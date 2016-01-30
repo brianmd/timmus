@@ -11,6 +11,8 @@ You will need [Leiningen][1] 2.0 or above installed.
 
 ## Running
 
+profiles-example.clj may be used as a template for /profiles.clj.
+
 To start a web server for the application, run:
 
     lein run
