@@ -5,7 +5,6 @@
     [config.core :refer [env]]
     [mount.core :refer [defstate]]
     [korma.core :refer :all]
-    ;[korma.db :refer [create-db default-connection]]
     [korma.db :refer :all]
     )
   (:import [java.sql

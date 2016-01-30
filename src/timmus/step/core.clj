@@ -3,12 +3,14 @@
             [config.core :refer [env]]
             [clojure.java.io :as io :refer [as-url make-parents]]
             [clojure.data.xml :as xml]
-            ))
 
-;(defn logit [x] (println x) x)
+            [timmus.utils.core :refer :all]
+            ))
 
 (def input-path (-> env :paths :local :step-input-path))
 (def output-path (-> env :paths :local :step-output-path))
+
+;(-> env :paths :local :step-input-path (#(str % "abc/")))
 
 (defn filter-tags-named [tag-name tag-value eles]
   (filter #(= tag-value (tag-name %)) eles)
