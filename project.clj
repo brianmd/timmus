@@ -39,6 +39,8 @@
                  [luminus-immutant "0.1.0"]
                  [luminus-log4j "0.1.2"]
                  [korma "0.4.2"]
+                 [com.draines/postal "1.11.3"]              ; email support
+                 [org.clojure/data.xml "0.0.8"]
                  ]
 
   :min-lein-version "2.0.0"
@@ -122,7 +124,7 @@
                                (pjstadig.humane-test-output/activate!)]
                   ;;when :nrepl-port is set the application starts the nREPL server on load
                   :env {:dev        true
-                        :port       3000
+                        :port       3007
                         :nrepl-port 7000}}
    :project/test {:env {:test       true
                         :port       3001

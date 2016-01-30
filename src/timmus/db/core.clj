@@ -23,7 +23,7 @@
 ;(defn connect! [] (create-db db-spec))
 
 (defn connect! []
-  (let [dbconfig (:local (:blue-harvest (env :db)))]
+  (let [dbconfig (-> env :db :blue-harvest :local)]
     (defdb db (mysql {:db (:dbname dbconfig) :user (:user dbconfig) :password (:password dbconfig)}))
     ))
 
