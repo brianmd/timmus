@@ -8,7 +8,13 @@
             [ajax.core :refer [GET POST]]
             [cljs.core.async :refer [chan close!]]          ; for timeout
             [siren.core :refer [siren! sticky-siren! base-style]]
+
+            [reagent-table.core :as rt]
             ))
+
+(enable-console-print!)
+(.log js/console "console print")
+(println "println after enable-console-print")
 
 (def order-num (r/atom ""))
 (def summit-email-address (r/atom ""))
@@ -81,7 +87,7 @@
     ))
 
 (defn order-spec-component []
-  [:div.well
+  [:div.container.well
    ;[:a {:href "https://www.google.com"} "google"]
    [:div.form-group.row
     [:label.col-sm-4.form-control-label

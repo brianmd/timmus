@@ -44,6 +44,7 @@
                  [ring-cors "0.1.7"]
 
                  [siren "0.2.0"]
+                 [org.clojars.frozenlock/reagent-table "0.1.3"]
                  ]
 
   :min-lein-version "2.0.0"

@@ -9,6 +9,7 @@
 
             ;[timmus.sales-associate.core]
             [timmus.csr.core :refer [csr-page]]
+            [timmus.math.core :refer [math-page]]
             ;[timmus.sales-associate.core :refer [csr-page]]
             )
   (:import goog.History))
@@ -43,6 +44,7 @@
          [nav-link "#/" "Home" :home collapsed?]
          [nav-link "#/about" "About" :about collapsed?]
          [nav-link "#/csr" "CSR" :csr collapsed?]
+         [nav-link "#/math" "Math" :math collapsed?]
          ]]])))
 
 ;(defn about-page []
@@ -95,6 +97,7 @@
   {:home #'home-page
    :about #'about-page
    :csr #'csr-page
+   :math #'math-page
    })
 
 (defn page []
@@ -112,6 +115,10 @@
 
 (secretary/defroute "/csr" []
   (session/put! :page :csr))
+
+(secretary/defroute "/math" []
+  (session/put! :page :math))
+
 ;(session/put! :page #'csr-page))
 
 ;(logit "after defroute")

@@ -7,6 +7,11 @@
             [timmus.utils.core :refer :all]
             ))
 
+;(enable-console-print!)
+;(.log js/console "hi")
+;(.log js/console (str "something happened"))
+;(println "boo")
+
 (def input-path (-> env :paths :local :step-input-path))
 (def output-path (-> env :paths :local :step-output-path))
 
@@ -64,8 +69,8 @@
     )
   )
 
-(defn get-id [manuf]
-  (-> manuf :attrs :ID))
+;(defn get-id [manuf]
+;  (-> manuf :attrs :ID))
 
 (defn golden? [manu]
   (contains? #{"Golden Manufacturer" "Manufacturer Root"} (-> manu :attrs :UserTypeID)))
