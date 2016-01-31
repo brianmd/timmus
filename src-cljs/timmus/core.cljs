@@ -5,8 +5,23 @@
             [goog.events :as events]
             [goog.history.EventType :as HistoryEventType]
             [markdown.core :refer [md->html]]
-            [ajax.core :refer [GET POST]])
+            [ajax.core :refer [GET POST]]
+
+            ;[timmus.sales-associate.core]
+            [timmus.csr.core :refer [order-spec-page]]
+            ;[timmus.sales-associate.core :refer [order-spec-page]]
+            )
   (:import goog.History))
+
+;(.clear js/console)
+
+;(.clear js/console)
+
+;(defn logit [& args]
+;  (apply println args)
+;  (last args))
+;
+;(logit :top)
 
 (defn nav-link [uri title page collapsed?]
   [:ul.nav.navbar-nav>a.navbar-brand
@@ -26,13 +41,40 @@
         [:a.navbar-brand {:href "#/"} "timmus"]
         [:ul.nav.navbar-nav
          [nav-link "#/" "Home" :home collapsed?]
-         [nav-link "#/about" "About" :about collapsed?]]]])))
+         [nav-link "#/about" "About" :about collapsed?]
+         [nav-link "#/orderspec" "OrderSpec" :orderspec collapsed?]
+         ]]])))
 
-(defn about-page []
-  [:div.container
-   [:div.row
-    [:div.col-md-12
-     "this is the story of timmus... work in progress"]]])
+;(defn about-page []
+;    [:div.container
+;        [:div.row
+;             [:div.col-md-12
+;                   "this is the story of timmus... work in progress"]]])
+
+ 
+ (defn about-page []
+   [:div.container
+    [:div.row
+     [:div.col-md-4
+      "this is the story of timmus... work in progress"]
+     [:div.col-md-4
+      "Already set up for bootstrap"]
+     [:div.col-md-4
+      "in three columns"]
+     ]])
+;(defn order-spec-page []
+;  [:div.container
+;   [:div.row
+;    [:div.col-md-4
+;     "order-spec  page"]
+;    [:div.col-md-4
+;     "Already set up for bootstrap"]
+;    [:div.col-md-4
+;     "in three columns"]
+;    ]])
+
+;(logit about-page)
+;[:div [:a {:href "/order-spec-page"} "go to order spec page"]]
 
 (defn home-page []
   [:div.container
@@ -51,7 +93,9 @@
 
 (def pages
   {:home #'home-page
-   :about #'about-page})
+   :about #'about-page
+   :orderspec #'order-spec-page
+   })
 
 (defn page []
   [(pages (session/get :page))])
@@ -66,6 +110,11 @@
 (secretary/defroute "/about" []
   (session/put! :page :about))
 
+(secretary/defroute "/orderspec" []
+  (session/put! :page :orderspec))
+;(session/put! :page #'order-spec-page))
+
+;(logit "after defroute")
 ;; -------------------------
 ;; History
 ;; must be called after routes have been defined
@@ -82,6 +131,8 @@
 (defn fetch-docs! []
   (GET (str js/context "/docs") {:handler #(session/put! :docs %)}))
 
+;(logit "after fetch-docs!")
+
 (defn mount-components []
   (r/render [#'navbar] (.getElementById js/document "navbar"))
   (r/render [#'page] (.getElementById js/document "app")))
@@ -90,3 +141,5 @@
   (fetch-docs!)
   (hook-browser-navigation!)
   (mount-components))
+
+;(logit "all done ....")
