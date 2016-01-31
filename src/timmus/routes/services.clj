@@ -73,10 +73,10 @@
                   (ok (select customer (limit 1) (where {:email email}))))
 
             (GET* "/order-spec/:email/:ordernum" []
-                 :return Long
-                 :path-params [email :- String, ordernum :- String]
+                 ;:return Long
+                 :path-params [email :- String, ordernum :- Long]
                  :summary "emails specs related to order-num to email"
-                 (ok 1))
+                 (ok {:email email :order-num ordernum}))
             )
 
   (context* "/context" []

@@ -90,5 +90,7 @@
         (-> site-defaults
             (assoc-in [:security :anti-forgery] false)
             (dissoc :session)))
+      ; (cors/wrap-cors :access-control-allow-origin [#".*"]
+        ; :access-control-allow-methods [:get :put :post :delete])
       wrap-context
       wrap-internal-error))

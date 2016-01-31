@@ -1,9 +1,60 @@
 (ns timmus.csr.core
+  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [reagent.session :as session]
             [secretary.core :as secretary :include-macros true]
+            ;[clojure.core :refer [future]]
             [reagent.core :as r :refer [atom]]
+            [cljs.pprint :refer [pprint]]
             [ajax.core :refer [GET POST]]
+            [cljs.core.async :refer [chan close!]]          ; for timeout
             ))
+
+(def order-num (r/atom ""))
+(def summit-email-address (r/atom ""))
+(def alert-message (r/atom nil))
+
+(defn set-alert-message [msg]
+  (reset! alert-message msg)
+  (js/setTimeout (fn [] (reset! alert-message nil)) 2000)
+  )
+
+
+;(js/setTimeout (fn [] (set-alert-message "set message after 2 seconds")) 2000)
+
+
+(defn timeout [ms]
+  (let [c (chan)]
+    (js/setTimeout (fn [] (close! c)) ms)
+    c))
+
+;(def base-api-url "http://localhost:3007/api/")
+(def base-api-url "/api/")
+
+(defn handler [response]
+  (set-alert-message response)
+  (.log js/console (str response))
+  )
+
+(defn error-handler [{:keys [status status-text]}]
+  (set-alert-message "error processing order-spec")
+  (.log js/console
+        (str "something bad happened: " status " " status-text)))
+
+(defn request-order-spec [email order-num]
+  (let [url (str base-api-url "order-spec/" email "/" order-num)]
+    (GET url
+         {:headers {"Accept" "application/json"}
+          ;:params {:message "Hello World"
+          ;         :user    "Bob"}
+          :handler handler
+          :error-handler error-handler}
+         )))
+
+(defn ajax-request-order-spec []
+  (request-order-spec @summit-email-address @order-num)
+  (reset! summit-email-address "")
+  (reset! order-num "")
+  )
 
 (defn atom-input [value attrs]
   [:input.form-control
@@ -13,27 +64,30 @@
       :value @value
       :on-change #(reset! value (-> % .-target .-value))})])
 
-(def order-num (r/atom ""))
-(def summit-email-address (r/atom ""))
+(defn valid-order-spec-data? []
+  (and
+    (re-matches #"[a-zA-Z0-9.-]+" @summit-email-address)
+    (re-matches #"\d+" @order-num)
+    ))
 
 (defn order-spec-component []
-  [:form
+  [:div.well
    ;[:a {:href "https://www.google.com"} "google"]
    [:div.form-group.row
     [:label.col-sm-4.form-control-label
      {:for "summit-email-address" :style {:text-align "right" :font-weight "bold"}}
-     " Your email address: "]
+     "Send to: "]
     [:div.col-sm-4
      (atom-input
        summit-email-address
        {:type "text" :id "summit-email-address" :class "form-control" :autofocus true :placeholder "Summit username"}
        )]
     [:div.col-sm-4
-     " @summit.com "]]
+     "@summit.com"]]
    [:div.form-group.row
     [:label.col-sm-4.form-control-label
      {:for "order-num" :style {:text-align "right" :font-weight "bold"}}
-     " Order #: "]
+     "Order #: "]
     [:div.col-sm-4
      (atom-input
        order-num
@@ -43,15 +97,31 @@
     [:div.col-sm-4]
     [:div.col-sm-4
      [:button.btn.btn-primary
-      {:type "submit" :disabled (or (= @summit-email-address "") (= @order-num ""))}
+      {:type "submit"
+       ;:disabled (or (= @summit-email-address "") (= @order-num ""))
+       :disabled (not (valid-order-spec-data?))
+       :on-click #(ajax-request-order-spec)}
       "Request Order Specs"]]]
+   (if @alert-message
+     (do
+       [:div.form-group.row
+        [:div.alert.alert-success.alert-dismissible
+         {:role "alert"}
+         ;[:button.close {:type "button" :data-dismiss "alert" :aria-label "Close"}
+         ; [:span.glyphicon.glyphicon-remove {:aria-hidden "true"} "x"]]
+         [:strong "Success! "]
+         (with-out-str (cljs.pprint/pprint @alert-message))
+         ;@alert-message
+         ]]
+       )
+     )
    ])
 
 
   ;(GET " http: //localhost:3000/store/service_centers.json")
 
 (defn order-spec-page []
-  [:div.container
+  [:div.container.page-header
    [:h2 "Order Spec Sheet Request"]
    ;[:fieldset.mds-border {:style "padding-top: 20px"}
     [order-spec-component]

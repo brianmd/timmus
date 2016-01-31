@@ -9,6 +9,7 @@
             [config.core :refer [env]]
             [timmus.config :refer [defaults]]
             [mount.core :as mount]
+            ; [ring.middleware.cors :refer [wrap-cors]]
             [luminus.logger :as logger]))
 
 (defn init
@@ -35,6 +36,8 @@
   (routes
     (var service-routes)
     (wrap-routes #'home-routes middleware/wrap-csrf)
+    ; (wrap-cors :access-control-allow-origin [#".*"]
+      ; :access-control-allow-methods [:get :put :post :delete])
     (route/not-found
       (:body
         (error-page {:status 404
