@@ -76,7 +76,12 @@
                  ;:return Long
                  :path-params [email :- String, ordernum :- Long]
                  :summary "emails specs related to order-num to email"
-                 (ok {:email email :order-num ordernum}))
+                  (println "order-spec" email ordernum)
+                  (Thread/sleep 1000)
+                  (ok {:email email :order-num ordernum})
+                  ;(bad-request {:email email :order-num ordernum})
+                  ;(throw "nope")
+                  )
             )
 
   (context* "/context" []

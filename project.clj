@@ -42,6 +42,8 @@
                  [com.draines/postal "1.11.3"]              ; email support
                  [org.clojure/data.xml "0.0.8"]
                  [ring-cors "0.1.7"]
+
+                 [siren "0.2.0"]
                  ]
 
   :min-lein-version "2.0.0"

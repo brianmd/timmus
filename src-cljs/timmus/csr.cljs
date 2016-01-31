@@ -7,38 +7,48 @@
             [cljs.pprint :refer [pprint]]
             [ajax.core :refer [GET POST]]
             [cljs.core.async :refer [chan close!]]          ; for timeout
+            [siren.core :refer [siren! sticky-siren! base-style]]
             ))
 
 (def order-num (r/atom ""))
 (def summit-email-address (r/atom ""))
 (def alert-message (r/atom nil))
+(def alert-message-history (r/atom []))
 
-(defn set-alert-message [msg]
-  (reset! alert-message msg)
-  (js/setTimeout (fn [] (reset! alert-message nil)) 2000)
-  )
-
-
-;(js/setTimeout (fn [] (set-alert-message "set message after 2 seconds")) 2000)
-
+(defn set-alert-message [status msg]
+  (let [global {:width "300px"
+                :color "white"}
+        local (case status
+                :success {:background "green"}
+                :warn {:background "yellow"}
+                :error {:background "red"}
+                {})
+        delay (case status
+                :success 500
+                :warn 3000
+                :error 3000
+                1000)
+        ]
+    (swap! alert-message-history conj [status msg])
+    (println @alert-message-history)
+    (siren! {:style (merge base-style global local) :content (str "<div>" msg "</div>") :delay delay})
+    ))
 
 (defn timeout [ms]
   (let [c (chan)]
     (js/setTimeout (fn [] (close! c)) ms)
     c))
 
-;(def base-api-url "http://localhost:3007/api/")
 (def base-api-url "/api/")
 
 (defn handler [response]
-  (set-alert-message response)
-  (.log js/console (str response))
+  (set-alert-message :success (str "Success! " response))
   )
 
 (defn error-handler [{:keys [status status-text]}]
-  (set-alert-message "error processing order-spec")
-  (.log js/console
-        (str "something bad happened: " status " " status-text)))
+  (set-alert-message :error (str "Failed error processing order-spec" status-text))
+  ;(.log js/console (str "something bad happened: " status " " status-text))
+  )
 
 (defn request-order-spec [email order-num]
   (let [url (str base-api-url "order-spec/" email "/" order-num)]
