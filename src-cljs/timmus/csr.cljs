@@ -130,7 +130,7 @@
 
   ;(GET " http: //localhost:3000/store/service_centers.json")
 
-(defn order-spec-page []
+(defn csr-page []
   [:div.container.page-header
    [:h2 "Order Spec Sheet Request"]
    ;[:fieldset.mds-border {:style "padding-top: 20px"}

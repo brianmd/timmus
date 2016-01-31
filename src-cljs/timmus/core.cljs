@@ -8,8 +8,8 @@
             [ajax.core :refer [GET POST]]
 
             ;[timmus.sales-associate.core]
-            [timmus.csr.core :refer [order-spec-page]]
-            ;[timmus.sales-associate.core :refer [order-spec-page]]
+            [timmus.csr.core :refer [csr-page]]
+            ;[timmus.sales-associate.core :refer [csr-page]]
             )
   (:import goog.History))
 
@@ -42,7 +42,7 @@
         [:ul.nav.navbar-nav
          [nav-link "#/" "Home" :home collapsed?]
          [nav-link "#/about" "About" :about collapsed?]
-         [nav-link "#/orderspec" "OrderSpec" :orderspec collapsed?]
+         [nav-link "#/csr" "CSR" :csr collapsed?]
          ]]])))
 
 ;(defn about-page []
@@ -62,7 +62,7 @@
      [:div.col-md-4
       "in three columns"]
      ]])
-;(defn order-spec-page []
+;(defn csr-page []
 ;  [:div.container
 ;   [:div.row
 ;    [:div.col-md-4
@@ -74,7 +74,7 @@
 ;    ]])
 
 ;(logit about-page)
-;[:div [:a {:href "/order-spec-page"} "go to order spec page"]]
+;[:div [:a {:href "/csr-page"} "go to order spec page"]]
 
 (defn home-page []
   [:div.container
@@ -94,7 +94,7 @@
 (def pages
   {:home #'home-page
    :about #'about-page
-   :orderspec #'order-spec-page
+   :csr #'csr-page
    })
 
 (defn page []
@@ -110,9 +110,9 @@
 (secretary/defroute "/about" []
   (session/put! :page :about))
 
-(secretary/defroute "/orderspec" []
-  (session/put! :page :orderspec))
-;(session/put! :page #'order-spec-page))
+(secretary/defroute "/csr" []
+  (session/put! :page :csr))
+;(session/put! :page #'csr-page))
 
 ;(logit "after defroute")
 ;; -------------------------
