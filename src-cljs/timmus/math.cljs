@@ -62,6 +62,7 @@
   )
 
 (defn math-page []
+  ;(breakpoint)
   [:div.container
    ;[:div.form-group.row
    ; [:div.col-sm-2]
@@ -74,7 +75,7 @@
      [:h2 "Multiplier"]
      [multiplier-component]
      ]]
-   [:hr]
-   [make-table]
+   ;[:hr]
+   ;[make-table]
    ])
 

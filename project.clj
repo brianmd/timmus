@@ -45,6 +45,7 @@
 
                  [siren "0.2.0"]
                  [org.clojars.frozenlock/reagent-table "0.1.3"]
+                 [clj-http "2.0.1"]
                  ]
 
   :min-lein-version "2.0.0"
