@@ -5,6 +5,7 @@
             [korma.core :refer :all]
 
             [timmus.db.relationships :refer :all]
+            [timmus.sales-associate.order-spec :refer [send-spec-email]]
             ))
 
 (s/defschema Thingie {:id Long
@@ -76,12 +77,20 @@
                  ;:return Long
                  :path-params [email :- String, ordernum :- Long]
                  :summary "emails specs related to order-num to email"
-                  (println "order-spec" email ordernum)
-                  (Thread/sleep 1000)
-                  (ok {:email email :order-num ordernum})
-                  ;(bad-request {:email email :order-num ordernum})
-                  ;(throw "nope")
-                  )
+                  (let [email (str email "@summit.com")]
+                    (println "order-spec" email ordernum)
+                    (try
+                      (send-spec-email email ordernum)
+                      (println "sent email for" email ordernum)
+                      (ok {:email email :order-num ordernum})
+                      (catch Exception e
+                        (println "oops" e)
+                        (not-found {:email email :order-num ordernum :error-msg (.getMessage e)}))
+                      )))
+                    ;(Thread/sleep 1000)
+                    ;(ok {:email email :order-num ordernum})
+                    ;(bad-request {:email email :order-num ordernum})
+                    ;(throw "nope")
             )
 
   (context* "/context" []

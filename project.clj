@@ -46,6 +46,9 @@
                  [siren "0.2.0"]
                  [org.clojars.frozenlock/reagent-table "0.1.3"]
                  [clj-http "2.0.1"]
+                 [com.cemerick/url "0.1.1"]
+                 [org.clojure/data.csv "0.1.3"]
+                 [org.clojure/data.codec "0.1.0"]
                  ]
 
   :min-lein-version "2.0.0"
@@ -56,7 +59,7 @@
   :main timmus.core
   :migratus {:store :database}
 
-  :plugins [[lein-environ "1.0.1"]
+  :plugins [[lein-environ "1.0.2"]
             [migratus-lein "0.2.0"]
             [lein-cljsbuild "1.1.1"]
             [lein-uberwar "0.2.0"]]
@@ -96,6 +99,7 @@
              :resource-paths ["env/prod/resources"]}
    :dev           [:project/dev :profiles/dev]
    :test          [:project/test :profiles/test]
+   :prod    [:project/prod :profiles/prod]
    :project/dev  {:dependencies [[prone "1.0.1"]
                                  [ring/ring-mock "0.3.0"]
                                  [ring/ring-devel "1.4.0"]

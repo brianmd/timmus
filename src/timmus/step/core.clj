@@ -12,8 +12,8 @@
 ;(.log js/console (str "something happened"))
 ;(println "boo")
 
-(def input-path (-> env :paths :local :step-input-path))
-(def output-path (-> env :paths :local :step-output-path))
+(def step-input-path (-> env :paths :local :step-input-path))
+(def step-output-path (-> env :paths :local :step-output-path))
 
 ;(-> env :paths :local :step-input-path (#(str % "abc/")))
 
@@ -83,9 +83,9 @@
   )
 
 (defn create-manufacturer-lookup-tables []
-  (let [manufacturers (xml/parse (java.io.FileReader. (str input-path "step/manufacturer.xml")))
+  (let [manufacturers (xml/parse (java.io.FileReader. (str step-input-path "step/manufacturer.xml")))
         golden (get-top-level-manufacturers manufacturers)
-        streams (make-output-streams (str output-path "lookup-tables/"))]
+        streams (make-output-streams (str step-output-path "lookup-tables/"))]
     (try
       (process-child streams nil golden)
       (finally

@@ -23,7 +23,7 @@
 
 (defn connect! []
   (let [dbconfig (-> env :db :blue-harvest :local)]
-    (defdb db (mysql {:db (:dbname dbconfig) :user (:user dbconfig) :password (:password dbconfig)}))
+    (defdb db (mysql {:host (:host dbconfig) :db (:dbname dbconfig) :user (:user dbconfig) :password (:password dbconfig)}))
     ))
 
 (defstate ^:dynamic *db*

@@ -6,7 +6,7 @@
             [reagent.core :as r :refer [atom]]
             [cljs.pprint :refer [pprint]]
             [ajax.core :refer [GET POST]]
-            [cljs.core.async :refer [chan close!]]          ; for timeout
+            [cljs.core.async :refer [chan close!]]          ; for sleep timeout
             [siren.core :refer [siren! sticky-siren! base-style]]
 
             [reagent-table.core :as rt]
@@ -30,10 +30,10 @@
                 :error {:background "red"}
                 {})
         delay (case status
-                :success 500
-                :warn 3000
-                :error 3000
-                1000)
+                :success 5000
+                :warn 10000
+                :error 25000
+                5000)
         ]
     (swap! alert-message-history conj [status msg])
     (println @alert-message-history)
@@ -51,15 +51,19 @@
   (set-alert-message :success (str "Success! " response))
   )
 
-(defn error-handler [{:keys [status status-text]}]
-  (set-alert-message :error (str "Failed error processing order-spec" status-text))
+(defn error-handler [status]
+;(defn error-handler [{:keys [status status-text]}]
+  (set-alert-message :error (str "Failed error processing order-spec: " (:response status)))
   ;(.log js/console (str "something bad happened: " status " " status-text))
   )
+;Failed error processing order-spec: {:status 404, :status-text "Not Found", :failure :error, :response ":emailb@summit.com:order-num111:error-msgNo line items for order #111"}
 
 (defn request-order-spec [email order-num]
   (let [url (str base-api-url "order-spec/" email "/" order-num)]
+    (set-alert-message :success (str "Processing order " order-num ". You may submit more requests now."))
     (GET url
          {:headers {"Accept" "application/json"}
+          :timeout 240000                                   ; 2 minutes
           ;:params {:message "Hello World"
           ;         :user    "Bob"}
           :handler handler
@@ -68,7 +72,7 @@
 
 (defn ajax-request-order-spec []
   (request-order-spec @summit-email-address @order-num)
-  (reset! summit-email-address "")
+  ;(reset! summit-email-address "")
   (reset! order-num "")
   )
 

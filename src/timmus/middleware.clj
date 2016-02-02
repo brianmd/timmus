@@ -81,7 +81,8 @@
 
 (defn wrap-base [handler]
   (-> ((:middleware defaults) handler)
-      wrap-auth
+      ;wrap-auth
+      ;wrap-restricted
       wrap-formats
       wrap-webjars
       wrap-flash
