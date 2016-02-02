@@ -49,6 +49,9 @@
                  [com.cemerick/url "0.1.1"]
                  [org.clojure/data.csv "0.1.3"]
                  [org.clojure/data.codec "0.1.0"]
+                 [org.clojure/data.xml "0.0.8"]
+
+                  [funcool/cats "1.2.1"]
                  ]
 
   :min-lein-version "2.0.0"
