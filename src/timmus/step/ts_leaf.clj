@@ -4,9 +4,12 @@
     [clojure.java.io :as io]
     [clojure.data.codec.base64 :as b64]
     [clojure.pprint :refer :all]
+    [clojure.data.xml :as xml]
 
-    [csvr.defun]
-    [csvr.xml-output]
+    ;[csvr.defun]
+    ;[csvr.xml-output]
+
+    [timmus.step.xml-output :refer :all]
 
     [timmus.utils.core :refer :all]
     ;[clojure.core.async
@@ -34,7 +37,8 @@
     output-tuples
       doxml ts-leaf-tag-names
   )
-(def ts-dir "/Users/bmd/data/stibo/input/trade-service/")
+
+(def ts-dir (str step-input-path "trade-service/"))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

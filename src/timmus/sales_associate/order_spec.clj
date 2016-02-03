@@ -153,11 +153,6 @@
    :content (str dirname "/" (last (str/split filename #"/")))})
 
 (defn last-not-nil? [x] (last x))
-;(->>
-;  '([10 " TYPE B" nil nil] [20 " TYPE N" nil nil])
-;  (filter last-not-nil?)
-  ;(filter #(last %))
-  ;)
 
 (defn send-spec-email [email order-num]
   (println)
@@ -172,16 +167,13 @@
                          get-sap-line-items
                          extract-sap-mail-data
                          (map merge-product-info)
-                         logit
                          (filter last-not-nil?)
-                         logit
                          (map extract-mail-line-item)
                          )
-        xyz (println "line-item-rows" line-item-rows)
         urls (flatten (map #(nth % 2) line-item-rows))
         ]
     (if (= 0 (count line-item-rows))
-      (throw (Exception. (str "No line items for order #" order-num))))
+      (throw (Exception. (str "No spec sheets found for order #" order-num ". No email sent."))))
     (.mkdir (clojure.java.io/file dir-name))
     (println "downloading" urls)
     (doall (pmap (partial download-file-to dir-name) urls)

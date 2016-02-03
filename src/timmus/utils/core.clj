@@ -3,8 +3,18 @@
     [clj-http.client :as client]
     [cheshire.core :refer :all]
     [clojure.pprint :refer [pprint]]
+    [config.core :refer [env]]
+
+    ;[cats.core :as m]
+    ;[cats.builtin]
+    ;[cats.monad.maybe :as maybe]
     )
   )
+
+
+(def step-input-path (-> env :paths :local :step-input-path))
+(def step-output-path (-> env :paths :local :step-output-path))
+
 
 (defn logit [& args]
   (apply println args)
@@ -68,3 +78,27 @@
        )
     `(defn ~name ~args ~@body)
     ))
+
+
+
+(defmacro macro->fn [m]
+  `(fn [& args#]
+     (eval
+       (cons '~m args#))))
+(defmacro make-record [name cols-names]
+  `(apply (macro->fn defrecord) ['~name (->> ~cols-names (map name) (map symbol) vec)]))
+
+(make-record ColumnInfo '(name dbid type validations))
+
+(defprotocol Validator
+  "validate "
+  (field-validations [rec] "returns map: {field-name [predicate (fn [name val rec] msg) ...] ...}")
+  (errors [rec] "returns map: {field-name [msg ...] ...")
+  (valid? [rec] "returns true if errors is empty map"))
+
+(def required #(and (not (nil? %)) (not= "" %)))
+(def string-integer #(re-matches #"\d*" %))
+(def string-float #(re-matches #"[\d.]*" %))
+(def alphanumeric? #(re-matches #"[a-zA-Z0-9]*" %))
+
+
