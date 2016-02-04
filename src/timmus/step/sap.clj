@@ -28,9 +28,6 @@
 
 (defn lookup-validator [lookup-table]
   [#(contains? lookup-table %) #(str "Value not in lookup table: " %)])
-;((first (lookup-validator material-types)) "SAMM")
-[(lookup-validator material-types)]
-((first (first [(lookup-validator material-types)])) "SAMM")
 
 (def material-col-info-array
   ;[:matnr "MARA-MATNR" String [:required :digits [:count 17]]
@@ -58,20 +55,12 @@
 (def material-col-info
   (into {} (map (fn [x] [(first x) (apply ->ColumnInfo x)]) (partition 4 material-col-info-array)))
   )
-;material-col-info
-;(keys material-col-info)
-;(-> material-col-info :type)
-;(-> material-col-info :matnr :validators)
 
 (def material-col-names
   (->> material-col-info-array (partition 4) (map first)))
 
 (make-record SapMaterial material-col-names)
 ;(apply ->SapMaterial (range 17))
-
-;(defn validate-with [val fn msg-fn]
-;  (if (not (fn val))
-;    (msg-fn val)))
 
 (defn validate-with [val fns]
   "fns => [assertion-fn msg-fn]"
@@ -87,26 +76,15 @@
 (defn validate-with* [val fns*]
   (let [val-validator (partial validate-with val)
         validator-fns (map validator-fns fns*)]
-    ;(remove nil? (map val-validator validator-fns))))
-    (remove nil?
-            (map val-validator validator-fns))))
+    (remove nil? (map val-validator validator-fns))))
 
-;(validate-with* "1a" [(:required validators) (:digits validators)])
-;(validate-with* "1a" [:required :digits])
-(assert (=
-    (validate-with* "" (-> material-col-info :matnr :validators))
-    '("This field is required." "The deck was stacked against bro: ")
-    ))
-(validate-with* "" (-> material-col-info :type :validators))
-(validate-with* "asdf" (-> material-col-info :type :validators))
-(validate-with* "DIEN" (-> material-col-info :type :validators))
-;(-> material-col-info :type :validators first first)
-;((-> material-col-info :type :validators first first) "DIEN")
-;((-> material-col-info :matnr :validators first) "")
-;((-> material-col-info :matnr :validators first) "")
-(-> material-col-info :type :validators)
-material-col-info
-*e
+;(assert (=
+;    (validate-with* "" (-> material-col-info :matnr :validators))
+;    '("This field is required.")
+;    ))
+;(validate-with* "" (-> material-col-info :type :validators))
+;(validate-with* "asdf" (-> material-col-info :type :validators))
+;(validate-with* "HAWA" (-> material-col-info :type :validators))
 
 (defn validate-colname-with* [colname val fns*]
   (let [msgs (validate-with* val fns*)]
@@ -114,24 +92,12 @@ material-col-info
       [colname msgs])))
 ;(validate-colname-with* :matnr "" [:required :digits])
 ;(validate-colname-with* :matnr "122" [:required :digits :test-failure])
-;(validate-with* (range 16) [[#(= (count %) 17) #(str "Wrong number of columns: " (count %) " instead of " 17)]])
 
 (defn validate-col [cols-info record col-name]
   (let [col-info (col-name cols-info)
         validators (:validators col-info)
-        ;errors (validate-col-with* :matnr )
         ]
     (validate-colname-with* col-name (col-name record) validators)))
-
-(validate-col material-col-info (makeit) :matnr)
-(validate-col material-col-info (makeit) :type)
-*e
-(defn makeit []
-  (sap-material (map str (range 17))))
-(makeit)
-
-
-
 
 (defn validate-record [cols-info record]
   (let [v (partial validate-col cols-info record)]
@@ -170,10 +136,10 @@ material-col-info
     ;@categories
     ))
 
-(sap-material [192 2])
-(sap-material (map str (range 17)))
-(process-sap-file-with "STEP_MATERIAL.txt" process-sap-material)
-(def x (process-sap-file-with "STEP_MATERIAL.txt" process-sap-material))
-(map :matnr x)
+;(sap-material [192 2])
+;(sap-material (map str (range 17)))
+;(process-sap-file-with "STEP_MATERIAL.txt" process-sap-material)
+;(def x (process-sap-file-with "STEP_MATERIAL.txt" process-sap-material))
+;(map :matnr x)
 
 
