@@ -248,11 +248,12 @@
 
 
 
-(def ^:dynamic levels-to-save 1)
-(def ^:dynamic levels-to-print 0)
+;(def ^:dynamic levels-to-save 1)
+;(def ^:dynamic levels-to-print 0)
+;
+;(binding [levels-to-save 0
+;          levels-to-print 5]
+;  (println
+;    (create-ts-leaf-hierarchy)
+;    ))
 
-(binding [levels-to-save 0
-          levels-to-print 5]
-  (println
-    (create-ts-leaf-hierarchy)
-    ))

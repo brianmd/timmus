@@ -51,7 +51,8 @@
                  [org.clojure/data.codec "0.1.0"]
                  [org.clojure/data.xml "0.0.8"]
 
-                  [funcool/cats "1.2.1"]
+                 [funcool/cats "1.2.1"]
+                 [org.clojure/algo.monads "0.1.5"]
                  ]
 
   :min-lein-version "2.0.0"

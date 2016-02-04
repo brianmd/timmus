@@ -1,4 +1,4 @@
-(ns timmus.utils.experiments
+(ns timmus.utils.experimentsmonad
   (:require
     ;[clj-http.client :as client]
     ;[cheshire.core :refer :all]
@@ -7,13 +7,28 @@
 
     [cats.core :as m]
     [cats.builtin]
+    ;[cats.monad.maybe :as maybe]
     [cats.monad.maybe :as maybe]
     [cats.context :as ctx]
     [cats.applicative.validation :as v]
+    [cats.protocols :as p]
+
+
+    ;[clojure.algo.monads :as algo]
     )
+  (:use [clojure.algo.monads
+         :only (domonad with-monad m-lift m-seq m-reduce m-when
+                        sequence-m
+                        maybe-m
+                        identity-m
+                        state-m fetch-state set-state
+                        writer-m write
+                        cont-m run-cont call-cc
+                        maybe-t)])
   )
 
 
+(when true
 
 ; semigroup
 (m/mappend (maybe/just [1 2 3])
@@ -104,6 +119,8 @@
   (m/traverse just-if-even [2 3]))
 ;; => #<Nothing>
 
+
+
 (defn valid-if-even
   [n]
   (if (even? n)
@@ -121,6 +138,8 @@
 (ctx/with-context v/context
   (m/traverse valid-if-even [2 3 4 5]))
 ;; => #<Fail {3 :not-even, 5 :not-even}>
+
+
 
 ; monad
 (m/bind (maybe/just 1)
@@ -142,9 +161,124 @@
 (m/mlet [a (maybe/just 1)
          b (maybe/just (inc a))]
         (m/return (* b 2)))
+;; => #<Just 4>
+
+; monad zero
+(m/mzero maybe/maybe-monad)
+;; => error. can't find maybe-monad. bummer. but the below works ...
+(ctx/with-context maybe/context
+                  (m/mzero))
+
+
+(m/bind (maybe/just 1)
+        (fn [a]
+          (m/bind (if (= a 2)
+                    (m/return nil)
+                    (m/mzero))
+                  (fn [_]
+                    (m/return (* a 2))))))
+;; or more simply with guard:
+(m/bind (maybe/just 1)
+        (fn [a]
+          (m/bind (m/guard (= a 2))
+                  (fn [_]
+                    (m/return (* a 2))))))
+;; or:
+(m/mlet [a (maybe/just 1)
+         :when (= a 2)]
+        (m/return (* a 2)))
 
 
 
-[1 4 nil 8]
+(cat-maybes
+  (map maybe/just (range 5)))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(defn bound-seq*
+  [bind-map inner-seq]
+  (lazy-seq
+    (with-bindings bind-map
+      (when-let [s (seq inner-seq)]
+        (cons (first s) (bound-seq* bind-map (rest s)))))))
+
+(defmacro bound-seq
+  ([inner-seq]
+   `(bound-seq* (get-thread-bindings) ~inner-seq))
+  ([bind-map inner-seq]
+   `(bound-seq* (hash-map ~@(mapcat (fn [[k v]] [`(var ~k) v]) bind-map))
+                ~inner-seq)))
+
+(def ^:dynamic x 1)
+
+(defn make-seq
+  [n]
+  (lazy-seq
+    (cons (+ x n) (make-seq (inc n)))))
+
+(def bs (bound-seq {x 100} (make-seq 5)))
+(first bs)
+(second bs)
+(nth bs 3)
+(nth bs 12)
+(->>
+  (bs)
+  (take 5))
+
+(= (take 5 (
+             (fn my-reduct
+               ([func coll]
+                (my-reduct func (first coll) (rest coll)))
+
+               ([func firstArg coll]
+                (letfn [(reduct [f init se]
+                          (lazy-seq (when-not (empty? se)
+                                      (let [res (f init (first se))]
+                                        (cons res (reduct f res (rest se)))))))]
+                  (lazy-seq (cons firstArg (reduct func firstArg coll))))))
+             + (range)))
+   [0 1 3 6 10])
+
+(->>
+  (range)
+  (
+    (fn my-reduct
+      ([func coll]
+       (my-reduct func (first coll) (rest coll)))
+
+      ([func firstArg coll]
+       (letfn [(reduct [f init se]
+                 (lazy-seq (when-not (empty? se)
+                             (let [res (f init (first se))]
+                               (cons res (reduct f res (rest se)))))))]
+         (lazy-seq (cons firstArg (reduct func firstArg coll))))))
+    +)
+  (take 5)
+  )
+
+
+
+
+;; algo monads
+(domonad identity-m
+         [a  1
+          b  (inc a)]
+         (* a b))
+
+)
+
+
+
 
 
