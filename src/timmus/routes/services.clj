@@ -192,12 +192,12 @@
                     )
                   )
 
-            (GET* "/db/column-info" []
+            (GET* "/entities/definitions" []
                   (println "&&&&&&&&&&&&&&&&&&&&&&&&&&^^^^^^^^^^^")
                   (println mysql/entity-definitions)
                   (ok (clean-all mysql/entity-definitions)))
 
-            (GET* "/db/query/:entity/:attribute-name/:val" []
+            (GET* "/entities/query/:entity/:attribute-name/:val" []
                   :path-params [entity :- String, attribute-name :- String, val :- String]
                   (println mysql/entity-definitions)
                   (println "getting entity" entity " ...")

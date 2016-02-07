@@ -28,9 +28,10 @@
                  :db (:dbname dbconfig)
                  :user (:user dbconfig)
                  :password (:password dbconfig)
-                 :naming {:keys   str/lower-case
-                          ;; set map keys to lower
-                          :fields str/lower-case}}))
+                 ;:naming {:keys   str/lower-case
+                          ; set map keys to lower
+                          ;:fields str/lower-case}
+                 }))
     ))
 
 (defstate ^:dynamic *db*

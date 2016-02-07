@@ -31,11 +31,11 @@
 ;(select :customers (fields :id) (limit 5))
 
 (defentity schema-entities
-           (table "information_schema.tables"))
+           (table "information_schema.TABLES"))
 (defentity schema-attributes
-           (table "information_schema.columns"))
+           (table "information_schema.COLUMNS"))
 (defentity key-attribute-usage
-           (table "information_schema.key_column_usage"))
+           (table "information_schema.KEY_COLUMN_USAGE"))
 
 (defn current-db-name []
   (-> *db* :pool deref :datasource .getJdbcUrl (str/split #"/") last)
@@ -53,7 +53,7 @@
   ([dbname]
    (->
      (select* schema-entities)
-     (where {:table_schema dbname}))))
+     (where {:TABLE_SCHEMA dbname}))))
 (defn entities-for
   ([] (entities-for (current-db-name)))
   ([dbname]
@@ -62,21 +62,21 @@
   ([] (entity-names-for (current-db-name)))
   ([dbname]
    (->>
-     (select (-> (entities-for* dbname) (fields :table_name)))
-     (map :table_name))))
+     (select (-> (entities-for* dbname) (fields :TABLE_NAME)))
+     (map :TABLE_NAME))))
 
 (defn attributes-for* [full-entity-name]
   (let [[dbname entity-name] (get-dbname-entityname full-entity-name)]
     (->
       (select* schema-attributes)
-      (where {:table_schema dbname :table_name entity-name})
+      (where {:TABLE_SCHEMA dbname :TABLE_NAME entity-name})
       )))
 (defn attributes-for [entity-name]
   (select (attributes-for* entity-name)))
 (defn attribute-names-for [entity-name]
   (->>
-    (select (-> (attributes-for* entity-name) (fields :column_name)))
-    (map :column_name)))
+    (select (-> (attributes-for* entity-name) (fields :COLUMN_NAME)))
+    (map :COLUMN_NAME)))
 
 ;const fieldTypeString = function() {
 ;const fieldTypes = {
@@ -114,26 +114,26 @@
 ;(attribute-defs-for "service_centers")
 (defn attribute-def [col]
   ;(println "-------" (:attribute_name col))
-  (let [col-type-tokens (str/split (:column_type col) #"[(),]")
-        max-length    (or (second col-type-tokens) (:character_maximum_length col))
+  (let [col-type-tokens (str/split (:COLUMN_TYPE col) #"[(),]")
+        max-length    (or (second col-type-tokens) (:CHARACTER_MAXIMUM_LENGTH col))
         ;a (println "max" max-length "tokens" col-type-tokens (type max-length))
         all {
-             :name       (keyword (:column_name col))
-             :type       (:data_type col)
+             :name       (keyword (:COLUMN_NAME col))
+             :type       (:DATA_TYPE col)
              ;:type       (first col-type-tokens)
              :max-length (if max-length (if (= String (type max-length)) (Long. max-length) max-length))
-             :default    (:column_default col)
-             :required   (= "NO" (:is_nullable col))
-             :seq        (:ordinal_position col)
-             :entity      (keyword (:table_name col))
-             :primary?       (= "PRI" (:column_key col))
+             :default    (:COLUMN_DEFAULT col)
+             :required   (= "NO" (:IS_NULLABLE col))
+             :seq        (:ORDINAL_POSITION col)
+             :entity      (keyword (:TABLE_NAME col))
+             :primary?       (= "PRI" (:COLUMN_KEY col))
              }
         ;b (println "all" all)
-        others (partition 2 [:collation_name :charset
-                             :column_comment :comment
-                             :numeric_precision :precision
-                             :numeric_scale :scale
-                             :extra :extra
+        others (partition 2 [:COLLATION_NAME :CHARSET
+                             :COLUMN_COMMENT :COMMENT
+                             :NUMERIC_PRECISION :PRECISION
+                             :NUMERIC_SCALE :SCALE
+                             :EXTRA :EXTRA
                              ])
         good-others (filter #(let [v ((first %) col)]
                                (and (not= "" v) (not (nil? v))))
@@ -233,20 +233,20 @@
    (let [constraints
          (select key-attribute-usage
                  ; indexes have null, foreign keys have ids
-                 (where {:table_schema dbname :referenced_table_name [not= nil]})
-                 (fields :constraint_name :entity_name :referenced_table_name :column_name :referenced_column_name :ordinal_position)
-                 (order :constraint_name)
-                 (order :ordinal_position)
+                 (where {:TABLE_SCHEMA dbname :REFERENCED_TABLE_NAME [not= nil]})
+                 (fields :CONSTRAINT_NAME :ENTITY_NAME :REFERENCED_TABLE_NAME :COLUMN_NAME :REFERENCED_COLUMN_NAME :ORDINAL_POSITION)
+                 (order :CONSTRAINT_NAME)
+                 (order :ORDINAL_POSITION)
                  )
          one2many (atom {})
          add-constraint (fn [c]
                           (let [
                                 ;key [(:entity_name c) (:referenced_entity_name c)]
-                                key (:constraint_name c)
-                                tbls [(:table_name c) (:referenced_table_name c)]
-                                cols [(:column_name c) (:referenced_column_name c)]
+                                key (:CONSTRAINT_NAME c)
+                                tbls [(:TABLE_NAME c) (:REFERENCED_TABLE_NAME c)]
+                                cols [(:COLUMN_NAME c) (:REFERENCED_COLUMN_NAME c)]
                                 ;v [(:attribute_name c) (:referenced_attribute_name c)]
-                                v [(:table_name c) (:referenced_table_name c) (:column_name c) (:referenced_column_name c)]
+                                v [(:TABLE_NAME c) (:REFERENCED_TABLE_NAME c) (:COLUMN_NAME c) (:referenced_column_name c)]
                                 o2m (@one2many key)
                                 new-v (if o2m
                                         (logit (conj o2m cols))
@@ -376,13 +376,18 @@
     (println "\n\nas-sql ------------" (as-sql query))
     (let [result (select query)]
       {
-       ;:rows    (vec (map #(map convert-for-json (vals %)) result))
-       :rows (vec (clean-all result))
-       :headers (vec (map name (keys (first result))))
-       :result  result
-       :belongs-to 3
+       ;:rows       (vec (clean-all (map vals result)))
+       :rows       (map vals result)
+       ;:headers    (vec (map name (keys (first result))))
+       :headers    (keys (first result))
+       :result     result
+       :relationships
+                   {
+                    :belongs-to 3
+                    }
        })
     ))
 
 ;(attribute-query :customers :id 28)
+;(attribute-query :carts :customer_id 28)
 ;(attribute-query :customers :email "brian@murphydye.com")
