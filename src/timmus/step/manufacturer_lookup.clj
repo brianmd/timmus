@@ -1,4 +1,4 @@
-(ns timmus.step.core
+(ns timmus.step.manufacturer-lookup
   (:require [clojure.string :as str]
             [config.core :refer [env]]
             [clojure.java.io :as io :refer [as-url make-parents]]

@@ -9,7 +9,7 @@
 
             ;[timmus.sales-associate.core]
             [timmus.csr.core :refer [csr-page]]
-            [timmus.math.core :refer [math-page]]
+            [timmus.math :refer [math-page]]
             ;[timmus.sales-associate.core :refer [csr-page]]
             )
   (:import goog.History))

@@ -53,6 +53,7 @@
 
                  [funcool/cats "1.2.1"]
                  [org.clojure/algo.monads "0.1.5"]
+                 [clj-time "0.11.0"]
                  ]
 
   :min-lein-version "2.0.0"

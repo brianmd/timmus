@@ -11,6 +11,13 @@
     )
   )
 
+(def table-element-id (atom 0))
+(defn next-table-element-id [] (swap! table-element-id inc))
+(defrecord Table [headers rows])
+(defrecord TableElement [id query table parent-id children-ids collapsed?])
+(def table-elements (atom {}))
+()
+
 (when false
 
   (def zzz 3)

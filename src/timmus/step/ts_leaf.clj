@@ -26,7 +26,6 @@
    )
   )
 
-
 (declare
   create-ts-leaf-hierarchy
     get-leaf-class-names
@@ -35,7 +34,8 @@
     create-leaf-category-tuples
       make-hashes make-id-hash sha1 make-tuples
     output-tuples
-      doxml ts-leaf-tag-names
+      ;doxml
+      ts-leaf-tag-names
   )
 
 (def ts-dir (str step-input-path "trade-service/"))
@@ -43,8 +43,8 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:dynamic levels-to-save 0)
-(def ^:dynamic levels-to-print 0)
+;(def ^:dynamic levels-to-save 0)
+;(def ^:dynamic levels-to-print 0)
 
 (defn create-ts-leaf-hierarchy []
   (->
@@ -64,7 +64,7 @@
 
           ; pipe [ leaf-name* ]
 
-(defun create-leaf-category-tuples [leaf-names]
+(defn create-leaf-category-tuples [leaf-names]
   (->>
     leaf-names
     (make-hashes "TS_LEAF_")
@@ -74,23 +74,23 @@
 
           ; pipe [ [ id parentId name ]* ]
 
-(defun output-tuples [tuples]
-       (xml/emit-str
-         (doxml ts-leaf-tag-names tuples)
-         )
+(defn output-tuples [tuples]
+  (xml/emit-str
+    (doxml ts-leaf-tag-names tuples)
+    )
   )
 
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   get-leaf-class-names functions
 
-(defun process-ts-items-with [fn]
+(defn process-ts-items-with [fn]
   (with-open [in-file (io/reader (str ts-dir "item.txt"))]
     (let [lines (csv/read-csv in-file :separator \tab :quote \~)]
       (fn lines)
       )))
 
-(defun extract-leaf-class-names
+(defn extract-leaf-class-names
   [lines]
   (let [leaves (atom #{})]
     (->> lines
@@ -103,19 +103,18 @@
          )
     @leaves))
 
-(defun get-leaf-class [arr]
+(defn get-leaf-class [arr]
   ;(logit 27
     (nth arr 27))
     ;)
 
-(defun remove-empty-strings [strings]
+(defn remove-empty-strings [strings]
   (disj strings ""))
 
-(defun titleize-all [words]
+(defn titleize-all [words]
   (set
     (map titleize words)))
 
-; TODO: enable 'defun (doesn't work now, perhaps because ->> is a macro?)
 (defn titleize
   "Capitalize every word in a string"
   [s]
@@ -128,7 +127,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   process-ts-items-with functions
 
-(defun make-hashes [prefix strings]
+(defn make-hashes [prefix strings]
   ;(println prefix strings)
   (let* [len (count prefix)
          h (atom {})
@@ -151,7 +150,7 @@
 (defn leaf-parent [name]
   (subs name 0 1))
 
-(defun make-tuples [prefix hashes]
+(defn make-tuples [prefix hashes]
   (let [tuples (into [] (for [[name id] hashes] [id (str prefix (leaf-parent name)) name]))]
     (into tuples (for [[name _] hashes] [(str prefix (leaf-parent name)) nil (leaf-parent name)]))
     ))
@@ -178,7 +177,7 @@
 ;x
 
 
-(with-out-str (println "this should return as a string"))
+;(with-out-str (println "this should return as a string"))
 
 (def blue-hierarchy
   {:type "Product"
@@ -251,9 +250,21 @@
 ;(def ^:dynamic levels-to-save 1)
 ;(def ^:dynamic levels-to-print 0)
 ;
-;(binding [levels-to-save 0
-;          levels-to-print 5]
-;  (println
-;    (create-ts-leaf-hierarchy)
-;    ))
+(binding [levels-to-save 0
+          levels-to-print 5]
+  (pprint
+    (create-ts-leaf-hierarchy)
+    ))
+;
+;*e
+(def x (create-ts-leaf-hierarchy))
+;x
+;extract-leaf-class-names
+;(extract-leaf-class-names x)
+;ts-leaf-tag-names
+;(xml/emit-str
+;  (doxml ts-leaf-tag-names x)
+;  )
+
+
 

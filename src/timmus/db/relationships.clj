@@ -28,6 +28,12 @@
          service-center solr-category solr-service-center
          stock-status video zcta)
 
+(def bh-entities
+  {
+   :account account
+   :cart cart
+   :customer customer
+   })
 
 (defentity tables
            (table :information_schema.tables))
@@ -180,6 +186,7 @@ c
 
 
 
+;(select customer (limit 1))
 
 #_(comment
 

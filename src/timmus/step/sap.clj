@@ -3,6 +3,8 @@
             [clojure.java.io :as io :refer [as-url make-parents]]
             [clojure.data.xml :as xml]
 
+            [clojure.xml :as x]
+
             [clojure.data.csv :as csv]
             [clojure.java.io :as io]
             [clojure.data.codec.base64 :as b64]
@@ -120,6 +122,66 @@
         )
       )))
 
+;(defn bookshelf-from [data]
+;  (xml/element :books {}
+;               (reduce
+;                 (fn [books b]
+;                   (conj books (xml/element :book {:author (:author b)} (:title b))))
+;                 () data)))
+;x
+;(def y (first x))
+;y
+;material-col-info
+;(keys material-col-info)
+;(-> material-col-info :matnr)
+;(-> material-col-info :matnr :dbid)
+;(defn sap-material-attributes [item]
+;  (xml/element :Values {}
+;               (reduce
+;                 (fn [attrs [name col]]
+;                   (conj attrs (xml/element :Value {:AttributeID (:dbid col)} (name item))))
+;                 () material-col-info)))
+;(sap-material-attributes y)
+;(xml/emit-str (sap-material-attributes y))
+;(xml/emit (sap-material-attributes y) *out*)
+;(xml/emit-char-seq (sap-material-attributes y) "UTF-8")
+;y
+
+(defn sap-material-attributes [item]
+  {:tag :Values
+   :content
+        (reduce
+          (fn [attrs [name col]]
+            (conj attrs {:tag     :Value
+                         :attrs   {:AttributeID (:dbid col)}
+                         :content [(name item)]}))
+          () material-col-info)})
+;(sap-material-attributes y)
+;(x/emit-element (sap-material-attributes y))
+;(x/emit-element {:tag :hello :attrs {:place "world"}})
+;(x/emit-element {:tag :parent
+;                 :attrs {:id "22" :name "fritz"}
+;                 :content [
+;                           {:tag :child :attrs {:id "56"}}
+;                           {:tag :child :attrs {:id "57"}}]})
+
+(defn sap-material-hiccup [item]
+  {:tag :Product
+   :attrs {:ID (str "SAP_MEM_" (as-short-document-num (:matnr item)))
+           :UserTypeID "SAP_Member_Record"
+           :ParentID "SAP_Member_Records"}
+   :content
+   [(sap-material-attributes item)]})
+
+(defn sap-material-xml [item]
+  (x/emit-element (sap-material-hiccup item))
+  item)
+
+;(x/emit-element (sap-material-attributes y))
+;(sap-material-hiccup y)
+;(sap-material-xml y)
+;y
+
 (defn process-sap-material [lines]
   (let [categories (atom #{})]
     (->> lines
@@ -127,13 +189,14 @@
          (take 5)
          (map sap-material)
          (remove nil?)
+         (map sap-material-xml)
          ;(rest)
          ;(map get-leaf-class)
          ;(take 25)
          ;(map #(swap! leaves conj %))
          (doall)
          )
-    ;@categories
+    nil
     ))
 
 ;(sap-material [192 2])
@@ -141,5 +204,49 @@
 ;(process-sap-file-with "STEP_MATERIAL.txt" process-sap-material)
 ;(def x (process-sap-file-with "STEP_MATERIAL.txt" process-sap-material))
 ;(map :matnr x)
+
+(def blue-hierarchy
+  {:type "Product"
+   :rootType "Product"
+   :baseId "Summit_Member_Records"
+   :baseName "Summit Member Records"
+   :baseParentId "Product hierarchy root"
+   })
+
+(defn create-sap-material-stepxml [tags all-categories]
+  (as->                                                     ; read in reverse order
+    ; each item is nested inside the item below it
+    (categories-to-xml tags all-categories (top-level-categories all-categories) 0)
+    %
+    [(xml/element
+       (:type tags)
+       {:ID (str (:rootType tags) " root")
+        :UserTypeID (str (:rootType tags) " user-type root")
+        :Selected "false"
+        }
+       %
+       )]
+    [(xml/element
+       (str (:type tags) "s")
+       {}
+       %
+       )]
+    (xml/element
+      :STEP-ProductInformation
+      {:ExportTime (timenow)
+       :ExportContext "EN All USA"
+       :ContextID "EN All USA"
+       :WorkspaceID "Main"
+       :UseContextLocale "false"
+       }
+      %)
+    ))
+
+
+;<STEP-ProductInformation ExportTime="2016-02-05 12:18:34" ExportContext="Context1" ContextID="Context1" WorkspaceID="Main" UseContextLocale="false">
+;  <Products>
+;    <Product ID="MEM_SAP_100378" UserTypeID="SAP_Member_Record" ParentID="SAP_Member_Records">
+;      <Values>
+;        <Value AttributeID="MARA-MFRPN">Manu Part num</Value>
 
 

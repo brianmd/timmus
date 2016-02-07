@@ -3,16 +3,89 @@
             [compojure.api.sweet :refer :all]
             [schema.core :as s]
             [korma.core :refer :all]
+            [clojure.set]
+            ;[clojure.string :as str]
+            [clojure.walk :refer :all]
+            [cheshire.core :refer :all]
+            ;[clj-time.core :as t]
+            ;[clj-time.format :as f]
 
             [timmus.db.relationships :refer :all]
             [timmus.sales-associate.order-spec :refer [send-spec-email]]
+
+
+
+            ;[cheshire.generate :refer [add-encoder encode-str remove-encoder]]
+
+
+            [compojure.core :refer [defroutes GET]]
+
+            [timmus.utils.core :refer :all]
+            [timmus.db.core :refer [*db*]]
+            [brianmd.db.mysql :as mysql]
             ))
+;customer
+;cart
+;(-> customer :rel)
+;(-> @((-> customer :rel) "cart") :fk-key)
+;(-> customer :rel #(% "cart"))
+
 
 (s/defschema Thingie {:id Long
                       :hot Boolean
                       :tag (s/enum :kikka :kukka)
                       :chief [{:name String
                                :type #{{:id String}}}]})
+
+
+(defn custs []
+  (let [custs (select customer (limit 2))]
+    {:headers (vec (map name (keys (first custs))))
+     :rows    [(vec (range 31))]
+     ;:rows (map vals custs)
+     })
+  ;(let [custs (select customer (limit 20))]
+  ;  {:headers (keys custs) :rows (vals custs)})
+  )
+;(custs)
+;(let [custs (select customer (limit 2))]
+;  {:headers (keys (first custs)) :rows (map vals custs)})
+
+
+;; test a route ...
+;(defn stringify-all [x]
+;  (postwalk #(if(keyword? %)(name %) %) x))
+
+;(def example-route (GET "/" [] "<html>...</html>"))
+;(def example-route (GET "/" req req))
+;(stringify-all [:a "b" 3])
+;(stringify-all {:server-port 80
+;                :server-name "127.0.0.1"
+;                :remote-addr "127.0.0.1"
+;                :uri "/"
+;                :scheme :http
+;                :headers {}
+;                :request-method :get})
+;(def example-route (GET "/" req (stringify-keys req)))
+;(def example-route (GET "/" req (do (println req) (println (stringify-all req)))))
+;(def example-route (GET "/" req (do req)))
+;(def example-route (GET* "/" req (do (println req) (println (stringify-all req)) (stringify-all req))))
+;(stringify-all)
+;(example-route {:server-port 80
+;                :server-name "127.0.0.1"
+;                :remote-addr "127.0.0.1"
+;                :uri "/"
+;                :scheme :http
+;                :headers {}
+;                :request-method :get})
+;
+;(walk #(* 2 %) identity [1 2 3 4 5])
+;(walk (fn [[k v]] [k (* 10 v)]) identity {:a 1 :b 2 :c 3})
+;(walk (fn [[k v]] [k (* 10 v)]) identity {:a 1 :b 2 :c 3})
+;(def thing {:page/tags [{:tag/category "lslsls"}]})
+;(postwalk #(if(keyword? %)(keyword (name %)) %) thing)
+;(postwalk #(if(keyword? %)(name %) %) thing)
+;(keyword? :a)
 
 (defapi service-routes
   (ring.swagger.ui/swagger-ui
@@ -53,6 +126,45 @@
                   :summary     "x^y with header-parameters"
                   (ok (long (Math/pow x y))))
 
+            (GET* "/echo" req
+                  :summary  "echoes the request"
+                  ["compojure.api.middleware/options",
+                   "cookies",
+                   "remote-addr",
+                   "ring.swagger.middleware/data",
+                   "params",
+                   "flash",
+                   "route-params",
+                   "headers",
+                   "async-channel",
+                   "server-port",
+                   "content-length",
+                   "form-params",
+                   "compojure/route",
+                   "websocket?",
+                   "session/key",
+                   "query-params",
+                   "content-type",
+                   "path-info",
+                   "character-encoding",
+                   "context",
+                   "uri",
+                   "server-name",
+                   "query-string",
+                   "body",
+                   "multipart-params",
+                   "scheme",
+                   "request-method",
+                   "session"]
+                  (let [bad-params [                        ; these throw errors when json-izing
+                                    :compojure.api.middleware/options
+                                    :async-channel
+                                    ]
+                        x (apply dissoc (concat [req] bad-params))]
+                    (ok (clean-all x))
+                   )
+                  )
+
             (PUT* "/echo" []
                   :return   [{:hot Boolean}]
                   :body     [body [{:hot Boolean}]]
@@ -69,9 +181,25 @@
                   :query-params [name :- String]
                   (ok {:message (str "Hello, " name)}))
 
+            (GET* "/customers" []
+                  ;(let [custs (select customer (limit 20))]
+                  ;  (ok {:headers (keys custs) :rows (vals custs)}))
+                  (println "getting customers ...")
+                  (let [c (custs)]
+                    (println c)
+                    (ok c)
+                    )
+                  )
+
+            (GET* "/db/:entity/:colname/:val" []
+                  :path-params [entity :- String, colname :- String, val :- String]
+                  (println "getting entity" entity " ...")
+                  (ok (clean-all (mysql/column-query (keyword entity) (keyword colname) val)))
+                  )
+
             (GET* "/customer/:email" []
                   :path-params [email :- String]
-                  (ok (select customer (limit 1) (where {:email email}))))
+                  (ok (mysql/column-query :customers :email email)))
 
             (GET* "/order-spec/:email/:ordernum" []
                  ;:return Long

@@ -3,8 +3,41 @@
     [clojure.java.io :as io]
     [clojure.xml :as c-xml]
     [clojure.data.xml :as xml]
+    [clojure.pprint :refer [pprint]]
+
+    [timmus.utils.core :refer :all]
     )
   )
+
+
+
+;(def bookshelf-as-sexp
+;  (xml/sexp-as-element
+;    [:books
+;     [:book {:author "Stuart Halloway"} "Programming Clojure"]
+;     [:book {:author "Christian Queinnec"} "Lisp in Small Pieces"]
+;     [:book {:author "Harold Abelson, Gerald Jay Sussman"}
+;      "Structure and Interpretation of Computer Programs"]]))
+;bookshelf-as-sexp
+
+; use FileOutputStream so can use utf
+;(with-open [out-file (java.io.OutputStreamWriter.
+;                       (java.io.FileOutputStream. "/tmp/output.xml") "UTF-8")]
+;  (xml/emit bookshelf out-file))
+
+; do conversion:
+;(def private-books #{
+;                     {:author "Stuart Halloway", :title "Programming Clojure"}
+;                     {:author "Christian Queinnec", :title "Lisp in Small Pieces"}
+;                     {:author "Harold Abelson, Gerald Jay Sussman",
+;                      :title "Structure and Interpretation of Computer Programs"}})
+;(defn bookshelf-from [data]
+;  (xml/element :books {}
+;               (reduce
+;                 (fn [books b]
+;                   (conj books (xml/element :book {:author (:author b)} (:title b))))
+;                 () data)))
+
 
 (declare category-to-xml categories-to-xml)
 
@@ -39,18 +72,25 @@
   )
 
 (defn doxml [tags all-categories]
+  (println "tags" tags)
+  (println "cats" all-categories)
+  (println "top" (top-level-categories all-categories))
+  (println
+    (categories-to-xml tags all-categories (top-level-categories all-categories) 0)
+    )
   (as->                                                     ; read in reverse order
                                                             ; each item is nested inside the item below it
     (categories-to-xml tags all-categories (top-level-categories all-categories) 0)
     %
-    [(xml/element
-       (:type tags)
-       {:ID (str (:rootType tags) " root")
-        :UserTypeID (str (:rootType tags) " user-type root")
-        :Selected "false"
-        }
-       %
-       )]
+    ;[(xml/element
+    ;   (:type tags)
+    ;   {:ID (str (:rootType tags) " root")
+    ;    :UserTypeID (str (:rootType tags) " user-type root")
+    ;    :Selected "false"
+    ;    }
+    ;   %
+    ;   )]
+                                                            (println "doxml2" %)
     [(xml/element
        (str (:type tags) "s")
        {}
@@ -66,7 +106,6 @@
        }
       %)
     ))
-
 
 (defn categories-to-xml
   ([tags all-categories]

@@ -170,8 +170,10 @@
                          (filter last-not-nil?)
                          (map extract-mail-line-item)
                          )
+        xyz (println line-item-rows)
         urls (flatten (map #(nth % 2) line-item-rows))
         ]
+    (println urls)
     (if (= 0 (count line-item-rows))
       (throw (Exception. (str "No spec sheets found for order #" order-num ". No email sent."))))
     (.mkdir (clojure.java.io/file dir-name))

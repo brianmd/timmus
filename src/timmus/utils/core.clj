@@ -4,7 +4,11 @@
     [cheshire.core :refer :all]
     [clojure.pprint :refer [pprint]]
     [config.core :refer [env]]
+    [clojure.walk :refer :all]
+    [clojure.pprint :refer [pprint]]
+    [clojure.string :as str]
 
+    [cheshire.generate :refer [add-encoder encode-str remove-encoder]]
     ;[cats.core :as m]
     ;[cats.builtin]
     ;[cats.monad.maybe :as maybe]
@@ -15,14 +19,35 @@
 (def step-input-path (-> env :paths :local :step-input-path))
 (def step-output-path (-> env :paths :local :step-output-path))
 
+(add-encoder clojure.lang.Delay
+             (fn [c jsonGenerator]
+               (.writeString jsonGenerator (str c))))
+
+(map
+  #(add-encoder %
+                (fn [c jsonGenerator]
+                  (.writeString jsonGenerator (str c))))
+  ;[clojure.lang.Delay org.httpkit.server.AsyncChannel java.lang.Class java.lang.Long])
+  [clojure.lang.Delay org.httpkit.server.AsyncChannel])
+
+(defn clean-all [x]
+  (parse-string (generate-string x)))
+
+(defn stringify-all [x]
+  (postwalk str x))
+  ;(postwalk #(if(keyword? %)(name %) %) x))
 
 (defn logit [& args]
-  (apply println args)
+  (pprint args)
   (last args))
 
 (defn as-document-num [string]
   (let [s (str "0000000000" string)]
     (subs s (- (count s) 10))))
+(defn as-short-document-num [string]
+  "remove leading zeros"
+  (str/replace string #"^0*" ""))
+;(as-short-document-num (as-document-num "1"))
 
 (defn bh_login [email pw]
   (let [cred

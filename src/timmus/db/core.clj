@@ -6,7 +6,7 @@
     [mount.core :refer [defstate]]
     [korma.core :refer :all]
     [korma.db :refer :all]
-    )
+    [clojure.string :as str])
   (:import [java.sql
             BatchUpdateException
             PreparedStatement])
@@ -23,7 +23,14 @@
 
 (defn connect! []
   (let [dbconfig (-> env :db :blue-harvest :local)]
-    (defdb db (mysql {:host (:host dbconfig) :db (:dbname dbconfig) :user (:user dbconfig) :password (:password dbconfig)}))
+    (defdb db (mysql
+                {:host (:host dbconfig)
+                 :db (:dbname dbconfig)
+                 :user (:user dbconfig)
+                 :password (:password dbconfig)
+                 :naming {:keys   str/lower-case
+                          ;; set map keys to lower
+                          :fields str/lower-case}}))
     ))
 
 (defstate ^:dynamic *db*
@@ -47,6 +54,7 @@
           :start (connect!)
           ;:stop (disconnect! *db*)
           )
+*db*
 
 ;(conman/bind-connection *db* "sql/queries.sql")
 
