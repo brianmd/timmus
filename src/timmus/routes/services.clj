@@ -191,8 +191,14 @@
                     )
                   )
 
-            (GET* "/db/:entity/:colname/:val" []
+            (GET* "/db/column-info" []
+                  (println "&&&&&&&&&&&&&&&&&&&&&&&&&&^^^^^^^^^^^")
+                  (println mysql/table-definitions)
+                  (ok (clean-all mysql/table-definitions)))
+
+            (GET* "/db/query/:entity/:colname/:val" []
                   :path-params [entity :- String, colname :- String, val :- String]
+                  (println mysql/table-definitions)
                   (println "getting entity" entity " ...")
                   (ok (clean-all (mysql/column-query (keyword entity) (keyword colname) val)))
                   )
