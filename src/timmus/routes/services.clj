@@ -22,13 +22,14 @@
 
             [timmus.utils.core :refer :all]
             [timmus.db.core :refer [*db*]]
-            [brianmd.db.mysql :as mysql]
+            [brianmd.db.store-mysql :as mysql]
             ))
 ;customer
+;mysql/entity-definitions
 ;cart
 ;(-> customer :rel)
+;@((-> customer :rel) "cart")
 ;(-> @((-> customer :rel) "cart") :fk-key)
-;(-> customer :rel #(% "cart"))
 
 
 (s/defschema Thingie {:id Long
@@ -193,19 +194,19 @@
 
             (GET* "/db/column-info" []
                   (println "&&&&&&&&&&&&&&&&&&&&&&&&&&^^^^^^^^^^^")
-                  (println mysql/table-definitions)
-                  (ok (clean-all mysql/table-definitions)))
+                  (println mysql/entity-definitions)
+                  (ok (clean-all mysql/entity-definitions)))
 
-            (GET* "/db/query/:entity/:colname/:val" []
-                  :path-params [entity :- String, colname :- String, val :- String]
-                  (println mysql/table-definitions)
+            (GET* "/db/query/:entity/:attribute-name/:val" []
+                  :path-params [entity :- String, attribute-name :- String, val :- String]
+                  (println mysql/entity-definitions)
                   (println "getting entity" entity " ...")
-                  (ok (clean-all (mysql/column-query (keyword entity) (keyword colname) val)))
+                  (ok (clean-all (mysql/attribute-query (keyword entity) (keyword attribute-name) val)))
                   )
 
             (GET* "/customer/:email" []
                   :path-params [email :- String]
-                  (ok (mysql/column-query :customers :email email)))
+                  (ok (mysql/attribute-query :customers :email email)))
 
             (GET* "/order-spec/:email/:ordernum" []
                  ;:return Long
