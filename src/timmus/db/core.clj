@@ -55,7 +55,7 @@
           :start (connect!)
           ;:stop (disconnect! *db*)
           )
-*db*
+;*db*
 
 ;(conman/bind-connection *db* "sql/queries.sql")
 

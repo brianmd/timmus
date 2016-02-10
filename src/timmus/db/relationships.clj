@@ -41,7 +41,6 @@
 
 
 
-
 (defentity account
            (table :accounts)
            (has-many role {:fk :account_id})

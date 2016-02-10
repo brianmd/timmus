@@ -58,6 +58,12 @@
    "if_addresses" "X"
    })
 
+(defn create-papi-url [fn-name args]
+  (str
+    "http://localhost:4000/bapi/show?function_name="
+    fn-name
+    "&args=" (url-encode (generate-string args))))
+
 (defn create-order-query-url [order-num]
   (str
     "http://localhost:4000/bapi/show?function_name="
@@ -65,14 +71,14 @@
     "&args="
     (url-encode
       (generate-string
-        (order-query-params order-num)))))
+        (order-query-params (as-document-num order-num))))))
 ;(create-order-query-url "3333")
 
 (defn get-sap-order [order-num]
   (let [creds (-> env :papichulo vals)]
-    ;(println "papichulo credentials" creds)
+    ;(println "summit.papichulo credentials" creds)
     (client/get
-      (create-order-query-url (as-document-num order-num))
+      (create-order-query-url order-num)
       {:basic-auth creds}
       ))
     )

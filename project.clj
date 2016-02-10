@@ -55,6 +55,9 @@
                  [org.clojure/algo.monads "0.1.5"]
                  [clj-time "0.11.0"]
                  [re-com "0.8.0"]
+                 ;[criterium "0.4.3"]                        ; benchmarking
+
+                 [enlive "1.1.6"]
                  ]
 
   :min-lein-version "2.0.0"

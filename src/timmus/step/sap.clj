@@ -1,9 +1,10 @@
 (ns timmus.step.sap
   (:require [clojure.string :as str]
             [clojure.java.io :as io :refer [as-url make-parents]]
-            [clojure.data.xml :as xml]
 
+            [clojure.data.xml :as xml]
             [clojure.xml :as x]
+            [hiccup.core :as hiccup]
 
             [clojure.data.csv :as csv]
             [clojure.java.io :as io]
@@ -22,7 +23,6 @@
     (let [lines (csv/read-csv in-file :separator \| :quote \^)]
       (fn lines)
       )))
-
 
 (def material-types #{"HAWA" "KITS" "ZATB" "ZCMF" "ZFIM" "ZLOT"})
 (def category-types #{"DIEN" "LUMF" "NLAG" "NORM" "SAMM" "ZFEE" "ZLAG" "ZTBF" "ZZLL"})
@@ -49,9 +49,9 @@
    :batch? "MARA-XCHPF" String []
    :mfr-part-num "MARA-MFRPN" String []
    :mfr-id "MARA-MFRNR" String []
-   :delivery-unit "MARA-SCMNG" String []
+   :delivery-unit "MVKE-SCMNG" String []
    :category-group "MVKE-MTPOS" String [(lookup-validator category-types)]         ; mvke => sales data for material
-   :descript "MARA-STXH/STXL-GRUN_TXT" String []
+   :descript "STXH/STXL-GRUN_TXT" String []
    ])
 
 (def material-col-info
@@ -113,11 +113,11 @@
 (defn sap-material [cols]
   (let [errors (validate-with* cols [[#(= (count %) 17) #(str "Wrong number of columns: " (count %) " instead of " 17)]])]
     (if (not-empty errors)
-      errors
+      (do (logit errors cols "----") (println) nil)
       (let [record (apply ->SapMaterial (map str/trim cols))
             errs (validate-record material-col-info record)]
         (if (not-empty errs)
-          errs
+          (do (logit errs cols "----") nil)
           record)
         )
       )))
@@ -148,14 +148,26 @@
 ;y
 
 (defn sap-material-attributes [item]
+  [:Values
+        (reduce
+          (fn [attrs [name col]]
+            (conj attrs [:Value
+                         {:AttributeID (:dbid col)}
+                         (escape-html (name item))]))
+          () material-col-info)])
+(defn sap-material-attributes-orig [item]
   {:tag :Values
    :content
         (reduce
           (fn [attrs [name col]]
             (conj attrs {:tag     :Value
                          :attrs   {:AttributeID (:dbid col)}
-                         :content [(name item)]}))
+                         ;:content [(name (escape-html item))]}))
+                         :content [(escape-html (name item))]}))
           () material-col-info)})
+;(time (write-sap-file))
+;*e
+
 ;(sap-material-attributes y)
 ;(x/emit-element (sap-material-attributes y))
 ;(x/emit-element {:tag :hello :attrs {:place "world"}})
@@ -165,18 +177,41 @@
 ;                           {:tag :child :attrs {:id "56"}}
 ;                           {:tag :child :attrs {:id "57"}}]})
 
-(defn sap-material-hiccup [item]
+(defn sap-material-hiccup-orig [item]
   {:tag :Product
-   :attrs {:ID (str "SAP_MEM_" (as-short-document-num (:matnr item)))
+   :attrs {:ID (str "MEM_SAP_" (as-short-document-num (:matnr item)))
            :UserTypeID "SAP_Member_Record"
            :ParentID "SAP_Member_Records"}
    :content
    [(sap-material-attributes item)]})
 
+(defn sap-material-hiccup [item]
+  [:Product
+   {:ID (str "MEM_SAP_" (as-short-document-num (:matnr item)))
+           :UserTypeID "SAP_Member_Record"
+           :ParentID "SAP_Member_Records"}
+   (sap-material-attributes item)
+   ]
+   ;:content
+  )
+
 (defn sap-material-xml [item]
-  (x/emit-element (sap-material-hiccup item))
+  (println
+    (hiccup/html (sap-material-hiccup item)))
+
+  ;(xml/emit (logit (sap-material-hiccup item)) *out*)
+  ;(xml/emit-element (logit (sap-material-hiccup item)))
   item)
 
+(defn transform-sap-material [item]
+  (assoc item :matnr (as-short-document-num (:matnr item))))
+
+(time (write-sap-file))
+x/*state*
+x/*sb*
+(str x/*sb*)
+(x/emit-element {:tag :hello :content ["world"]})
+(x/emit {:tag :hello :content ["world"]})
 ;(x/emit-element (sap-material-attributes y))
 ;(sap-material-hiccup y)
 ;(sap-material-xml y)
@@ -186,9 +221,13 @@
   (let [categories (atom #{})]
     (->> lines
          rest
-         (take 5)
+         (take 50)
+         ;(take 5)
+         ;logit
          (map sap-material)
          (remove nil?)
+         ;logit
+         (map transform-sap-material)
          (map sap-material-xml)
          ;(rest)
          ;(map get-leaf-class)
@@ -199,12 +238,6 @@
     nil
     ))
 
-;(sap-material [192 2])
-;(sap-material (map str (range 17)))
-;(process-sap-file-with "STEP_MATERIAL.txt" process-sap-material)
-;(def x (process-sap-file-with "STEP_MATERIAL.txt" process-sap-material))
-;(map :matnr x)
-
 (def blue-hierarchy
   {:type "Product"
    :rootType "Product"
@@ -213,40 +246,98 @@
    :baseParentId "Product hierarchy root"
    })
 
-(defn create-sap-material-stepxml [tags all-categories]
-  (as->                                                     ; read in reverse order
-    ; each item is nested inside the item below it
-    (categories-to-xml tags all-categories (top-level-categories all-categories) 0)
-    %
-    [(xml/element
-       (:type tags)
-       {:ID (str (:rootType tags) " root")
-        :UserTypeID (str (:rootType tags) " user-type root")
-        :Selected "false"
-        }
-       %
-       )]
-    [(xml/element
-       (str (:type tags) "s")
-       {}
-       %
-       )]
-    (xml/element
-      :STEP-ProductInformation
-      {:ExportTime (timenow)
-       :ExportContext "EN All USA"
-       :ContextID "EN All USA"
-       :WorkspaceID "Main"
-       :UseContextLocale "false"
-       }
-      %)
-    ))
+;(defn create-sap-material-stepxml [tags all-categories]
+;  (as->                                                     ; read in reverse order
+;    (categories-to-xml tags all-categories (top-level-categories all-categories) 0); each item is nested inside the item below it
+;    %
+;    [(xml/element
+;       (:type tags)
+;       {:ID (str (:rootType tags) " root")
+;        :UserTypeID (str (:rootType tags) " user-type root")
+;        :Selected "false"
+;        }
+;       %
+;       )]
+;    [(xml/element
+;       (str (:type tags) "s")
+;       {}
+;       %
+;       )]
+;    (xml/element
+;      :STEP-ProductInformation
+;      {:ExportTime (timenow)
+;       :ExportContext "EN All USA"
+;       :ContextID "EN All USA"
+;       :WorkspaceID "Main"
+;       :UseContextLocale "false"
+;       }
+;      %)
+;    ))
 
+;(sap-material [192 2])
+;(sap-material (map str (range 17)))
+;(with-open [w (clojure.java.io/writer  "/Users/bmd/Downloads/sap.xml")]
+;   (.write w (str "hello" "world")))
+
+(defn top-tag []
+  (with-out-str
+    (x/emit
+      (xml/sexp-as-element
+        (stepxml-top-tag)
+        ))))
+
+(defn opening []
+  (str/join "\n"
+    (take 3 (str/split-lines (top-tag)))))
+
+(defn closing []
+  ((comp str/join reverse take2 reverse) (str/split-lines (top-tag))))
+  ;((comp take2 reverse) (str/split-lines (top-tag))))
+  ;reverse
+  ;(-> (top-tag) str/split-lines (reverse #(take 2 %) reverse)))
+;((comp str/join take2 reverse) (str/split-lines (top-tag)))
+;(-> (str/split-lines (top-tag)) (fn [x] reverse x) vec)
+;(-> (str/split-lines (top-tag)) #(reverse %) (fn [x] (take 2 x)))
+(opening)
+(closing)
+(type (top-tag))
+(top-tag)
+
+(defn write-sap-file []
+  (println "in write-sap")
+  (with-open [w (clojure.java.io/writer "/Users/bmd/Downloads/sap.xml")]
+    (binding [*out* w]
+      (println (opening))
+      (process-sap-file-with "STEP_MATERIAL.txt" process-sap-material)
+      (println (closing))
+      )))
+;(time (write-sap-file))
+;(process-sap-file-with "STEP_MATERIAL.txt" process-sap-material)
+;(def x (process-sap-file-with "STEP_MATERIAL.txt" process-sap-material))
+;(map :matnr x)
 
 ;<STEP-ProductInformation ExportTime="2016-02-05 12:18:34" ExportContext="Context1" ContextID="Context1" WorkspaceID="Main" UseContextLocale="false">
 ;  <Products>
 ;    <Product ID="MEM_SAP_100378" UserTypeID="SAP_Member_Record" ParentID="SAP_Member_Records">
 ;      <Values>
 ;        <Value AttributeID="MARA-MFRPN">Manu Part num</Value>
+;(xml/sexp-as-element
+;  [:foo {:foo-attr "foo value"}
+;   [:bar {:bar-attr "bar value"}
+;    [:baz {} "The baz value"]]])
+
+;(stepxml-opening-tag)
+;(xml/emit-str (stepxml-opening-tag))
+;(x/emit-element
+;  (stepxml-opening-tag)
+;  )
+
+;(def djy
+;  {"name" {:first-name "Dave"
+;          :last-name "Yarwood"}
+;   :age 28
+;   :hobbies ["music" "languages" "programming"]})
+;
+;(get-in djy ["name" :last-name])
 
 

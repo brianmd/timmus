@@ -97,7 +97,7 @@
 ;return function(fieldTypeNum, name, flags) {
 
 
-(entities-for "blue_harvest_dev")
+;(entities-for "blue_harvest_dev")
 ;(entity-names-for "blue_harvest_dev")
 ;(entity-names-for)
 ;(entity-names-for "information_schema")
@@ -129,11 +129,11 @@
              :primary?       (= "PRI" (:COLUMN_KEY col))
              }
         ;b (println "all" all)
-        others (partition 2 [:COLLATION_NAME :CHARSET
-                             :COLUMN_COMMENT :COMMENT
-                             :NUMERIC_PRECISION :PRECISION
-                             :NUMERIC_SCALE :SCALE
-                             :EXTRA :EXTRA
+        others (partition 2 [:COLLATION_NAME :charset
+                             :COLUMN_COMMENT :comment
+                             :NUMERIC_PRECISION :precision
+                             :NUMERIC_SCALE :scale
+                             :EXTRA :extra
                              ])
         good-others (filter #(let [v ((first %) col)]
                                (and (not= "" v) (not (nil? v))))
@@ -234,7 +234,7 @@
          (select key-attribute-usage
                  ; indexes have null, foreign keys have ids
                  (where {:TABLE_SCHEMA dbname :REFERENCED_TABLE_NAME [not= nil]})
-                 (fields :CONSTRAINT_NAME :ENTITY_NAME :REFERENCED_TABLE_NAME :COLUMN_NAME :REFERENCED_COLUMN_NAME :ORDINAL_POSITION)
+                 (fields :CONSTRAINT_NAME :TABLE_NAME :REFERENCED_TABLE_NAME :COLUMN_NAME :REFERENCED_COLUMN_NAME :ORDINAL_POSITION)
                  (order :CONSTRAINT_NAME)
                  (order :ORDINAL_POSITION)
                  )
@@ -270,32 +270,35 @@
 
 
 
-;(defn find-relations
-;  ([fn dbname]
-;   (let [names (entity-names-for dbname)
-;         relations (relationships dbname)]
-     ;(letfn [(find-matching-entity [name]
-     ;          (filter
-     ;            (fn [[_ relation]] (= name (fn (first relation))))
-     ;            relations
-     ;            ))]
-       ;(into {}
-       ;      (map #(vector (keyword %) (find-matching-entity %)) names)))))
-  ;)
-; want:
-;{:name :blue_harvest_dev
-; :entities
-;       {:name         :customer
-;        :entity_name:  :customers
-;        :pk           :id
-;        :fields       [
-;                       {:name :email :type :string :required :true
-;                        }]
-;        :has-many     {:carts {:entity-name :cart :match-keys [:id :customer-id]}
-;                       }
-;        :many-to-many {:accounts {:through :customer-accounts :id: :customer_id :fk_id :account_id}}
-;        }
-; })
+(defn find-relations
+  ([func] (find-relations func (current-db-name)))
+  ([func dbname]
+   (let [names (entity-names-for dbname)
+         relations (relationships dbname)]
+     (letfn [(get-relation [[_ relation]]
+               )
+             (find-matching-entity [name]
+               (filter
+                 (fn [[x relation]] (= name (func (first relation))))
+                 relations
+                 ))]
+       (into {}
+             (map #(vector (keyword %) (find-matching-entity %)) names)))))
+  )
+(defn my-belongs-to
+  ([] (my-belongs-to (current-db-name)))
+  ([dbname] (find-relations first dbname)))
+(defn my-has-many
+  ([] (my-has-many (current-db-name)))
+  ([dbname] (find-relations second dbname)))
+;(find-relations first "blue_harvest_dev")
+;(:attrs (find-relations first "blue_harvest_dev"))
+;(:carts (find-relations first "blue_harvest_dev"))
+;(:carts (find-relations first))
+;(:carts (find-relations second))
+;(:carts (my-belongs-to))
+;(:carts (my-has-many))
+
 
 ;(defn belongs-relations
 ;  ([] (belongs-relations (current-db-name)))
@@ -333,9 +336,11 @@
 ;    (println sql)
 ;    (q sql)))
 
-(defn relationships-for [entityname]
-  (filter #(= (:entity_name %) entityname) (relationships)))
-
+;(defn relationships-for [entityname]
+;  (filter #(= (:entity_name %) entityname) (relationships)))
+;
+;(relationships)
+;(relationships-for "customers")
 ;(defn foreign-ids-for [entityname]
 ;  (->>
 ;    (relationships-for entityname)
@@ -347,19 +352,150 @@
     (= java.util.Date (type val)) (str val)
     :else val))
 
-(def entity-names (entity-names-for))
-(def entity-definitions (database-attribute-defs))
 ;entity-names
 ;(println entity-definitions)
 ;*e
+
+;(defn attribute-query [entity attribute-name value]
+;  (println [entity attribute-name value])
+;  (println {(keyword attribute-name) value})
+;  (let [
+;        entity-name (keyword entity)
+;        entity-info (entity-name entity-definitions)
+;        colname (keyword attribute-name)
+;        attribute-info (colname entity-info)
+;        attribute-type (:type attribute-info)
+;        v (if (contains? #{} attribute-type) (Long. value) value)
+;        colname (keyword attribute-name)
+;        query (->
+;                (select* entity-name)
+;                (where {colname v})
+;                (limit 100))]
+;    (println entity colname query)
+;    (println "\n\nas-sql ------------" (as-sql query))
+;    (let [result (select query)]
+;      {
+       ;:rows       (map vals result)
+       ;:headers    (keys (first result))
+       ;:result     result
+       ;:relationships
+       ;            {
+       ;             :belongs-to 3
+       ;             }
+       ;})
+    ;))
+
+;:rows       (vec (clean-all (map vals result)))
+;:headers    (vec (map name (keys (first result))))
+
+;(attribute-query :customers :id 28)
+;(attribute-query :carts :customer_id 28)
+;(attribute-query :customers :email "brian@murphydye.com")
+
+
+
+(defn build-one-relationship [relations func]
+  (println func)
+  (println relations)
+  (doall
+    (map println relations))
+  (doall
+    (map (fn [r]
+           {:storage-name (first r)
+            :name         (-> r second first func keyword)
+            :entity       (-> r second first func keyword)
+            :link         (map
+                            #(vector (keyword (first %)) (keyword (second %)))
+                            (if (= first func)
+                              (map #(vector (second %) (first %)) (-> r second rest))
+                              (-> r second rest)
+                              ))
+            }
+           ) relations))
+  )
+(defn build-relationship-for [belongs-to has-many name]
+  ;(let [b (map #(build-one-relationship % first) belongs-to)
+        ;m (map #(build-one-relationship % second) has-many)]
+  (let [b (build-one-relationship (name belongs-to) second)
+        m (build-one-relationship (name has-many) first)]
+    (println "done")
+    (println "b" b)
+    (println "m" m)
+    {:relationships {:belongs-to b :has-many m}}
+    ))
+;(build-relationship-for
+;  (my-belongs-to)
+;  (my-has-many)
+;  :carts
+;  )
+;(def dbname (current-db-name))
+(defn my-build-relationships
+  ([] (my-build-relationships (current-db-name)))
+  ([dbname]
+   (let [belongs (my-belongs-to dbname)
+         many (my-has-many dbname)
+         keys (entity-names-for dbname)]
+     (into {} (map #(vector % (build-relationship-for belongs many %)) (map keyword (entity-names-for dbname)))))
+    ))
+
+
+
+;(:carts entity-definitions)
+;(:carts (my-build-relationships))
+
+(defn build-entity-definitions
+  ([] (build-entity-definitions (current-db-name)))
+  ([dbname]
+    (let [attrs (database-attribute-defs dbname)
+          relations (my-build-relationships dbname)
+          names (map keyword (entity-names-for dbname))]
+      (into {}
+            (map #(vector % {:attributes (:attributes (% attrs)) :relationships (:relationships (% relations))}) names)))))
+;(:carts (build-entity-definitions))
+;(:zctas (build-entity-definitions))
+
+
+(def entity-names (entity-names-for))
+(def entity-definitions (build-entity-definitions))
+;(:carts entity-definitions)
+;(:customers entity-definitions)
+
+;(def entity-definitions (database-attribute-defs))
+;(my-build-relationships)
+;(entity-names-for dbname)
+
+; want:
+;{:name :blue_harvest_dev
+; :entities
+;   {:customers
+;     {:relationships
+;       :belongs-to
+;          [
+;           {:storage-name :brokercompanies_catalog_fk
+;            :name :catalogs
+;            :entity :catalog
+;            :link [[from to] [from to]]
+;           ]
+;       :has-many
+;          [...]
+;       }
+;     {:attributes
+;       {:name         :customers
+;        :entity_name:  :customers
+;        :pk           :id
+;        :fields       [
+;                       {:name :email :type :string :required :true
+;                        }]
+;        :has-many     {:carts {:entity-name :cart :match-keys [:id :customer-id]}
+;                       }
+;        :many-to-many {:accounts {:through :customer-accounts :id: :customer_id :fk_id :account_id}}
+;        }
+; })
 
 (defn attribute-query [entity attribute-name value]
   (println [entity attribute-name value])
   (println {(keyword attribute-name) value})
   (let [
-        ;tbl (if (keyword? entity)
-        ;      (entity bh-entities)
-        ;      entity)
         entity-name (keyword entity)
         entity-info (entity-name entity-definitions)
         colname (keyword attribute-name)
@@ -367,7 +503,6 @@
         attribute-type (:type attribute-info)
         v (if (contains? #{} attribute-type) (Long. value) value)
         colname (keyword attribute-name)
-        ;v (re-matches #".*id" (name colname))
         query (->
                 (select* entity-name)
                 (where {colname v})
@@ -376,9 +511,7 @@
     (println "\n\nas-sql ------------" (as-sql query))
     (let [result (select query)]
       {
-       ;:rows       (vec (clean-all (map vals result)))
        :rows       (map vals result)
-       ;:headers    (vec (map name (keys (first result))))
        :headers    (keys (first result))
        :result     result
        :relationships
@@ -387,7 +520,5 @@
                     }
        })
     ))
-
-;(attribute-query :customers :id 28)
-;(attribute-query :carts :customer_id 28)
-;(attribute-query :customers :email "brian@murphydye.com")
+;
+;
