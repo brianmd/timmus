@@ -1,4 +1,4 @@
-(ns timmus.sales-associate.order-spec
+(ns summit.sales-associate.order-spec
   (:require [clojure.string :as str]
             [clojure.java.io :as io :refer [as-url]]
             [korma.db :refer :all]
@@ -14,10 +14,10 @@
             ;[clojure.data.xml :as xml]
             [config.core :refer [env]]
 
-            [timmus.utils.core :refer :all]
+            [summit.utils.core :refer :all]
             ;[utils.config :as :utils]
             ;[db.core :refer :all]
-            [timmus.db.relationships :refer :all]
+            [summit.db.relationships :refer :all]
             ))
 
 ;(str "http://stackoverflow.com/search?" (client/generate-query-string {"q=7" "clojure url"}))

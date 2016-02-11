@@ -1,10 +1,10 @@
-(ns timmus.step.manufacturer-lookup
+(ns summit.step.manufacturer-lookup
   (:require [clojure.string :as str]
             [config.core :refer [env]]
             [clojure.java.io :as io :refer [as-url make-parents]]
             [clojure.data.xml :as xml]
 
-            [timmus.utils.core :refer :all]
+            [summit.utils.core :refer :all]
             ))
 
 ;(enable-console-print!)

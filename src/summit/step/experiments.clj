@@ -1,4 +1,4 @@
-(ns timmus.utils.experiments
+(ns summit.utils.experiments
   (:require
     [clj-http.client :as client]
     [cheshire.core :refer :all]

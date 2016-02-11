@@ -1,11 +1,11 @@
-(ns timmus.step.xml-output
+(ns summit.step.xml-output
   (:require
     [clojure.java.io :as io]
     [clojure.xml :as c-xml]
     [clojure.data.xml :as xml]
     [clojure.pprint :refer [pprint]]
 
-    [timmus.utils.core :refer :all]
+    [summit.utils.core :refer :all]
     )
   )
 

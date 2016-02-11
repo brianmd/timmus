@@ -1,4 +1,4 @@
-(ns timmus.step.sap
+(ns summit.step.sap
   (:require [clojure.string :as str]
             [clojure.java.io :as io :refer [as-url make-parents]]
 
@@ -11,9 +11,9 @@
             [clojure.data.codec.base64 :as b64]
             [clojure.pprint :refer :all]
 
-            [timmus.step.xml-output :refer :all]
+            [summit.step.xml-output :refer :all]
 
-            [timmus.utils.core :refer :all]
+            [summit.utils.core :refer :all]
             ))
 
 (def sap-path (str step-input-path "sap/"))
@@ -155,16 +155,15 @@
                          {:AttributeID (:dbid col)}
                          (escape-html (name item))]))
           () material-col-info)])
-(defn sap-material-attributes-orig [item]
-  {:tag :Values
-   :content
-        (reduce
-          (fn [attrs [name col]]
-            (conj attrs {:tag     :Value
-                         :attrs   {:AttributeID (:dbid col)}
-                         ;:content [(name (escape-html item))]}))
-                         :content [(escape-html (name item))]}))
-          () material-col-info)})
+;(defn sap-material-attributes-orig [item]
+;  {:tag :Values
+;   :content
+;        (reduce
+;          (fn [attrs [name col]]
+;            (conj attrs {:tag     :Value
+;                         :attrs   {:AttributeID (:dbid col)}
+;                         :content [(escape-html (name item))]}))
+;          () material-col-info)})
 ;(time (write-sap-file))
 ;*e
 
@@ -206,12 +205,12 @@
 (defn transform-sap-material [item]
   (assoc item :matnr (as-short-document-num (:matnr item))))
 
-(time (write-sap-file))
-x/*state*
-x/*sb*
-(str x/*sb*)
-(x/emit-element {:tag :hello :content ["world"]})
-(x/emit {:tag :hello :content ["world"]})
+;(time (write-sap-file))
+;x/*state*
+;x/*sb*
+;(str x/*sb*)
+;(x/emit-element {:tag :hello :content ["world"]})
+;(x/emit {:tag :hello :content ["world"]})
 ;(x/emit-element (sap-material-attributes y))
 ;(sap-material-hiccup y)
 ;(sap-material-xml y)

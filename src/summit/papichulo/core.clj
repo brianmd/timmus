@@ -11,8 +11,8 @@
             ;[clj-time.format :as f]
             [net.cgrand.enlive-html :as html]
 
-            [timmus.db.relationships :refer :all]
-            [timmus.sales-associate.order-spec :refer [send-spec-email]]
+            [summit.db.relationships :refer :all]
+            [summit.sales-associate.order-spec :refer [send-spec-email]]
 
 
 
@@ -25,7 +25,7 @@
 
             [compojure.core :refer [defroutes GET]]
 
-            [timmus.utils.core :refer :all]
+            [summit.utils.core :refer :all]
             [timmus.db.core :refer [*db*]]
             [brianmd.db.store-mysql :as mysql]
             ))
@@ -89,16 +89,16 @@
 (defn find-attribute [entity from-attr to-attr val]
   (-> (select entity (where {from-attr val}) (fields to-attr)) first to-attr))
 
-(find-attribute :products :upc :matnr (first upcs))
+;(find-attribute :products :upc :matnr (first upcs))
 
 (defn matnr->upc [matnr]
   (find-attribute :products :matnr :upc matnr))
 (defn upc->matnr [upc]
   (-> (select :products (where {:upc upc}) (fields :matnr)) first :matnr)
   )
-(defn upc->matnr-qty [matnr]
-  (-> (select :products (where {:upc upc}) (fields :matnr :min-qty)) first (fn [x] ((juxt :matnr :min_qty) x)))
-  )
+;(defn upc->matnr-qty [matnr]
+;  (-> (select :products (where {:upc upc}) (fields :matnr :min-qty)) first (fn [x] ((juxt :matnr :min_qty) x)))
+;  )
 
 (defn get-internet-prices [matnr-qtys]
   (let [mqs (map (fn [mq] (if (string? mq) [mq 1] mq)) matnr-qtys)
@@ -138,16 +138,16 @@
 
 
 
+;(def all-upcs (map #(-> % vals first)
+;                   (select product (where {:upc [not= ""]}) (fields :upc))))
+;(time (pmap download-platt (drop 10000 all-upcs)))
 
-;(comment
+
+(comment
 
 
-(def all-upcs (map #(-> % vals first)
-                   (select product (where {:upc [not= ""]}) (fields :upc))))
-(def matnrs (map upc->matnr upcs))
 ;(take 30 all-upcs)
 ;(count all-upcs)
-;(time (pmap download-platt (drop 10000 all-upcs)))
 ;(time (pmap (fn [x] (download-platt x) nil) (drop 10000 all-upcs))))
 
 (def platt-product-pages "/Users/bmd/data/crawler/platt/product")
@@ -156,13 +156,12 @@
 (def files (filter #(re-find #"\.html$" (.getName %)) all-files))
 (def upcs (map #(re-find #"[^.]+" (.getName %)) files))
 upcs
-(count upcs)
-(partition 2 (take 5 upcs))
+(def matnrs (map upc->matnr upcs))
 
-(def prod (htmlfile->enlive (first files)))
-files
-prod
-(-> (html/select prod [:span.ProductPriceOrderBox]) first :content first)
+;(def prod (htmlfile->enlive (first files)))
+;files
+;prod
+;(-> (html/select prod [:span.ProductPriceOrderBox]) first :content first)
 
 ;((juxt :a :b) {:a 4 :b 7})
 ;(upc->matnr (first upcs))

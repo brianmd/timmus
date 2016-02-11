@@ -1,4 +1,4 @@
-(ns timmis.step.ts-leaf
+(ns summit.step.ts-leaf
   (:require
     [clojure.data.csv :as csv]
     [clojure.java.io :as io]
@@ -9,9 +9,9 @@
     ;[csvr.defun]
     ;[csvr.xml-output]
 
-    [timmus.step.xml-output :refer :all]
+    [summit.step.xml-output :refer :all]
 
-    [timmus.utils.core :refer :all]
+    [summit.utils.core :refer :all]
     ;[clojure.core.async
     ; :as a
     ; :refer [>! <! >!! <!! go chan buffer close! thread

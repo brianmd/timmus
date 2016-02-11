@@ -11,8 +11,8 @@
             ;[clj-time.format :as f]
             [net.cgrand.enlive-html :as html]
 
-            [timmus.db.relationships :refer :all]
-            [timmus.sales-associate.order-spec :refer [send-spec-email]]
+            [summit.db.relationships :refer :all]
+            [summit.sales-associate.order-spec :refer [send-spec-email]]
 
 
 
@@ -25,7 +25,7 @@
 
             [compojure.core :refer [defroutes GET]]
 
-            [timmus.utils.core :refer :all]
+            [summit.utils.core :refer :all]
             [timmus.db.core :refer [*db*]]
             [brianmd.db.store-mysql :as mysql]
             ))
@@ -92,8 +92,8 @@
 ;(postwalk #(if(keyword? %)(keyword (name %)) %) thing)
 ;(postwalk #(if(keyword? %)(name %) %) thing)
 ;(keyword? :a)
-(select contact-email (where {:type "Order"}) (order :created_at :desc) (limit 5))
-(select contact-email (limit 5))
+; (select contact-email (where {:type "Order"}) (order :created_at :desc) (limit 5))
+; (select contact-email (limit 5))
 
 (defapi service-routes
   (ring.swagger.ui/swagger-ui

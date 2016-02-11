@@ -1,11 +1,11 @@
-(ns timmus.db.relationships
+(ns summit.db.relationships
   (:require
     [korma.db :refer :all]
     [korma.core :refer :all]
     [clojure.string :as str]
     [mount.core :as mount]
 
-    [timmus.db.core :refer :all]
+    ; [timmus.db.core :refer :all]
     )
   )
 
@@ -84,6 +84,8 @@
 
 
 ;(mount/start)
+
+
 ;(select customer (limit 1))
 
 #_(comment

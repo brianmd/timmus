@@ -1,4 +1,4 @@
-(ns timmus.utils.experimentsmonad
+(ns summit.utils.experimentsmonad
   (:require
     ;[clj-http.client :as client]
     ;[cheshire.core :refer :all]

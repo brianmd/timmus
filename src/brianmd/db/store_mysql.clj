@@ -10,12 +10,19 @@
     [korma.core :refer :all]
     [clojure.string :as str]
     [clojure.pprint :refer [pprint]]
+    [mount.core :as mount]
 
-    [timmus.utils.core :refer :all]
+    [summit.utils.core :refer :all]
+    ;[summit.db.relationships :as relations]
     [timmus.db.core :refer :all]
-    [timmus.db.core :refer [*db*]]
+    ; [timmus.db.core :refer [*db*]]
     )
   )
+
+(mount/start)
+
+;(select customer (limit 1))
+;(select :customers (limit 1))
 
 ;;;;;;;   NOTE:  have set :naming in db.core to convert all attribute names to lowercase.
 ;;;;;;;          if revert this, will need to uppercase TABLE_NAME and COLUMN_NAME below
@@ -455,8 +462,6 @@
 ;(:zctas (build-entity-definitions))
 
 
-(def entity-names (entity-names-for))
-(def entity-definitions (build-entity-definitions))
 ;(:carts entity-definitions)
 ;(:customers entity-definitions)
 
@@ -492,6 +497,11 @@
 ;        }
 ; })
 
+;(def entity-names 3)
+;(def entity-definitions 4)
+(def entity-names (entity-names-for))
+(def entity-definitions (build-entity-definitions))
+
 (defn attribute-query [entity attribute-name value]
   (println [entity attribute-name value])
   (println {(keyword attribute-name) value})
@@ -520,5 +530,4 @@
                     }
        })
     ))
-;
-;
+
