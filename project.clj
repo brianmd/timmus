@@ -58,6 +58,14 @@
                  ;[criterium "0.4.3"]                        ; benchmarking
 
                  [enlive "1.1.6"]
+
+                 [org.clojure/java.jdbc "0.4.2"]
+                 [com.h2database/h2 "1.4.190"]
+                 [gyptis "0.2.2"]
+                 [medley "0.7.1"]
+                 [com.datomic/datomic-pro "0.9.5344" :exclusions [joda-time org.slf4j/jul-to-slf4j org.slf4j/slf4j-nop]]
+                 ;[com.datomic/datomic-pro "0.9.5344"]
+                 [com.taoensso/carmine "2.12.2"]
                  ]
 
   :min-lein-version "2.0.0"

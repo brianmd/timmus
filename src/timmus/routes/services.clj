@@ -10,6 +10,7 @@
             ;[clj-time.core :as t]
             ;[clj-time.format :as f]
             [net.cgrand.enlive-html :as html]
+            [clojure.pprint :refer [pprint]]
 
             [summit.db.relationships :refer :all]
             [summit.sales-associate.order-spec :refer [send-spec-email]]
@@ -36,6 +37,11 @@
 ;@((-> customer :rel) "cart")
 ;(-> @((-> customer :rel) "cart") :fk-key)
 
+
+(defn map->table [hash]
+  {:headers (keys (first hash))
+   :rows    (map vals hash)})
+;(map->table [{:a 9 :b 99}])
 
 (s/defschema Thingie {:id Long
                       :hot Boolean
@@ -95,6 +101,44 @@
 ; (select contact-email (where {:type "Order"}) (order :created_at :desc) (limit 5))
 ; (select contact-email (limit 5))
 
+
+
+(defn req->printable [req]
+  (let [bad-params [                        ; these throw errors when json-izing
+                    :compojure.api.middleware/options
+                    :async-channel
+                    ]
+        x (apply dissoc (concat [req] bad-params))]
+     (clean-all x)))
+
+(defn forward-request [to-uri req]
+  (pprint (req->printable req))
+  (println (:params req))
+  (println "")
+  (println "")
+  (println "")
+  (let [uri (str to-uri ((:params req) :*))
+        method (:request-method req)
+        base-req (select-keys req [:headers :cookies :body :remote-addr
+                                   :multipart-params :query-params :form-params :form-param-encoding
+                                   :content-type :content-length :json-opts :transit-opts
+                                   :basic-auth :digest-auth :oauth-token])
+        ]
+    (client/request
+     (assoc base-req
+            :method method
+            :url uri
+            :decompress-body false
+            :debug true
+            :debug-body true
+            )
+      )))
+
+;; (def x {:a 3 :b "432"})
+;; (select-keys x [:a :c])
+
+
+
 (defapi service-routes
   (ring.swagger.ui/swagger-ui
    "/swagger-ui")
@@ -134,9 +178,9 @@
                   :summary     "x^y with header-parameters"
                   (ok (long (Math/pow x y))))
 
-            (GET* "/echo" req
+            (GET* "/echo/*" req
                   :summary  "echoes the request"
-                  ["compojure.api.middleware/options",
+                  #_["compojure.api.middleware/options",
                    "cookies",
                    "remote-addr",
                    "ring.swagger.middleware/data",
@@ -169,9 +213,14 @@
                                     :async-channel
                                     ]
                         x (apply dissoc (concat [req] bad-params))]
-                    (ok (clean-all x))
+                    (ok (clean-all (assoc x :abcdef 32)))
+                    ;(ok (clean-all x))
                    )
                   )
+
+            (GET* "/papi/*" req
+                  (let [response (forward-request "http://bh:werilasf879d@localhost:4000/" req)]
+                    response))
 
             (PUT* "/echo" []
                   :return   [{:hot Boolean}]
@@ -219,6 +268,13 @@
             (GET* "/customer/:email" []
                   :path-params [email :- String]
                   (ok (mysql/attribute-query :customers :email email)))
+
+            (GET* "/platt-prices" []
+                  (println "in platt-prices")
+                  (let [compare-sql "select p1.upc, p1.price sap, p2.price platt, (p1.price-p2.price)/p2.price*100 increase from mdm.prices p1 join mdm.prices p2 on p1.upc=p2.upc where p1.source='sap' and p2.source='platt' and p1.price>0 order by increase"
+                        compared (exec-raw (vector compare-sql) :results)]
+                    (println "upc comparison count: " (count compared))
+                    (ok (map->table compared))))
 
             (GET* "/order-spec/:email/:ordernum" []
                  ;:return Long

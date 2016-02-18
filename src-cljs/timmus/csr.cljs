@@ -70,6 +70,19 @@
           :error-handler error-handler}
          )))
 
+(def platt-prices (atom nil))
+(defn platt-handler [response]
+  (reset! platt-prices response))
+(defn request-platt-prices []
+  (let [url "/api/platt-prices"]
+    (GET url
+         {:headers {"Accept" "application/json"}
+          :timeout 240000                                   ; 2 minutes
+          :handler platt-handler
+          :error-handler error-handler}
+         )))
+(request-platt-prices)
+
 (defn ajax-request-order-spec []
   (request-order-spec @summit-email-address @order-num)
   ;(reset! summit-email-address "")

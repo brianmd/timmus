@@ -8,7 +8,7 @@
             [ajax.core :refer [GET POST]]
 
             ;[timmus.sales-associate.core]
-            [timmus.csr.core :refer [csr-page]]
+            [timmus.csr.core :refer [csr-page platt-prices]]
             [timmus.math :refer [math-page]]
             ;[timmus.sales-associate.core :refer [csr-page]]
             )
@@ -53,6 +53,13 @@
 ;             [:div.col-md-12
 ;                   "this is the story of timmus... work in progress"]]])
 
+; http://localhost:3449/api/platt-prices
+
+(defn show-platt-prices []
+  [:div
+   (timmus.math/show-table @platt-prices)
+   ;(show-table platt-prices)
+   ])
  
  (defn about-page []
    [:div.container
@@ -63,7 +70,11 @@
       "Already set up for bootstrap"]
      [:div.col-md-4
       "in three columns"]
-     ]])
+     ]
+    (if @platt-prices
+      (show-platt-prices))
+      ;"goot prices")
+    ])
 ;(defn csr-page []
 ;  [:div.container
 ;   [:div.row

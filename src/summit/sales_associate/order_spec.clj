@@ -20,6 +20,7 @@
             [summit.db.relationships :refer :all]
             ))
 
+
 ;(str "http://stackoverflow.com/search?" (client/generate-query-string {"q=7" "clojure url"}))
 
 ;(defn escape-html
@@ -107,6 +108,10 @@
   (let [product
         (select product (where {:matnr (second line-item)}) (with external-file (where {:type "Attachment"})))
         ]
+    (println "\n\n\n-----------------")
+    (println "matnr: " line-item)
+    (println product)
+    (println "\n\n\n")
     (conj line-item (first product))
     ))
 

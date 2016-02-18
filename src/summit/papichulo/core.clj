@@ -30,7 +30,6 @@
             [brianmd.db.store-mysql :as mysql]
             ))
 
-
 (defn remove-$ [price]
   (read-string (re-find #"[0-9.]+" price)))
 
@@ -100,8 +99,29 @@
 ;  (-> (select :products (where {:upc upc}) (fields :matnr :min-qty)) first (fn [x] ((juxt :matnr :min_qty) x)))
 ;  )
 
-(defn get-internet-prices [matnr-qtys]
-  (let [mqs (map (fn [mq] (if (string? mq) [mq 1] mq)) matnr-qtys)
+
+;(defn get-internet-prices [matnr-qtys]
+;  (let [mqs (map (fn [mq] (if (string? mq) [mq 1] mq)) matnr-qtys)
+;        args {:i_kunnr        "0001027925"
+;              :i_werks        "ZZZZ"
+;              :it_price_input (map (fn [[matnr qty]] [(as-matnr matnr) qty]) mqs)}
+;        response (call-papi "z_o_complete_pricing" args)]
+;    (map (fn [p]
+;           (let [extended-price (p "NETWR")
+;                 requested-qty (p "KWMENG")
+;                 pricing-qty (p "KPEIN")
+;                 price (if requested-qty (/ (* extended-price pricing-qty) requested-qty) 0)]
+;             {:matnr (p "MATNR")
+;              :extended-price extended-price
+;              :requested-qty requested-qty
+;              :pricing-qty pricing-qty
+;              :unit (p "KMEIN")
+;              :price price }))
+;         (content-for-name response "ET_PRICE_OUTPUT"))
+;    ))
+
+(defn get-internet-prices [prods]                           ; can pass array of matnrs instead of prod maps
+  (let [mqs (map (fn [mq] (if (string? mq) [mq 1] [(:matnr mq) (:min_qty mq)])) prods)
         args {:i_kunnr        "0001027925"
               :i_werks        "ZZZZ"
               :it_price_input (map (fn [[matnr qty]] [(as-matnr matnr) qty]) mqs)}
@@ -119,6 +139,14 @@
               :price price }))
          (content-for-name response "ET_PRICE_OUTPUT"))
     ))
+;(get-internet-prices z)
+
+(def ipprice-safety-net [])
+(defn safely-prices [matnr-qtys]
+  (def ipprice-safety-net [])
+  (let [x (get-internet-prices matnr-qtys)]
+    (def ipprice-safety-net (conj ipprice-safety-net x))
+    x))
 
 (defn get-order-detail [order-num]
   (let [args {
@@ -138,17 +166,95 @@
 
 
 
-;(def all-upcs (map #(-> % vals first)
-;                   (select product (where {:upc [not= ""]}) (fields :upc))))
-;(time (pmap download-platt (drop 10000 all-upcs)))
+;(def prods
+;  (select product (where {:upc [not= ""]}) (limit 999999) (fields :upc :matnr :min_qty)))
+;(def prods
+;  (select product (where {:upc [not= ""] :min_qty [> 1]}) (limit 999999) (fields :upc :matnr :min_qty)))
+;(map (comp #(vector (first %) %) vals) z)
+;(count prods)
+;(take 5 prods)
+
+;(def prods
+;  (select product (where {:upc [not= ""] :min_qty [> 1]}) (limit 999999) (fields :upc :matnr :min_qty)))
+;(def upc->matnrs
+;  (doall (into {} (map (comp #(vector (first %) %) vals)
+;                       (select product (where {:upc [not= ""]}) (fields :upc :matnr :min_qty)))))))
+;(def all-upcs (vals upc->matnrs))
+;(upc->matnrs "045242309825")
+;(take 5 all-upcs)
+;(time (pmap (fn [x] (download-platt x) nil) (drop 50000 all-upcs))))
+;(java.util.Date.)
+;(count all-upcs)
+;(def upc->matnrs
+;  (doall (into {} (map (comp #(vector (first %) %) vals)
+;                       (select product (where {:upc [not= ""]}) (fields :upc :matnr :min_qty)))))))
+;(def matnrs (vals upc->matnrs))
+;(time
+;  (def sapprices (doall (mapcat get-internet-prices (partition-all 10 (take 100 (vals upc->matnrs)))))))
+;(time
+;  (def sapprices (doall (mapcat safely-prices (partition-all 10 (take 999999 matnrs))))))
+
+;sapprices
+;ipprice-safety-net
+;(count sapprices)
+;(spit "sapprices.edn" (with-out-str (pr sapprices)))
+;(def x (read-string (slurp "sapprices.edn")))
+;(take 5 x)
 
 
-(comment
+;(delete :mdm.prices (where {:source 'sap'}))
+
+(defn insert-price-hash [x]
+  (insert :mdm.prices (values x)))
+
+(def files :not-loaded-yet)
+
+;; TODO: should filter out already loaded upcs
+;; Note: this is untested!
+(defn load-platt-prices [product-files]                             ; files is calculated above
+  (def prices (map get-price files))
+  (def p (map #(vector (first %) (remove-$ (second %))) prices))
+  (def price-hashes (doall (pmap (fn [price] {:source "platt" :upc (first price) :price (second price)}) p)))
+  (def partitioned (doall (partition 300 price-hashes)))
+  (map (fn [x] (map insert-price-hash x)) partitioned)
+  )
+
+
+(defn load-sap-prices []
+  (def upc->matnrs
+    (doall (into {} (map (comp #(vector (first %) %) vals)
+                         (select product (where {:upc [not= ""]}) (fields :upc :matnr :min_qty))))))
+  (def matnrs (vals upc->matnrs))
+  (def sapprices (doall (mapcat safely-prices (partition-all 10 (take 999999 matnrs)))))
+
+  (def sappriceinsert
+    (map
+      (fn [x] (let [upc (matnr->upc (:matnr x))
+                    qty (last (upc->matnrs upc))]
+                {:source "sap" :upc upc :price (* (:price x) qty)}))
+      (take 999999 sapprices)))
+  (def partitioned (doall (partition 300 sappriceinsert)))
+  (map (fn [x] (map insert-price-hash x)) partitioned)
+  )
+
+
+
+(def compare-sql "select p1.upc, p1.price sap, p2.price platt, (p1.price-p2.price)/p2.price*100 increase from mdm.prices p1 join mdm.prices p2 on p1.upc=p2.upc where p1.source='sap' and p2.source='platt' and p1.price>0 order by increase")
+
+(def compared (exec-raw (vector compare-sql) :results))
+(take 5 compared)
+
+
+
+
+
+#_(comment
 
 
 ;(take 30 all-upcs)
 ;(count all-upcs)
-;(time (pmap (fn [x] (download-platt x) nil) (drop 10000 all-upcs))))
+
+platt-product-pages
 
 (def platt-product-pages "/Users/bmd/data/crawler/platt/product")
 (def directory (clojure.java.io/file platt-product-pages))
@@ -156,7 +262,7 @@
 (def files (filter #(re-find #"\.html$" (.getName %)) all-files))
 (def upcs (map #(re-find #"[^.]+" (.getName %)) files))
 upcs
-(def matnrs (map upc->matnr upcs))
+(def matnrs (map upc->matnrs upcs))
 
 ;(def prod (htmlfile->enlive (first files)))
 ;files
@@ -176,16 +282,22 @@ sapprices
 
 ;(get-price (first files))
 ;(def prices (map get-price files))
-;
+
 ;(def p (map #(vector (first %) (remove-$ (second %))) prices))
+;(first p)
 ;p
-;(def price-hashes (doall (map (fn [price] {:source "platt" :upc (first price) :price (second price)}) p)))
-(take 5 price-hashes)
+;(def price-hashes (doall (pmap (fn [price] {:source "platt" :upc (first price) :price (second price)}) p)))
+;(take 5 price-hashes)
+;(map (fn [x] (insert :mdm.prices x)) (partition 300 (values price-hashes)))
+
+;(def partitioned (doall (partition 300 price-hashes)))
+;(last partitioned)
+;(map (fn [x] (map insert-price-hash x)) partitioned)
 ;(insert :mdm.prices (values price-hashes))
 ;(select :mdm.prices)
-(take 5 upcs)
-(def sapprices (mapcat get-internet-prices (partition 10 upcs)))
-sapprices
+;(take 5 upcs)
+;(def sapprices (mapcat get-internet-prices (partition 10 upcs)))
+;sapprices
 
 
 
@@ -193,35 +305,49 @@ sapprices
 
 
 
-(def sappriceinsert (map (fn [x] {:source "sap" :upc (matnr->upc (:matnr x)) :price (:price x)}) sapprices))
-sappriceinsert
-(insert :mdm.prices (values sappriceinsert))
+;(take 5 sapprices)
+;(take 5 sappriceinsert)
+;(map vals (take 5 sappriceinsert))
 
-(get-internet-prices (logit (take 10 upcs)))
-(get-internet-prices (take 1 upcs))
+;(def sappriceinsert
+;  (map
+;    (fn [x] (let [upc (matnr->upc (:matnr x))
+;                  qty (last (upc->matnrs upc))]
+;              {:source "sap" :upc upc :price (* (:price x) qty)}))
+;    (take 999999 sapprices)))
+;sappriceinsert
+;3
+;(vec (first (first partitioned)))
+;(insert-price-hash (vec (first) (first partitioned))
+;(def partitioned (doall (partition 300 sappriceinsert)))
+;(last partitioned)
+;(map (fn [x] (map insert-price-hash x)) partitioned)
+
+;(get-internet-prices (logit (take 10 upcs)))
+;(get-internet-prices (take 1 upcs))
 
 
 
-(def saporder (get-order-detail "2991654"))
-(as-document-num "asdf")
-saporder
+;(def saporder (get-order-detail "2991654"))
+;(as-document-num "asdf")
+;saporder
 
 
-(-> saporder first :content )
-(filter map? (-> saporder first :content))
-((partial filter map?) (-> saporder first :content))
-(-> saporder first :content first map?)
-(-> saporder first :content (partial filter map?) )
+;(-> saporder first :content )
+;(filter map? (-> saporder first :content))
+;((partial filter map?) (-> saporder first :content))
+;(-> saporder first :content first map?)
+;(-> saporder first :content (partial filter map?) )
 
 
-(-> saporder
-    first
-    :content
-    (as-> eles
-          (filter map? eles)
-          (map (comp parse-string unescape-fat-arrow-html first :content) eles)
-          )
-    )
+;(-> saporder
+;    first
+;    :content
+;    (as-> eles
+;          (filter map? eles)
+;          (map (comp parse-string unescape-fat-arrow-html first :content) eles)
+;          )
+;    )
 
 
 

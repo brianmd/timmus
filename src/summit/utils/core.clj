@@ -42,7 +42,7 @@
 
 (defn logit [& args]
   (binding [*out* *err*]
-    (apply pprint args))
+    (map pprint args))
   (last args))
 
 (defn as-matnr [string]
@@ -118,10 +118,15 @@
   `(fn [& args#]
      (eval
        (cons '~m args#))))
+
+
+(defn col-names [definition-vector]
+  (->> definition-vector (partition 4) (map first)))
+
 (defmacro make-record [name cols-names]
   `(apply (macro->fn defrecord) ['~name (->> ~cols-names (map name) (map symbol) vec)]))
-
-(make-record ColumnInfo '(name dbid type validators))
+;; (defmacro make-record [name definition-vector]
+;;   `(apply (macro->fn defrecord) ['~name (->> ~(col-names definition-vector) (map name) (map symbol) vec)]))
 
 (defprotocol Validator
   "validate "
