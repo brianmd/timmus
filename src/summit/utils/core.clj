@@ -148,8 +148,16 @@
    :required     [required (fn [_] "This field is required.")]
    })
 
+(defn short-timenow []
+  (.format (java.text.SimpleDateFormat. "yyyyMMddHHmmssZ") (new java.util.Date))
+  )
+
 (defn timenow []
   (.format (java.text.SimpleDateFormat. "yyyy-MM-dd HH:mm:ss Z") (new java.util.Date))
+  )
+
+(defn plain-timenow []
+  (clean-all (new java.util.Date))
   )
 
 (defn stepxml-top-tag []
