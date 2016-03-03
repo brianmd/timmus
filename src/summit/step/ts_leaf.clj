@@ -250,14 +250,16 @@
 ;(def ^:dynamic levels-to-save 1)
 ;(def ^:dynamic levels-to-print 0)
 ;
-(binding [levels-to-save 0
-          levels-to-print 5]
-  (pprint
-    (create-ts-leaf-hierarchy)
-    ))
+
+;; (binding [levels-to-save 0
+;;           levels-to-print 5]
+;;   (pprint
+;;     (create-ts-leaf-hierarchy)
+;;     ))
+;; (def x (create-ts-leaf-hierarchy))
+
 ;
 ;*e
-(def x (create-ts-leaf-hierarchy))
 ;x
 ;extract-leaf-class-names
 ;(extract-leaf-class-names x)

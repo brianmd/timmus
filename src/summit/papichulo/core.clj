@@ -4,7 +4,7 @@
             [schema.core :as s]
             [korma.core :refer :all]
             [clojure.set]
-            ;[clojure.string :as str]
+            [clojure.string :as str]
             [clojure.walk :refer :all]
             [cheshire.core :refer :all]
             ;[clj-time.core :as t]
@@ -12,7 +12,7 @@
             [net.cgrand.enlive-html :as html]
 
             [summit.db.relationships :refer :all]
-            [summit.sales-associate.order-spec :refer [send-spec-email]]
+            ;; [summit.sales-associate.order-spec :refer [send-spec-email]]
 
 
 
@@ -23,12 +23,31 @@
             [config.core :refer [env]]
 
 
-            [compojure.core :refer [defroutes GET]]
+            ;[compojure.core :refer [defroutes GET]]
 
             [summit.utils.core :refer :all]
             [timmus.db.core :refer [*db*]]
             [brianmd.db.store-mysql :as mysql]
             ))
+
+(defn papichulo-url []
+  (-> (default-env-setting :papichulo) :url))
+
+(defn papichulo-creds []
+  (let [papichulo (default-env-setting :papichulo)]
+    [(:username papichulo) (:password papichulo)]))
+
+(defn papichulo-url-with-creds []
+  (let [tokens (str/split (papichulo-url) #"//")
+        creds (str/join (papichulo-creds) ":")]
+    (str (first tokens) "//" creds (second tokens))))
+
+(defn create-papi-url [fn-name args]
+  (str
+   (papichulo-url)
+   "bapi/show?function_name="
+   fn-name
+   "&args=" (url-encode (generate-string args))))
 
 (defn remove-$ [price]
   (read-string (re-find #"[0-9.]+" price)))
@@ -42,7 +61,7 @@
 
 
 
-(defn unescape-fat-arrow-html
+(defn junk-unescape-fat-arrow-html
   "Change special characters into HTML character entities."
   [text]
   (.. #^String (str text)
@@ -52,12 +71,6 @@
       (replace "&quot;" "\"")
       (replace "=>" ":")
       ))
-
-(defn create-papi-url [fn-name args]
-  (str
-    "http://localhost:4000/bapi/show?function_name="
-    fn-name
-    "&args=" (url-encode (generate-string args))))
 
 (defn content-for-name [coll name]
   (let [section (first (filter #(= name (% "name")) coll))
@@ -71,7 +84,8 @@
 ;(content-for-name saporder "ET_ORDERS_DETAIL")
 
 (defn call-papi [fn-name args]
-  (let [creds (-> env :papichulo vals)
+  ;; (let [creds (-> env :papichulo vals)
+  (let [creds (default-env-setting :papichulo vals)
         url (create-papi-url fn-name args)
         response (client/get url {:basic-auth creds})
         parsed (html->enlive (:body response))]
@@ -80,7 +94,7 @@
         :content
         (as-> eles
               (filter map? eles)
-              (map (comp parse-string unescape-fat-arrow-html first :content) eles)
+              (map (comp parse-string unescape-html first :content) eles)
               )
         )
     ))
@@ -241,6 +255,8 @@
 
 (def compare-sql "select p1.upc, p1.price sap, p2.price platt, (p1.price-p2.price)/p2.price*100 increase from mdm.prices p1 join mdm.prices p2 on p1.upc=p2.upc where p1.source='sap' and p2.source='platt' and p1.price>0 order by increase")
 
+#_(comment
+
 (def compared (exec-raw (vector compare-sql) :results))
 (take 5 compared)
 
@@ -248,7 +264,6 @@
 
 
 
-#_(comment
 
 
 ;(take 30 all-upcs)

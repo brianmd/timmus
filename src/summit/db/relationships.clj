@@ -1,3 +1,5 @@
+(println "loading summit.db.relationships")
+
 (ns summit.db.relationships
   (:require
     [korma.db :refer :all]
@@ -8,6 +10,12 @@
     ; [timmus.db.core :refer :all]
     )
   )
+
+(defn find-entity [name id]
+  (first (select name (where {:id id}))))
+(defn find-entity-by [name key id]
+  (select name (where {key id})))
+
 
 (declare account account-catalog account-verification-status
          account-verification-status
@@ -23,10 +31,11 @@
          customer customer-note
          external-file grant line-item
          manufacturer permission
-         product product-class product-video
+         product product-class product-video punchout
          role sales-request-status schema-migration
          service-center solr-category solr-service-center
          stock-status video zcta)
+
 
 (def bh-entities
   {
@@ -46,6 +55,17 @@
            (has-many role {:fk :account_id})
            (many-to-many customer :roles {:lfk :account_id :rfk :customer_id})
            )
+
+(defentity broker
+  (table :brokers)
+  (has-many broker-company {:fk :broker_id})
+  (many-to-many company :broker_companies {:lfk :broker_id :rfk :company_id}))
+
+(defentity broker-company
+  (table :broker_companies)
+  (belongs-to broker)
+  (belongs-to company))
+
 (defentity cart
            (table :carts)
            ;(name :carts)
@@ -53,18 +73,77 @@
            (belongs-to customer {:fk :customer_id})
            (belongs-to service-center {:fk :service_center_id})
            )
+
 (defentity category
            (table :categories)
            (has-many product {:fk :category_id})
            )
+
+(defentity company
+  (table :companies)
+  (has-many broker-company {:fk :company_id})
+  (many-to-many broker :broker_companies {:lfk :company_id :rfk :broker_id}))
+
+(defentity contact-email
+  (table :contact_emails)
+  (belongs-to cart {:fk :cart_id})
+  )
+
+(defentity contact-email
+  (table :contact_emails)
+  (belongs-to customer {:fk :customer_id})
+  )
+
 (defentity customer
            (table :customers)
            ;(name :customers)
            (has-many cart {:fk :customer_id})
            (has-many contact-email {:fk :customer_id})
            (has-many role {:fk :customer_id})
+           (has-many punchout {:fk :customer_id})
            (many-to-many account :roles {:lfk :customer_id :rfk :account_id})
            )
+
+
+(defentity external-file
+           (table :external_files)
+           (belongs-to customer {:fk :product_id})
+           )
+(defentity grant
+           (table :grants)
+           (belongs-to permission {:fk :permission_id})
+           (belongs-to role {:fk :role_id})
+           )
+(defentity line-item
+           (table :line_items)
+           (belongs-to cart {:fk :cart_id})
+           (has-one product {:fk :line_item_id})
+           )
+(defentity permission
+           (table :permissions)
+           (has-many grant {:fk :permission_id})
+           )
+(defentity product
+           (table :products)
+           (belongs-to category {:fk :_id})
+           (has-many external-file {:fk :product_id})
+           (belongs-to line-item {:fk :line_item_id})
+           )
+(defentity punchout
+  (table :punchouts)
+  (belongs-to customer {:fk :customer_id}))
+(defentity role
+           (table :roles)
+           (belongs-to account {:fk :account_id})
+           (belongs-to customer {:fk :customer_id})
+           (has-many grant {:fk :role_id})
+           )
+(defentity service-center
+           (table :service_centers)
+           (has-many cart {:fk :service_center_id})
+           )
+
+
 
 ;(def perms (select permission))
 ;perms
@@ -145,48 +224,6 @@ c
 )
 
 
-
-(defentity external-file
-           (table :external_files)
-           (belongs-to customer {:fk :product_id})
-           )
-(defentity grant
-           (table :grants)
-           (belongs-to permission {:fk :permission_id})
-           (belongs-to role {:fk :role_id})
-           )
-(defentity line-item
-           (table :line_items)
-           (belongs-to cart {:fk :cart_id})
-           (has-one product {:fk :line_item_id})
-           )
-(defentity permission
-           (table :permissions)
-           (has-many grant {:fk :permission_id})
-           )
-(defentity product
-           (table :products)
-           (belongs-to category {:fk :_id})
-           (has-many external-file {:fk :product_id})
-           (belongs-to line-item {:fk :line_item_id})
-           )
-(defentity role
-           (table :roles)
-           (belongs-to account {:fk :account_id})
-           (belongs-to customer {:fk :customer_id})
-           (has-many grant {:fk :role_id})
-           )
-(defentity service-center
-           (table :service_centers)
-           (has-many cart {:fk :service_center_id})
-           )
-(defentity contact-email
-           (table :contact_emails)
-           (belongs-to customer {:fk :customer_id})
-           )
-
-
-
 ;(select customer (limit 1))
 
 #_(comment
@@ -236,8 +273,11 @@ c
   ;:roles
   )
 
-)
+)   ;; end comment
 
 
+(println "mount/start")
 (mount/start)
+(println "mount/start completed")
 
+(println "done loading summit.db.relationships")

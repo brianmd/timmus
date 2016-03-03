@@ -1,3 +1,5 @@
+(println "loading summit.utils.core")
+
 (ns summit.utils.core
   (:require
     [clj-http.client :as client]
@@ -10,17 +12,36 @@
     [clojure.java.io :as io]
 
     [cheshire.generate :refer [add-encoder encode-str remove-encoder]]
+    [taoensso.carmine :as car :refer (wcar)]
     ;[cats.core :as m]
     ;[cats.builtin]
     ;[cats.monad.maybe :as maybe]
 
     [net.cgrand.enlive-html :as html]
-    )
-  )
+    ))
 
+
+(defn exec-sql [sql]
+  (korma.core/exec-raw sql :results))
 
 (def step-input-path (-> env :paths :local :step-input-path))
 (def step-output-path (-> env :paths :local :step-output-path))
+
+
+(defn default-env-setting [key]
+  (let [default (-> env :defaults key)]
+    (-> env key default)))
+;; (default-env-setting :redis)
+;; (default-env-setting :db)
+;; ((default-env-setting :db) :local)
+
+
+(def redis-conn {:pool {} :spec (default-env-setting :redis)})
+(defmacro wcar* [& body] `(car/wcar redis-conn ~@body))
+
+;; (wcar* (car/ping))
+
+
 
 (add-encoder clojure.lang.Delay
              (fn [c jsonGenerator]
@@ -40,21 +61,60 @@
   (postwalk str x))
   ;(postwalk #(if(keyword? %)(name %) %) x))
 
+(defn save-to-x
+  "may be used in a threading macro"
+  [obj]
+  (def x obj)
+  x)
+
 (defn logit [& args]
   (binding [*out* *err*]
     (map pprint args))
   (last args))
 
+(defn logit-plain [& args]
+  (apply println args)
+  (last args))
+
+(defn first-element-equals? [key coll]
+  (and (sequential? coll) (= key (first coll))))
+
+(defn floored [x]
+  (java.lang.Math/floor (double x)))
+
+(defn select-ranges [rows & ranges]
+  (let [r (vec rows)]
+    (mapcat #(subvec r (first %) (second %)) ranges)))
+;; (select-ranges [0 1 2 3 4 5 6 7 8 9 10] [0 2] [4 5])
+
+(defn convert-row-num [row-num num-rows]
+  (floored (* num-rows row-num (double 0.01))))
+
+(defn convert-range [a-range num-rows]
+  [(convert-row-num (first a-range) num-rows) (convert-row-num (second a-range) num-rows)])
+
+(defn select-percentage-ranges [num-rows rows & ranges]
+  (mapcat #(apply subvec (vec rows) (convert-range % num-rows)) ranges))
+;; (select-ranges 5 prods [0 20] [30 44])
+
+(defn select-keyword [nested-arr keyword]
+  (let [i (atom [])]
+    (prewalk #(if (first-element-equals? keyword %) (do (swap! i conj %) %) %) nested-arr)
+    @i))
+;; (select-keyword [:a [:b 3 4] [:c]] :b)
+
 (defn as-matnr [string]
-  (let [s (str "000000000000000000" string)]
-    (subs s (- (count s) 18))))
+  (if string
+    (let [s (str "000000000000000000" string)]
+      (subs s (- (count s) 18)))))
 (defn as-document-num [string]
-  (let [s (str "0000000000" string)]
-    (subs s (- (count s) 10))))
-(as-document-num "asdf")
+  (if string
+    (let [s (str "0000000000" string)]
+      (subs s (- (count s) 10)))))
+;; (as-document-num "asdf")
 (defn as-short-document-num [string]
   "remove leading zeros"
-  (str/replace string #"^0*" ""))
+  (if string (str/replace string #"^0*" "")))
 ;(as-short-document-num (as-document-num "1"))
 
 (defn bh_login [email pw]
@@ -74,6 +134,7 @@
       "https://www.summit.com/store/customers/sign_in.json"
       params)
     ))
+; => {:status 201, :headers {"Server" "nginx/1.4.6 (Ubuntu)", "Content-Type" "application/json; charset=utf-8", "X-Content-Type-Options" "nosniff", "X-Runtime" "0.107563", "X-Frame-Options" "SAMEORIGIN", "Connection" "close", "X-CSRF-Token" "2yucxbJnvTNt2oHJBzvXEcrKbsDkZzU7xMIpo5J4zdA=", "Location" "/", "Transfer-Encoding" "chunked", "ETag" "\"3e601d8f4e7c7ce73f0e89041750abe2\"", "Date" "Mon, 29 Feb 2016 16:18:35 GMT", "X-CSRF-Param" "authenticity_token", "X-Request-Id" "2f903ed7-8458-4945-a4f5-f774ac01abbb", "X-XSS-Protection" "1; mode=block", "Cache-Control" "max-age=0, private, must-revalidate"}, :body "{\"customers\":[{\"id\":28,\"first_name\":\"Brian\",\"last_name\":\"\",\"email\":\"brian@murphydye.com\",\"office_phone\":\"\",\"cell_phone\":\"\",\"address1\":\"\",\"address2\":\"\",\"city\":\"Seattle\",\"state\":\"WA\",\"zip\":\"\",\"sign_in_count\":151,\"active_account_number\":\"1000736\",\"active_job_account_number\":null,\"jobAccount\":null,\"links\":{\"accounts\":\"/store/accounts\"}}]}", :request-time 176, :trace-redirects ["https://www.summit.com/store/customers/sign_in.json"], :orig-content-encoding nil, :cookies {"customer_id" {:discard true, :path "/", :secure false, :value "28", :version 0}, "_blueharvest_session" {:discard true, :path "/", :secure false, :value "SlJEM0ZkOTdNSWJaWVFlQ0xmWGtTWFZVSWJtMC8vTk05aExES1gzT3FUMGgvRXBUYW5qUU5nZjBjNno4Yk00Ym8rWXhVQkpNOWpPVkkvS2dma2pUclR0eHJOUnNKeEwrTU14MS91Y2U4OW42eGlmdTJ3N0tUdmRDdVB4ODJ4aWd0cGlPaCtiaHZMejMvcGVRbEcrWVpONmNjaHFIdGlBd3JuOWM4cGpaUVF3ay9aUmdXNDZIUUQ1eElodEtLZUdueHJhM1JzVTJUZDk0Ni93ZjFwdHZSSEtOVUpPeHd3bXc1YzhzNXVJdjZ3bnJoWWpuVmRaUEtDTzVYSTdpTzNDbTJ2RlJUSkpoUmFXenBGMmI3MnRDcVd1MWlvaUJWSTJTcXhjNlQySFhyNjg9LS1CdzM3M3JFK1lEcWZlb0FEWUxpVWtRPT0%3D--76d2f3c88be29bc3d4c79b87b711dbe2b7f2d7f5", :version 0}}}
 
 
 (def ^:dynamic level-function-names (list))
@@ -150,6 +211,12 @@
 
 (defn short-timenow []
   (.format (java.text.SimpleDateFormat. "yyyyMMddHHmmssZ") (new java.util.Date))
+  )
+
+(def db-time-format (clj-time.format/formatter "yyyy-MM-dd HH:mm:ss"))
+(defn db-timenow []
+  (clj-time.format/unparse db-time-format (clj-time.core/now))
+  ;; (.format (java.text.SimpleDateFormat. "yyyy-MM-dd HH:mm:ss Z") (new java.util.Date))
   )
 
 (defn timenow []
@@ -317,4 +384,5 @@
 
 
 
+(println "done loading summit.utils.core")
 

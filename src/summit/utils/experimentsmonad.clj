@@ -28,7 +28,7 @@
   )
 
 
-(when true
+#_(when true
 
 ; semigroup
 (m/mappend (maybe/just [1 2 3])
@@ -79,7 +79,7 @@
 
 
 ; pure
-(m/pure maybe/maybe-monad 5)
+;; (m/pure maybe/maybe-monad 5)
 
 ; foldable
 (m/foldl (fn [acc v] (+ acc v)) 0 [1 2 3 4 5])
@@ -164,7 +164,7 @@
 ;; => #<Just 4>
 
 ; monad zero
-(m/mzero maybe/maybe-monad)
+;; (m/mzero maybe/maybe-monad)
 ;; => error. can't find maybe-monad. bummer. but the below works ...
 (ctx/with-context maybe/context
                   (m/mzero))
@@ -190,7 +190,7 @@
 
 
 
-(cat-maybes
+#_(cat-maybes
   (map maybe/just (range 5)))
 
 

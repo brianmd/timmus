@@ -402,10 +402,6 @@
 
 
 (defn build-one-relationship [relations func]
-  (println func)
-  (println relations)
-  (doall
-    (map println relations))
   (doall
     (map (fn [r]
            {:storage-name (first r)
@@ -425,9 +421,6 @@
         ;m (map #(build-one-relationship % second) has-many)]
   (let [b (build-one-relationship (name belongs-to) second)
         m (build-one-relationship (name has-many) first)]
-    (println "done")
-    (println "b" b)
-    (println "m" m)
     {:relationships {:belongs-to b :has-many m}}
     ))
 ;(build-relationship-for
@@ -497,37 +490,40 @@
 ;        }
 ; })
 
+
 ;(def entity-names 3)
 ;(def entity-definitions 4)
-(def entity-names (entity-names-for))
-(def entity-definitions (build-entity-definitions))
+(def get-entity-info-future
+  (future
+    (def entity-names (entity-names-for))
+    (def entity-definitions (build-entity-definitions))
 
-(defn attribute-query [entity attribute-name value]
-  (println [entity attribute-name value])
-  (println {(keyword attribute-name) value})
-  (let [
-        entity-name (keyword entity)
-        entity-info (entity-name entity-definitions)
-        colname (keyword attribute-name)
-        attribute-info (colname entity-info)
-        attribute-type (:type attribute-info)
-        v (if (contains? #{} attribute-type) (Long. value) value)
-        colname (keyword attribute-name)
-        query (->
-                (select* entity-name)
-                (where {colname v})
-                (limit 100))]
-    (println entity colname query)
-    (println "\n\nas-sql ------------" (as-sql query))
-    (let [result (select query)]
-      {
-       :rows       (map vals result)
-       :headers    (keys (first result))
-       :result     result
-       :relationships
-                   {
-                    :belongs-to 3
-                    }
-       })
-    ))
+    (defn attribute-query [entity attribute-name value]
+      (println [entity attribute-name value])
+      (println {(keyword attribute-name) value})
+      (let [
+            entity-name (keyword entity)
+            entity-info (entity-name entity-definitions)
+            colname (keyword attribute-name)
+            attribute-info (colname entity-info)
+            attribute-type (:type attribute-info)
+            v (if (contains? #{} attribute-type) (Long. value) value)
+            colname (keyword attribute-name)
+            query (->
+                   (select* entity-name)
+                   (where {colname v})
+                   (limit 100))]
+        (println entity colname query)
+        (println "\n\nas-sql ------------" (as-sql query))
+        (let [result (select query)]
+          {
+           :rows       (map vals result)
+           :headers    (keys (first result))
+           :result     result
+           :relationships
+           {
+            :belongs-to 3
+            }
+           })
+        ))))
 

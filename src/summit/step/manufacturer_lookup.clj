@@ -12,8 +12,8 @@
 ;(.log js/console (str "something happened"))
 ;(println "boo")
 
-(def step-input-path (-> env :paths :local :step-input-path))
-(def step-output-path (-> env :paths :local :step-output-path))
+;; (def step-input-path (-> env :paths :local :step-input-path))
+;; (def step-output-path (-> env :paths :local :step-output-path))
 
 ;(-> env :paths :local :step-input-path (#(str % "abc/")))
 

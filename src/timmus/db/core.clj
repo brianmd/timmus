@@ -1,3 +1,5 @@
+(println "loading timmus.db.core")
+
 (ns timmus.db.core
   (:require
     [clojure.java.jdbc :as jdbc]
@@ -6,7 +8,9 @@
     [mount.core :refer [defstate]]
     [korma.core :refer :all]
     [korma.db :refer :all]
-    [clojure.string :as str])
+    [clojure.string :as str]
+    [summit.utils.core :refer [default-env-setting]]
+    )
   (:import [java.sql
             BatchUpdateException
             PreparedStatement])
@@ -22,7 +26,7 @@
 ;(defn connect! [] (create-db db-spec))
 
 (defn connect! []
-  (let [dbconfig (-> env :db :blue-harvest :local)]
+  (let [dbconfig (default-env-setting :db)]
     (defdb db (mysql
                 {:host (:host dbconfig)
                  :db (:dbname dbconfig)
@@ -74,3 +78,4 @@
   (set-parameter [v ^PreparedStatement stmt idx]
     (.setTimestamp stmt idx (java.sql.Timestamp. (.getTime v)))))
 
+(println "done loading timmus.db.core")

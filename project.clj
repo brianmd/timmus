@@ -4,10 +4,12 @@
   :url "http://example.com/FIXME"
 
   :dependencies [[org.clojure/clojure "1.8.0"]
+                 [org.clojure/tools.logging "0.3.1"]
+                 [ch.qos.logback/logback-classic "1.1.3"]
                  [com.taoensso/encore "2.36.0"]
                  [selmer "1.0.0"]
                  [markdown-clj "0.9.85"]
-                 [luminus/config "0.5"]
+                 [luminus/config "0.8"]
                  [ring-middleware-format "0.7.0"]
                  [metosin/ring-http-response "0.6.5"]
                  [bouncer "1.0.0"]
@@ -15,7 +17,6 @@
                  [org.webjars/font-awesome "4.5.0"]
                  [org.webjars.bower/tether "1.1.1"]
                  [org.webjars/jquery "2.2.0"]
-                 [org.clojure/tools.logging "0.3.1"]
                  [com.taoensso/carmine "2.12.2"]
                  [com.taoensso/tower "3.1.0-beta4"]
                  [compojure "1.4.0"]
@@ -26,7 +27,8 @@
                  [luminus-nrepl "0.1.2"]
                  [buddy "0.10.0"]
                  [migratus "0.8.9"]
-                 [conman "0.3.0" :exclusions [org.slf4j/slf4j-api org.slf4j/slf4j-log4j12]]
+                 [conman "0.4.5"]
+                 ;[conman "0.3.0" :exclusions [org.slf4j/slf4j-api org.slf4j/slf4j-log4j12]]
                  [mysql/mysql-connector-java "5.1.6"]
                  [org.clojure/clojurescript "1.7.228" :scope "provided"]
                  [reagent "0.5.1"]
@@ -35,11 +37,11 @@
                  [secretary "1.2.3"]
                  [org.clojure/core.async "0.2.374" :exclusions [org.clojure/core.memoize]]
                  [cljs-ajax "0.5.3"]
-                 [metosin/compojure-api "0.24.5"]
+                 [metosin/compojure-api "1.0.0"]
                  [metosin/ring-swagger-ui "2.1.4-0"]
                  [org.webjars/webjars-locator-jboss-vfs "0.1.0"]
                  ;this one caused errors:
-                 [luminus-immutant "0.1.0" :exclusions [org.jboss.logging/jboss-logging]]
+                 [luminus-immutant "0.1.1" :exclusions [org.jboss.logging/jboss-logging]]
                  ;[luminus-immutant "0.1.0"]
                  [luminus-log4j "0.1.2" :exclusions [org.slf4j/slf4j-api org.slf4j/slf4j-log4j12]]
                  ;[luminus-log4j "0.1.2" :exclusions [org.slf4j/slf4j-nop]]
@@ -51,7 +53,7 @@
 
                  [siren "0.2.0"]
                  [org.clojars.frozenlock/reagent-table "0.1.3"]
-                 [clj-http "2.0.1"]
+                 [clj-http "2.1.0"]
                  [com.cemerick/url "0.1.1"]
                  [org.clojure/data.csv "0.1.3"]
                  [org.clojure/data.codec "0.1.0"]
@@ -60,8 +62,8 @@
                  ;[com.datomic/datomic-pro "0.9.5344"]
                  [com.datomic/datomic-pro "0.9.5344" :exclusions [joda-time org.slf4j/jul-to-slf4j org.slf4j/slf4j-nop org.slf4j/slf4j-over-log4j org.slf4j/slf4j org.slf4j/slf4j-log4j12]]
 
-                 ;[funcool/cats "1.2.1"]
-                 ;[org.clojure/algo.monads "0.1.5"]
+                 [funcool/cats "1.2.1"]
+                 [org.clojure/algo.monads "0.1.5"]
                  [clj-time "0.11.0"]
                  [re-com "0.8.0"]
                  ;[criterium "0.4.3"]                        ; benchmarking
@@ -74,6 +76,11 @@
                  [medley "0.7.1"]
                  [com.taoensso/carmine "2.12.2"]
                  [clj-tagsoup/clj-tagsoup "0.3.0" :exclusions [org.clojure/clojure]]
+                 ;; [lein-ancient "0.6.8"]
+                 ;; [com.jakemccrary/lein-test-refresh "0.13.0"]
+                 [zookeeper-clj "0.9.4" :exclusions [org.slf4j/slf4j-log4j12]]
+                 [com.rpl/specter "0.9.2"]
+
                  ]
 
   :min-lein-version "2.0.0"
@@ -125,7 +132,7 @@
    :dev           [:project/dev :profiles/dev]
    :test          [:project/test :profiles/test]
    :prod    [:project/prod :profiles/prod]
-   :project/dev  {:dependencies [[prone "1.0.1"]
+   :project/dev  {:dependencies [[prone "1.0.2"]
                                  [ring/ring-mock "0.3.0"]
                                  [ring/ring-devel "1.4.0"]
                                  [pjstadig/humane-test-output "0.7.1"]

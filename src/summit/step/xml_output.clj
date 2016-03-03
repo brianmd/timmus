@@ -1,3 +1,5 @@
+(println "loading summit.step.xml-output")
+
 (ns summit.step.xml-output
   (:require
     [clojure.java.io :as io]
@@ -127,3 +129,4 @@
              )))
 
 
+(println "finished loading summit.step.xml-output")

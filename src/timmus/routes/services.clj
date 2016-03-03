@@ -1,47 +1,55 @@
 (ns timmus.routes.services
   (:require [ring.util.http-response :refer :all]
             [compojure.api.sweet :refer :all]
+            [ring.util.http-response :refer :all]
             [schema.core :as s]
             [korma.core :refer :all]
             [clojure.set]
-            ;[clojure.string :as str]
+            [clojure.string :as str]
             [clojure.walk :refer :all]
             [cheshire.core :refer :all]
             ;[clj-time.core :as t]
             ;[clj-time.format :as f]
             [net.cgrand.enlive-html :as html]
+            [clojure.core.async :as  a
+             :refer [>! <! >!! <!! go go-loop chan close! thread alts! alts!! timeout
+                     buffer sliding-buffer dropping-buffer]]
             [clojure.pprint :refer [pprint]]
-
-            [summit.db.relationships :refer :all]
-            [summit.sales-associate.order-spec :refer [send-spec-email]]
-
-
-
-            ;[cheshire.generate :refer [add-encoder encode-str remove-encoder]]
 
             [cemerick.url :refer [url-encode url]]
             [clj-http.client :as client]
             [config.core :refer [env]]
 
+            ;[compojure.core :refer [defroutes GET]]
+            ;[compojure.core :refer [GET]]
+            [cheshire.generate :refer [add-encoder encode-str remove-encoder]]
 
-            [compojure.core :refer [defroutes GET]]
 
             [summit.utils.core :refer :all]
+            [summit.db.relationships :refer :all]
+            [summit.sales-associate.order-spec :refer [send-spec-email]]
+
+
             [timmus.db.core :refer [*db*]]
             [brianmd.db.store-mysql :as mysql]
+            [summit.punchout.core :as p]
+            [summit.papichulo.core :refer [papichulo-url papichulo-creds create-papi-url papichulo-url-with-creds]]
             ))
-;customer
-;mysql/entity-definitions
-;cart
-;(-> customer :rel)
-;@((-> customer :rel) "cart")
 ;(-> @((-> customer :rel) "cart") :fk-key)
 
+#_(comment
+(.reset (:body aa))
+(def bb (slurp (:body aa)))
+bb 
+(:body aa)
+(p/process-punchout-request-str (:body aa))
+)
 
 (defn map->table [hash]
   {:headers (keys (first hash))
    :rows    (map vals hash)})
 ;(map->table [{:a 9 :b 99}])
+
 
 (s/defschema Thingie {:id Long
                       :hot Boolean
@@ -97,26 +105,99 @@
 ;(def thing {:page/tags [{:tag/category "lslsls"}]})
 ;(postwalk #(if(keyword? %)(keyword (name %)) %) thing)
 ;(postwalk #(if(keyword? %)(name %) %) thing)
-;(keyword? :a)
-; (select contact-email (where {:type "Order"}) (order :created_at :desc) (limit 5))
-; (select contact-email (limit 5))
 
 
 
-(defn req->printable [req]
+(defn req-sans-unprintable [req]
+  #_["compojure.api.middleware/options",
+     "cookies",
+     "remote-addr",
+     "ring.swagger.middleware/data",
+     "params",
+     "flash",
+     "route-params",
+     "headers",
+     "async-channel",
+     "server-port",
+     "content-length",
+     "form-params",
+     "compojure/route",
+     "websocket?",
+     "session/key",
+     "query-params",
+     "content-type",
+     "path-info",
+     "character-encoding",
+     "context",
+     "uri",
+     "server-name",
+     "query-string",
+     "body",
+     "multipart-params",
+     "scheme",
+     "request-method",
+     "session"]
   (let [bad-params [                        ; these throw errors when json-izing
                     :compojure.api.middleware/options
                     :async-channel
                     ]
         x (apply dissoc (concat [req] bad-params))]
-     (clean-all x)))
+     x))
+
+(defn req->printable [req]
+  (clean-all (req-sans-unprintable req)))
+
+(defn separately-log-request
+  "stores request in its own file as edn"
+  ([req] (separately-log-request req "request"))
+  ([req filename]
+   (let [hash (req-sans-unprintable req)]
+     (spit (str "log/" (short-timenow) "-"
+                (clojure.string/replace filename "/" "-")
+                ".clj")
+           (pr-str hash)))))
+
+(defn load-log-request [filename]
+  (read-string (slurp (str "log/" filename ".clj"))))
+
+(defonce log-request-chan (chan (sliding-buffer 30)))
+
+;; (->
+;;  (load-log-request "20160221142345-0700--api-punchout-rew")
+;;  :cookies
+;;  keys)
+
+(defn log-request [& args]
+  (>!! log-request-chan args))
+
+(defn do-log-request
+  ([req] (log-request req "requests"))
+  ([req filename]
+   (spit (str "log/" filename ".log")
+         (with-out-str
+           (pprint
+            [(timenow)
+             (if (map? req) (req->printable req) req)
+             (str "end " (timenow))]))
+         :append true)))
+
+(defn log-request-loop [& args]
+  (go-loop []
+    (println "wait for incoming log request ...")
+    (let [args (<! log-request-chan)]
+      (apply do-log-request args)
+      (separately-log-request (first args) (:uri (first args)))
+      (recur)
+      )))
+
+
+
+
+;; (log-request-loop)
+
+
 
 (defn forward-request [to-uri req]
-  (pprint (req->printable req))
-  (println (:params req))
-  (println "")
-  (println "")
-  (println "")
   (let [uri (str to-uri ((:params req) :*))
         method (:request-method req)
         base-req (select-keys req [:headers :cookies :body :remote-addr
@@ -140,110 +221,114 @@
 
 
 (defapi service-routes
-  (ring.swagger.ui/swagger-ui
-   "/swagger-ui")
-  ;JSON docs available at the /swagger.json route
-  (swagger-docs
-    {:info {:title "Sample api"}})
-  (context* "/api" []
+  {:swagger {:ui "/swagger-ui"
+             :spec "/swagger.json"
+             :data {:info {:version "1.0.0"
+                           :title "Sample API"
+                           :description "Sample Services"}}}}
+  ;(ring.swagger.ui/swagger-ui
+  ; "/swagger-ui")
+  ;;JSON docs available at the /swagger.json route
+  ;(swagger-docs
+  ;  {:info {:title "Sample api"}})
+  (context "/api" []
             :tags ["thingie"]
 
-            (GET* "/plus" []
+            (GET "/plus" []
                   :return       Long
                   :query-params [x :- Long, {y :- Long 1}]
                   :summary      "x+y with query-parameters. y defaults to 1."
                   (ok (+ x y)))
 
-            (POST* "/minus" []
+            (POST "/minus" []
                    :return      Long
                    :body-params [x :- Long, y :- Long]
                    :summary     "x-y with body-parameters."
                    (ok (- x y)))
 
-            (GET* "/times/:x/:y" []
+            (GET "/times/:x/:y" []
                   :return      Long
                   :path-params [x :- Long, y :- Long]
                   :summary     "x*y with path-parameters"
                   (ok (* x y)))
 
-            (POST* "/divide" []
+            (POST "/divide" []
                    :return      Double
                    :form-params [x :- Long, y :- Long]
                    :summary     "x/y with form-parameters"
                    (ok (/ x y)))
 
-            (GET* "/power" []
+            (GET "/power" []
                   :return      Long
                   :header-params [x :- Long, y :- Long]
                   :summary     "x^y with header-parameters"
                   (ok (long (Math/pow x y))))
 
-            (GET* "/echo/*" req
+            (GET "/echo/*" req
                   :summary  "echoes the request"
-                  #_["compojure.api.middleware/options",
-                   "cookies",
-                   "remote-addr",
-                   "ring.swagger.middleware/data",
-                   "params",
-                   "flash",
-                   "route-params",
-                   "headers",
-                   "async-channel",
-                   "server-port",
-                   "content-length",
-                   "form-params",
-                   "compojure/route",
-                   "websocket?",
-                   "session/key",
-                   "query-params",
-                   "content-type",
-                   "path-info",
-                   "character-encoding",
-                   "context",
-                   "uri",
-                   "server-name",
-                   "query-string",
-                   "body",
-                   "multipart-params",
-                   "scheme",
-                   "request-method",
-                   "session"]
-                  (let [bad-params [                        ; these throw errors when json-izing
-                                    :compojure.api.middleware/options
-                                    :async-channel
-                                    ]
-                        x (apply dissoc (concat [req] bad-params))]
-                    (ok (clean-all (assoc x :abcdef 32)))
-                    ;(ok (clean-all x))
-                   )
+                  (ok (req->printable req))
+                  ;; (ok {:a 3})
+                  ;; (let [bad-params [                        ; these throw errors when json-izing
+                  ;;                   :compojure.api.middleware/options
+                  ;;                   :async-channel
+                  ;;                   ]
+                  ;;       x (apply dissoc (concat [req] bad-params))]
+                  ;;   (ok (clean-all (assoc x :abcdef 32)))
+                  ;;   ;(ok (clean-all x))
+                  ;;  )
                   )
 
-            (GET* "/papi/*" req
-                  (let [response (forward-request "http://bh:werilasf879d@localhost:4000/" req)]
+            (GET "/papi/*" req
+                  (let [response (forward-request (papichulo-url-with-creds) req)]
                     response))
 
-            (PUT* "/echo" []
+            (GET "/punchout" req
+                  (println "in get punchout")
+                  (log-request req)
+                  ;; (separately-log-request req (:uri req))
+                  (ok (req->printable req)))
+
+            (POST "/punchout" req
+                   (println "in post punchout")
+                   (let [byte? (= (type (:body req)) org.httpkit.BytesInputStream)
+                         req (if byte? (assoc req :body (slurp (:body req))) req)]
+                     (def aa req)
+                     (log-request req)
+                     (let [response (p/process-punchout-request-str (:body req))]
+                       ;; text/xml; charset=utf-8
+                       {:status 200,
+                        :headers {"Content-Type" "text/xml; charset=utf-8"},
+                        :body response}
+                       ;; (ok response)
+                       )
+                     ;; (separately-log-request req (:uri req))
+                     ;; (ok (req->printable req))
+                     ))
+
+
+
+            (PUT "/echo" []
                   :return   [{:hot Boolean}]
                   :body     [body [{:hot Boolean}]]
                   :summary  "echoes a vector of anonymous hotties"
                   (ok body))
 
-            (POST* "/echo" []
+            (POST "/echo" []
                    :return   (s/maybe Thingie)
                    :body     [thingie (s/maybe Thingie)]
                    :summary  "echoes a Thingie from json-body"
                    (ok thingie))
 
-            (GET* "/hello" []
+            (GET "/hello" []
                   :query-params [name :- String]
                   (ok {:message (str "Hello, " name)}))
 
-            (GET* "/orders" []
+            (GET "/orders" []
                   ;(ok (select contact-email (where {:type "Order"}) (order :created_at :desc) (limit 5))))
                   (ok (select contact-email (where {:type "Order"}) (order :created_at :desc) (limit 5)
                               (fields :email :payment_method :type :sap_document_number :total_price :cart_id))))
 
-            (GET* "/customers" []
+            (GET "/customers" []
                   ;(let [custs (select customer (limit 20))]
                   ;  (ok {:headers (keys custs) :rows (vals custs)}))
                   (println "getting customers ...")
@@ -253,30 +338,30 @@
                     )
                   )
 
-            (GET* "/entities/definitions" []
+            (GET "/entities/definitions" []
                   (println "&&&&&&&&&&&&&&&&&&&&&&&&&&^^^^^^^^^^^")
                   ;(println mysql/entity-definitions)
                   (ok (clean-all mysql/entity-definitions)))
 
-            (GET* "/entities/query/:entity-name/:attribute-name/:val" []
+            (GET "/entities/query/:entity-name/:attribute-name/:val" []
                   :path-params [entity-name :- String, attribute-name :- String, val :- String]
                   ;(println mysql/entity-definitions)
                   (println "getting entity" [entity-name attribute-name val] " ...")
                   (ok (clean-all (mysql/attribute-query (keyword entity-name) (keyword attribute-name) val)))
                   )
 
-            (GET* "/customer/:email" []
+            (GET "/customer/:email" []
                   :path-params [email :- String]
                   (ok (mysql/attribute-query :customers :email email)))
 
-            (GET* "/platt-prices" []
+            (GET "/platt-prices" []
                   (println "in platt-prices")
                   (let [compare-sql "select p1.upc, p1.price sap, p2.price platt, (p1.price-p2.price)/p2.price*100 increase from mdm.prices p1 join mdm.prices p2 on p1.upc=p2.upc where p1.source='sap' and p2.source='platt' and p1.price>0 order by increase"
                         compared (exec-raw (vector compare-sql) :results)]
                     (println "upc comparison count: " (count compared))
                     (ok (map->table compared))))
 
-            (GET* "/order-spec/:email/:ordernum" []
+            (GET "/order-spec/:email/:ordernum" []
                  ;:return Long
                  :path-params [email :- String, ordernum :- Long]
                  :summary "emails specs related to order-num to email"
@@ -296,248 +381,21 @@
                     ;(throw "nope")
             )
 
-  (context* "/context" []
+  (context "/context" []
             :tags ["context*"]
             :summary "summary inherited from context"
-            (context* "/:kikka" []
+            (context "/:kikka" []
                       :path-params [kikka :- s/Str]
                       :query-params [kukka :- s/Str]
-                      (GET* "/:kakka" []
+                      (GET "/:kakka" []
                             :path-params [kakka :- s/Str]
                             (ok {:kikka kikka
                                  :kukka kukka
-                                 :kakka kakka})))))
-
-
-;(select product (limit 5) )
-;(select product (limit 5) (where {:upc [not= ""]}) (fields :upc))
-;(map #(-> % vals first) (select product (limit 5) (where {:upc [not= ""]}) (fields :upc)))
-;
-;(take 30 all-upcs)
-;
-;slow-download-platt
-;(map download-platt (take 2 all-upcs))
-
-
-;(def all-upcs (map #(-> % vals first)
-;                   (select product (where {:upc [not= ""]}) (fields :upc))))
-;(count all-upcs)
-;(time (pmap download-platt (drop 10000 all-upcs)))
-;(time (pmap (fn [x] (download-platt x) nil) (drop 10000 all-upcs))))
-
-
-
-
-(comment
-
-
-(def platt-product-pages "/Users/bmd/data/crawler/platt/product")
-(def directory (clojure.java.io/file platt-product-pages))
-(def all-files (file-seq directory))
-(def files (filter #(re-find #"\.html$" (.getName %)) all-files))
-(def upcs (map #(re-find #"[^.]+" (.getName %)) files))
-upcs
-(count upcs)
-(partition 2 (take 5 upcs))
-
-(def prod (htmlfile->enlive (first files)))
-files
-prod
-(-> (html/select prod [:span.ProductPriceOrderBox]) first :content first)
-
-(defn remove-$ [price]
-  (read-string (re-find #"[0-9.]+" price)))
-
-(defn get-price [file]
-  [(re-find #"[^.]+" (.getName file))
-   (-> (html/select (htmlfile->enlive file) [:span.ProductPriceOrderBox]) first :content first)
-   ])
-
-(select customer (limit 1) (with account))
-
-;(get-price (first files))
-;(def prices (map get-price files))
-;
-;(def p (map #(vector (first %) (remove-$ (second %))) prices))
-;p
-;(def price-hashes (doall (map (fn [price] {:source "platt" :upc (first price) :price (second price)}) p)))
-(take 5 price-hashes)
-;(insert :mdm.prices (values price-hashes))
-;(select :mdm.prices)
-(take 5 upcs)
-(def sapprices (mapcat get-internet-prices (partition 10 upcs)))
-sapprices
-
-
-
-
-
-
-
-(def sappriceinsert (map (fn [x] {:source "sap" :upc (matnr->upc (:matnr x)) :price (:price x)}) sapprices))
-sappriceinsert
-(insert :mdm.prices (values sappriceinsert))
-
-(get-internet-prices (logit (take 10 upcs)))
-(get-internet-prices (take 1 upcs))
-
-
-
-
-
-
-(defn unescape-fat-arrow-html
-  "Change special characters into HTML character entities."
-  [text]
-  (.. #^String (str text)
-      (replace "&amp;" "&")
-      (replace "&lt;" "<")
-      (replace "&gt;" ">")
-      (replace "&quot;" "\"")
-      (replace "=>" ":")
-      ))
-
-(defn create-papi-url [fn-name args]
-  (str
-    "http://localhost:4000/bapi/show?function_name="
-    fn-name
-    "&args=" (url-encode (generate-string args))))
-
-(defn content-for-name [coll name]
-  (let [section (first (filter #(= name (% "name")) coll))
-        ]
-    (case (section "type")
-      "TABLE" (->> (section "table") second)
-      section)
-    )
+                                 :kakka kakka}))))
   )
-;(content-for-name saporder "ET_ORDERS_SUMMARY")
-;(content-for-name saporder "ET_ORDERS_DETAIL")
-
-(defn call-papi [fn-name args]
-  (let [creds (-> env :papichulo vals)
-        url (create-papi-url fn-name args)
-        response (client/get url {:basic-auth creds})
-        parsed (html->enlive (:body response))]
-    (-> (html/select parsed [:ul#returnsJson])
-        first
-        :content
-        (as-> eles
-              (filter map? eles)
-              (map (comp parse-string unescape-fat-arrow-html first :content) eles)
-              )
-        )
-    ))
-
-(defn find-attribute [entity from-attr to-attr val]
-  (-> (select entity (where {from-attr val}) (fields to-attr)) first to-attr))
-
-(find-attribute :products :upc :matnr (first upcs))
-
-(defn matnr->upc [matnr]
-  (find-attribute :products :matnr :upc matnr))
-(defn upc->matnr [upc]
-  (-> (select :products (where {:upc upc}) (fields :matnr)) first :matnr)
-  )
-(defn upc->matnr-qty [matnr]
-  (-> (select :products (where {:upc upc}) (fields :matnr :min-qty)) first (fn [x] ((juxt :matnr :min_qty) x)))
-  )
-((juxt :a :b) {:a 4 :b 7})
-;(upc->matnr (first upcs))
-
-(defn get-internet-prices [matnr-qtys]
-  (let [mqs (map (fn [mq] (if (string? mq) [mq 1] mq)) matnr-qtys)
-        args {:i_kunnr        "0001027925"
-              :i_werks        "ZZZZ"
-              :it_price_input (map (fn [[matnr qty]] [(as-matnr matnr) qty]) mqs)}
-        response (call-papi "z_o_complete_pricing" args)]
-    (map (fn [p]
-           (let [extended-price (p "NETWR")
-                 requested-qty (p "KWMENG")
-                 pricing-qty (p "KPEIN")
-                 price (if requested-qty (/ (* extended-price pricing-qty) requested-qty) 0)]
-             {:matnr (p "MATNR")
-              :extended-price extended-price
-              :requested-qty requested-qty
-              :pricing-qty pricing-qty
-              :unit (p "KMEIN")
-              :price price }))
-         (content-for-name response "ET_PRICE_OUTPUT"))
-    ))
-
-(def matnrs (map upc->matnr upcs))
-(get-internet-prices [["2718442" 5] ["2718433" 22] ["2718433" 1000]])
-(get-internet-prices ["2718442" "0000000000000000000000002718433"])
-(def sapprices (mapcat get-internet-prices (partition 10 matnrs)))
-sapprices
-(get-internet-prices (logit (take 1 matnrs)))
-(get-internet-prices (vec (take 10 (drop 1000 matnrs))))
-;(-> (select :products (where {:upc (first upcs)}) (fields :matnr)) first :matnr)
-;(select :products (limit 5))
-
-(defn get-order-detail [order-num]
-  (let [args {
-              "i_order"      (as-document-num order-num)
-              "if_orders"    "X"
-              "if_details"   "X"
-              "if_texts"     "X"
-              "if_addresses" "X"
-              }
-        response (call-papi "z_o_orders_query" args)
-        ]
-    ;(content-for-name response "ET_ORDERS_SUMMARY")
-    ;(content-for-name response "ET_ORDERS_DETAIL")
-    ;(content-for-name response "ET_SCHED_LINES")
-    response
-    ))
-
-
-(def saporder (get-order-detail "2991654"))
-(as-document-num "asdf")
-saporder
-
-
-(-> saporder first :content )
-(filter map? (-> saporder first :content))
-((partial filter map?) (-> saporder first :content))
-(-> saporder first :content first map?)
-(-> saporder first :content (partial filter map?) )
-
-
-(-> saporder
-    first
-    :content
-    (as-> eles
-          (filter map? eles)
-          (map (comp parse-string unescape-fat-arrow-html first :content) eles)
-          )
-    )
 
 
 
-(def sapprices (get-internet-prices [["2718442" 5] ["2718433" 22]]))
-sapprices
 
 
-(def x (html->enlive (clojure.string/replace (:body sapprice) #"[\n]+" "")))
-(def x (html->enlive (:body sapprice)))
-x
-(-> (html/select x [:ul#returnsJson]) )
-(-> (html/select x [:ul#returnsJson]) first :content second :content first unescape-fat-arrow-html parse-string)
-(generate-string {:a 3})
-(parse-string (generate-string {:a 3}))
-(-> (html/select x [:ul#returns]) first :content)
 
-(clojure.string/replace "asdf\nfff" #"\n" "")
-(clojure.string/trim " \n ")
-
-
-(def z {:a 9,,,,, "b" 12})
-(z :a)
-(z "b")
-z
-(:a z)
-("b" z)
-
-
-)

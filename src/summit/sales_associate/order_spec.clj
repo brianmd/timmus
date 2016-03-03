@@ -15,6 +15,7 @@
             [config.core :refer [env]]
 
             [summit.utils.core :refer :all]
+            [summit.papichulo.core :refer [papichulo-url-with-creds]]
             ;[utils.config :as :utils]
             ;[db.core :refer :all]
             [summit.db.relationships :refer :all]
@@ -39,7 +40,7 @@
 ;      (replace "&lt;" "<")
 ;      (replace "&gt;" ">")
 ;      (replace "&quot;" "\"")))
-(defn unescape-fat-arrow-html
+(defn junk-unescape-fat-arrow-html
   "Change special characters into HTML character entities."
   [text]
   (.. #^String (str text)
@@ -91,7 +92,7 @@
     :body
     (re-find #"(\{.*ORDERS_DETAIL.*})")
     second
-    unescape-fat-arrow-html
+    unescape-html
     parse-string
     (#(% "table"))
     second

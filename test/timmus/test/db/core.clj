@@ -14,7 +14,7 @@
     (migrations/migrate ["migrate"])
     (f)))
 
-(deftest test-users
+#_(deftest test-users
   (with-transaction [t-conn db/*db*]
     (jdbc/db-set-rollback-only! t-conn)
     (is (= 1 (db/create-user!
