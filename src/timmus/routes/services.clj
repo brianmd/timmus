@@ -282,6 +282,17 @@ bb
                   (let [response (forward-request (papichulo-url-with-creds) req)]
                     response))
 
+            (GET "/punchout/order-message/:id" req
+              :path-params [id :- Long]
+              (let [order-request (p/find-order-request id)
+                    punchout-request (p/find-punchout-request (:punchout_id order-request))
+                    hiccup (p/cxml-order-message order-request punchout-request)]
+                {:status 200,
+                 :headers {"Content-Type" "text/xml; charset=utf-8"},
+                 :body (p/create-cxml hiccup)}
+                ;; (ok (p/create-cxml hiccup))
+                ))
+
             (GET "/punchout" req
                   (println "in get punchout")
                   (log-request req)

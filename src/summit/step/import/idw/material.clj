@@ -117,13 +117,16 @@
 ;; Read sap material file
 
 ;; (def matched-products (set (:idw (slurp-source-ids "punduit"))))
-(def matched-products (set (map str (:idw (slurp-source-ids "punduit")))))
+;; (def matched-products (set (map str (:idw (slurp-source-ids "punduit")))))
 ;; (contains? matched-products 9566224)
 ;; matched-products 
 
 (defn transform-idw-material [item]
   item)
   ;(assoc item :matnr (as-short-document-num (:matnr item))))
+
+(defn idw-index-of [item]
+  (nth item 6))
 
 (defn process-idw-material [lines]
   (let [categories (atom #{})]
@@ -134,21 +137,23 @@
          ;; logit-plain
          (map #(select-ranges % [3 4] [6 14] [16 19] [34 35]))
          ;; logit-plain
-         (filter #(contains? matched-products (nth % 6)))
+         ;; (filter #(contains? matched-products (nth % 6)))
+         (filter (comp matched-products idw-index-of))
          ;; (take 5)
          ;; logit-plain
          (map idw-material)
          (map transform-idw-material)
          ;; logit-plain
          (map idw-material-xml)
-         (doall)
+         (map :idw-index)
+         idw-concat-exported
+         (dorun)
          )
-    nil
     ))
+;; (time (write-idw-file "Panduit14374598.csv"))
 ;; (process-idw-file-with "Panduit14374598.csv" process-idw-material)
 
 ;; (process-idw-file-with "KleinTools14353859.csv" process-idw-material)
-;; (time (write-idw-file))
 ;; (-> x first)
 ;; (-> x first count)
 

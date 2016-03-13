@@ -111,12 +111,10 @@
 
 ;; Read sap material file
 
-(def matched-products (set (map str (:sap (slurp-source-ids "punduit")))))
-
 (defn transform-sap-material [item]
   (assoc item
          :matnr (as-short-document-num (:matnr item))
-         :mfr-id (as-short-document-num (:mfr-id item))
+         ;; :mfr-id (as-short-document-num (:mfr-id item))
          ))
 
 (defn process-sap-material [lines]
@@ -124,17 +122,20 @@
     (->> lines
          rest
          (remove nil?)
-         (filter #(contains? matched-products (first %)))
+         ;; (filter #(contains? matched-products (first %)))
+         (filter (comp matched-products first))
          ;; (take 2)
          ;; logit-plain
          (map sap-material)
          ;; (remove nil?)
          (map transform-sap-material)
          (map sap-material-xml)
-         (doall)
+         (map :matnr)
+         sap-set-exported
+         (dorun)
          )
-    nil
     ))
+;; (time (write-sap-file))
 ;; (process-sap-file-with "STEP_MATERIAL.txt" process-sap-material)
 
 (defn process-sap-file-with [filename fn]
@@ -152,4 +153,5 @@
 ;(process-sap-file-with "STEP_MATERIAL.txt" process-sap-material)
 ;(def x (process-sap-file-with "STEP_MATERIAL.txt" process-sap-material))
 
+(println "finished loading summit.step.import.sap.material")
 

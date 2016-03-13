@@ -11,6 +11,8 @@
             [summit.utils.core :refer :all]
             [summit.punchout.core :refer :all]
             [com.rpl.specter :refer :all]
+
+            [summit.db.relationships :refer :all]
             ))
 
 #_(defn select-keyword [nested-arr keyword]
@@ -25,7 +27,6 @@
 (def xml (slurp "test/mocks/punchout-request.xml"))
 (def hashxml (punchout->map xml))
 
-
 (expect
  {:request {:type :PunchOutSetupRequest, :payloadID "1211221788.71299@ip-10-251-122-83", :browser-form-post "https://qa.coupahost.com/punchout/checkout/4", :operation "create"}, :broker {:id "coupa-t"}, :to {:id "coupa-t"}, :company {:id (-> env :punchout-test :id), :auth (-> env :punchout-test :auth), :agent "myagent"}, :contact {:email "matthew.hamilton@axiall.com", :name "jim"}, :user {:email "matthew.hamilton@axiall.com", :first-name "myfirstname", :last-name "mylastname", :unique-name "myuniquename", :user "myuser", :business-unit "mybusinessunit", :buyer-cookie "c64af92dc27e68172e030d3dfd1bc944"}}
  (extract-punchout-data hashxml))
@@ -33,6 +34,17 @@
 (expect true? (validate-punchout-request (extract-punchout-data hashxml)))
 
 
+(extract-punchout-data hashxml)
+(def ha  (extract-punchout-data hashxml))
+(-> ha :company)
+(korma.core/select broker)
+(korma.core/select broker (korma.core/where {:authkey (-> ha :broker :id)}))
+(korma.core/select broker (korma.core/where {:authkey (-> ha :broker :id)}))
+(korma.core/select :broker_companies (korma.core/where {:company_key (-> ha :company :id)}))
+(korma.core/select broker
+                   (korma.core/where {:authkey (-> ha :broker :id)})
+                   (korma.core/with company)
+                   )
 
 ;; ---------------------------------------------------------------------------------  test punchout response
 

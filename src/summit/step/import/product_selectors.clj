@@ -11,7 +11,7 @@
             [clojure.edn :as edn]
 
             [summit.utils.core :refer :all]
-            [summit.step.import.core :refer :all]
+            ;; [summit.step.import.core :refer :all]
             ))
 
 (def punduit-prods-sql "select j.*
@@ -22,7 +22,7 @@
 
 ;; (def prods (vec (exec-sql punduit-prods-sql)))
 
-(defn ound [x]
+(defn round [x]
   (java.lang.Math/floor (double x)))
 
 (defn convert-row-num [row-num num-rows]

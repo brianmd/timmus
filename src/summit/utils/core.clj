@@ -20,6 +20,7 @@
     [net.cgrand.enlive-html :as html]
     ))
 
+(def datomic-url "datomic:sql://datomic?jdbc:mysql://localhost:3306/datomic?user=summit&password=qw23er")
 
 (defn exec-sql [sql]
   (korma.core/exec-raw sql :results))
@@ -116,6 +117,9 @@
   "remove leading zeros"
   (if string (str/replace string #"^0*" "")))
 ;(as-short-document-num (as-document-num "1"))
+
+(defn as-integer [string]
+  (read-string (as-short-document-num string)))
 
 (defn bh_login [email pw]
   (let [cred

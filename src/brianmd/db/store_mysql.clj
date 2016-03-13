@@ -29,7 +29,7 @@
 
 ;(type *db*)
 ;*db*
-;(exec-raw ["SELECT * FROM customers WHERE id > ?" [5]] :results)
+;; (exec-raw ["SELECT * FROM customers WHERE id > ?" [5]] :results)
 ;(exec-raw ["SELECT * FROM customers WHERE id=28"] :results)
 ;(select :customers (modifier "DISTINCT") (fields :state))
 ;(select :customers (fields :state "count(*) cnt") (group :state) (order "cnt"))
@@ -490,7 +490,9 @@
 ;        }
 ; })
 
-
+;; (clojure.pprint/pprint (keys (:customers entity-definitions)))
+;; (clojure.pprint/pprint (:attributes (:customers entity-definitions)))
+;; (clojure.pprint/pprint (:customers entity-definitions))
 ;(def entity-names 3)
 ;(def entity-definitions 4)
 (def get-entity-info-future

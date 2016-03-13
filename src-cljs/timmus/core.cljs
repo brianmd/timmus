@@ -31,6 +31,93 @@
     :on-click #(reset! collapsed? true)}
    title])
 
+
+(defn summit-component []
+  [:div "Summit Electric"])
+(defn simple-component []
+  [:div "I love Jennifer"])
+
+(defn render-simple []
+  ;; (r/render [#'navbar] (.getElementById js/document "navbar"))
+  ;; (r/render [#'simple-component]
+  (r/render [simple-component]
+            (js/document.getElementById "simple")))
+                      ;; (.-body js/document)))
+
+(defn render-simple2 [ele]
+  (r/render [simple-component] ele))
+;; (.-body js/document)))
+
+(defn ^:export call-from-js [method-name]
+  (render-simple)
+  (.log js/console method-name)
+  )
+
+
+(def window-number (atom 0))
+
+(defn make-window [content-fn hash]
+  (let [base
+        {:showModal false
+         :modalOpacity 0.5
+         :icon "http://www.fstoke.me/favicon.ico"
+         :title (str "Window #" (swap! window-number inc))
+         :content "lots and lots of content"
+         :footerContent "footer content"
+         :width 200
+         :height 160
+         ;; :maxWidth 400
+         ;; :maxHeight 300
+         :x (+ 80 (rand-int 500))
+         :y (+ 80 (rand-int 500))
+
+         ;; :onOpen #(swap! num-opened inc)
+         :onClose #(.log js/console "closed")
+         }
+        win (.window js/jQuery (clj->js (merge base hash)))
+        ;; $id (.id (.getContainer win))
+        win-id (.attr (.getContainer win) "id")
+        $ele (.getElementById js/document win-id)
+        $content (.item (.getElementsByClassName $ele "window_frame") 0)
+        ;; $content (.item (.getFrame win) 0)
+        ]
+    (r/render [content-fn] $content)
+    win))
+
+(defn simple-windows [n]
+  (when (> n 0)
+    (let [win (make-window summit-component {:width 250})]
+      (js/setTimeout
+       #(.close win)
+       (rand-int 2000)))
+    (js/setTimeout #(simple-windows (dec n)) (rand-int 1000))
+    ))
+  ;; (dotimes [x n] (make-window :test {:content "asdfs"})))
+
+(defn dialog-test []
+  [:div
+   ;; [:input {:type "button" :value "simple component"
+   ;;          :on-click #(render-simple)}]
+   [:input {:type "button" :value "Make Window--simple component"
+            ;; :on-click #(make-window :test {:content (str "window #" )})}]
+            :on-click #(simple-windows 300)}]
+   [:div#simple]
+   ;; [:input {:type "button" :value "Make Window"
+   ;;          :on-click #(make-window :test {:content (str "window #" )})}]
+   ]
+            ;; :on-click #(make-window {:content [:b (str "window #" )]})}]]
+            ;; :on-click #(dotimes [n 2] (make-window {:content (str "window #" n)}))}]]
+  )
+
+
+(defn react-test []
+  [:div
+   [:b "react test"]])
+  ;; ($.window)({
+  ;;         title: "Cyclops Studio",
+  ;;         url: "http://apps.fstoke.me/"
+  ;;         })
+
 (defn navbar []
   (let [collapsed? (r/atom true)]
     (fn []
@@ -63,6 +150,7 @@
  
  (defn about-page []
    [:div.container
+    [dialog-test]
     [:div.row
      [:div.col-md-4
       "this is the story of timmus... work in progress"]
@@ -71,10 +159,10 @@
      [:div.col-md-4
       "in three columns"]
      ]
-    (if @platt-prices
-      (show-platt-prices))
-      ;"goot prices")
+    ;; (if @platt-prices
+    ;;   (show-platt-prices))
     ])
+
 ;(defn csr-page []
 ;  [:div.container
 ;   [:div.row

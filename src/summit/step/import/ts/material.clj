@@ -135,7 +135,6 @@
       )))
 
 
-
 ;; Xml creation code
 
 #_(defn ts-material-attributes [item]
@@ -180,7 +179,7 @@
 
 ;; (def matched-products (set (:ts (slurp-source-ids "punduit"))))
 ;; (contains? matched-products 121959245)
-(def matched-products (set (map str (:ts (slurp-source-ids "punduit")))))
+;; (def matched-products (set (map str (:ts (slurp-source-ids "punduit")))))
 ;; (contains? matched-products "121959245")
 
 (defn transform-ts-material [item]
@@ -195,7 +194,8 @@
     (->> lines
          rest
          (remove nil?)
-         (filter #(contains? matched-products (first %)))
+         ;; (filter #(contains? matched-products (first %)))
+         (filter (comp matched-products first))
          ;; (drop 50)
          ;; (take 5)
          ;; logit-plain
@@ -203,12 +203,14 @@
          ;; (remove nil?)
          (map transform-ts-material)
          (map ts-material-xml)
-         (doall)
+         (map :item-pik)
+         ts-set-exported
+         (dorun)
          )
-    nil
     ))
 ;; (process-ts-file-with "item.txt" process-ts-material)
-;(time (write-ts-file))
+;; (time (write-ts-file))
+
 
 (defn process-ts-file-with [filename fn]
   (let [full-filename (str ts-input-path filename)]
@@ -223,12 +225,14 @@
     (with-open [w (clojure.java.io/writer full-filename)]
       (binding [*out* w]
         (println (opening))
-        (process-ts-file-with "item.txt" process-ts-material)
-        (println (closing))
-        ))))
+        (let [result
+              (process-ts-file-with "item.txt" process-ts-material)]
+          (println (closing))
+          result)))))
 
 ;; (time (write-ts-file))
 ;(process-ts-file-with "STEP_MATERIAL.txt" process-ts-material)
 ;(def x (process-ts-file-with "STEP_MATERIAL.txt" process-ts-material))
 
 
+(println "finished loading summit.step.import.ts.material")

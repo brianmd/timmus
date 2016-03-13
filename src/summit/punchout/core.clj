@@ -15,13 +15,14 @@
             [clojure.pprint :refer :all]
 
             [net.cgrand.enlive-html :as html]
-            [cheshire.core :refer [generate-string]]
+            [cheshire.core :refer [generate-string parse-string]]
             [pl.danieljanus.tagsoup :as soup]
             [taoensso.carmine :as car :refer (wcar)]
             [clojure.zip :as zip]
             [config.core :refer [env]]
             [korma.core :as k]
 
+            [com.rpl.specter :as s]
 
             [summit.step.xml-output :refer :all]
 
@@ -30,9 +31,6 @@
             ;; [summit.step.import.core :refer :all]
             ;; [summit.step.import.ts.core :refer :all]
             ))
-
-(defn first-keyword-tagged [loc tag])
-(defn first-keyword-tagged [loc tag])
 
 (defn first-keyword-tagged [loc tag]
    (if (zip/end? loc)
@@ -308,8 +306,9 @@
 (def cxml-leader "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <!DOCTYPE cXML SYSTEM \"http://xml.cxml.org/schemas/cXML/1.1.010/cXML.dtd\">
 ")
-;; (def base-punchout-login-url "http://ubkkb140d981.brianmd.koding.io:22222/punchout/login/")
-(def base-punchout-login-url "http://ubkkb140d981.brianmd.koding.io:22223/punchout/")
+;; (def base-punchout-login-url "http://ubkkb140d981.brianmd.koding.io:22222/punchout_login/")
+(def base-punchout-login-url "http://ubkkb140d981.brianmd.koding.io:22223/punchout_login/")
+(def base-punchout-login-url "http://localhost:3000/punchout_login/")
 
 (defn create-onetime-url [onetime]
   (str base-punchout-login-url "onetime-" onetime))
@@ -345,6 +344,11 @@
 
 ;; (def punchhash {:request {:type :PunchOutSetupRequest, :payloadID "1211221788.71299@ip-10-251-122-83", :browser-form-post "https://qa.coupahost.com/punchout/checkout/4"}, :broker {:id "coupa-t"}, :to {:id "coupa-t"}, :company {:id (-> env :punchout-test :id), :auth (-> env :punchout-test :auth), :agent "myagent"}, :contact {:email "matthew.hamilton@axiall.com", :name "jim"}, :user {:email "matthew.hamilton@axiall.com", :first-name "myfirstname", :last-name "mylastname", :unique-name "myuniquename", :user "myuser", :business-unit "mybusinessunit", :buyer-cookie "c64af92dc27e68172e030d3dfd1bc944"}})
 
+(defn log-punchout [other-party direction type msg]
+  (k/insert :punchout_logs
+            (k/values {:other_party other-party :direction (if (= direction :to) 1 0) :type (str type) :message (str msg) :created_at (db-timenow) :updated_at (db-timenow)}))
+  )
+
 (defn save-punchout-request! [hash cxml]
   (let [cust (first (k/select :customers (k/where {:email (-> hash :user :email str/lower-case)})))
         broker (first (k/select broker
@@ -377,9 +381,13 @@
 ;; (find-entity :contact_emails 4183)
 ;; (:active_punchout_id (k/select :customers (k/where {:id 5462})))
 
+
 (defn store-onetime [onetime hash]
-  (wcar* (car/set onetime (generate-string hash))))
+  (println "store-onetime" onetime hash)
+  (def xyz [onetime hash])
+  (wcar* (car/setex (clean-all onetime) 60 (generate-string hash))))
 ;(generate-string {:a 4 :b "hello"})
+;; (println xyz)
 
 (defn create-customer-punchout [hash])
 
@@ -405,19 +413,24 @@
 
 ;; ---------------------------------------------------------------------------------  order message
 
-(defn order-header []
-  [:Header
-   [:From
-    [:Credential {:domain "DUNS"}
-     [:Identity "asdf"]]]
-   [:To
-    [:Credential {:domain "DUNS"}
-     [:Identity "rrrr"]]]
-   [:Sender
-    [:Credential {:domain "DUNS"}
-     [:Identity "wwww"]]
-    [:UserAgent "Summit cXML Application"]]
-   ])
+(defn order-header [punchout-request]
+  (let [punchout (parse-string (:params punchout-request))
+        from ((punchout "broker") "id")
+        to ((punchout "company") "id")
+        ]
+    [:Header
+     [:From
+      [:Credential {:domain "DUNS"}
+       [:Identity from]]]
+     [:To
+      [:Credential {:domain "DUNS"}
+       [:Identity to]]]
+     [:Sender
+      [:Credential {:domain "DUNS"}
+       [:Identity from]]
+      [:UserAgent "Summit cXML Application"]]
+     ]))
+;; (order-header (find-punchout-request 4))
 
 (defn item->hiccup [item]
   (let [prod (find-entity :products (:product_id item))]
@@ -431,7 +444,7 @@
        [:ShortName (:name prod)]
        (:LongDescription prod)]
       [:UnitOfMeasure (:uom prod)]
-      [:URL (str "https://www.summit.com/store/product/" (:product_id item))]
+      [:URL (str "https://www.summit.com/store/products/" (:product_id item))]
       (if false [:Classification {:domain "UNSPSC"} (:unspsc prod)])
       ]]))
 
@@ -454,17 +467,20 @@
 
 (println "--------- f")
 
+(defn find-order-request [order-num]
+  (find-entity :contact_emails order-num))
+
+(defn find-punchout-request [id]
+  (find-entity :punchouts id))
+
 ;; other params: buyer-cookie, operationAllowed
-(defn get-order-message [order-num]
+(defn create-order-message [order-request punchout-request]
   ;; [buyer-cookie operation total-price items]
-  (let [order-request (find-entity :contact_emails order-num)
-        punchout-request (if-let [punchout-id (:punchout_id order-request)]
-                           (find-entity :punchouts (:punchout_id order-request)))
-        cart (find-entity :carts (:cart_id order-request))
+  (let [cart (find-entity :carts (:cart_id order-request))
         cust (find-entity :customers (:customer_id cart))
         items (find-entity-by :line_items :cart_id (:cart_id order-request))
         ]
-    [:Message {:inReplyTo (:payload-id punchout-request)}
+    [:Message {:inReplyTo (:payload_id punchout-request)}
      [:PunchOutOrderMessage {:operationAllowed "create"}  ;; create disallows inspect/edit. May want to allow these in the future. p. 90
       [:BuyerCookie (:buyer_cookie punchout-request)]
       [:PunchOutOrderMessageHeader {:operationAllowed (:operation punchout-request)}
@@ -474,6 +490,32 @@
      (map item->hiccup items)
      ]
     ))
-;; (get-order-request 4183)
+;; (let [order-request (find-order-request 4185)]
+;;   (create-order-message order-request (find-punchout-request (:punchout_id order-request))))
+
+(defn cxml-order-message [order-request punchout-request]
+  (let [header (order-header punchout-request)
+        msg (create-order-message order-request punchout-request)]
+    (cxml header msg)))
+;; (let [order-request (find-order-request 4185)]
+;;   (create-cxml (cxml-order-message order-request (find-punchout-request (:punchout_id order-request)))))
+;; (let [order-request (find-order-request 4185)]
+;;   (cxml-order-message order-request (find-punchout-request (:punchout_id order-request))))
+
+(defn send-order-message [order-request punchout-request order-message]
+  (log-punchout nil :to :order-message order-message)
+  (let [
+        response 3 ;;(http-post (:browser_form_post punchout-request) order-message) 
+        ]
+    (log-punchout nil :from :order-message (:body response))
+    ))
+
+(defn process-order-request [order-num]
+  (let [order-request (find-order-request order-num)
+        punchout-request (find-punchout-request (:punchout_id order-request))
+        order-message (create-order-message order-request punchout-request)
+        ]
+    (send-order-message order-request order-message)
+    ))
 
 (println "done loading summit.punchout.core")

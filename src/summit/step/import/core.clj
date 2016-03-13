@@ -15,9 +15,55 @@
             ;; [summit.step.xml-output :refer :all]
 
             [summit.utils.core :refer :all]
+            [summit.step.import.product-selectors :refer :all]
             ))
 
 (make-record ColumnInfo '(name dbid type validators))
+
+(defn reset-exported-products []
+  (def exported-products (atom {:ts [] :idw [] :sap []}))
+  )
+(reset-exported-products)
+
+(defn sap-set-exported [x] (swap! exported-products assoc :sap (set (mapv read-string x))) x)
+(defn ts-set-exported [x] (swap! exported-products assoc :ts (set (mapv read-string x))) x)
+(defn idw-concat-exported [x] (swap! exported-products assoc :idw (set (concat (:idw exported-products) (mapv read-string x)))) x)
+
+(defn calculate-expected-golden-match [exported match]
+  (into {}
+        (filter (fn [[k v]]
+                  (if (contains? 
+                       (case k
+                         :matnr (:sap exported)
+                         :idw_index (:idw exported)
+                         :item_pik (:ts exported))
+                       (as-integer v))
+                    [k v]))
+                match)))
+;; (calculate-expected-golden-match @exported-products (first matches))
+;; (calculate-expected-golden-match @exported-products {})
+
+(defn calculate-expected-golden-matches [exported matches]
+  (filter not-empty (map (partial calculate-expected-golden-match exported) matches)))
+;; (calculate-expected-golden-matches @exported-products matches)
+;; (clojure.pprint/pprint (calculate-expected-golden-matches @exported-products matches))
+;; (spit "junk" (with-out-str (calculate-expected-golden-matches @exported-products matches)))
+
+(defn create-source-product-xml [source-ids-file idw-files]
+  (def matches (:prods (slurp-source-ids source-ids-file)))
+  (reset-exported-products)
+  (dorun (map summit.step.import.idw.material/write-idw-file idw-files))
+  (time (summit.step.import.ts.material/write-ts-file))
+  (time (summit.step.import.sap.material/write-sap-file))
+  (clojure.pprint/pprint (calculate-expected-golden-matches @exported-products matches))
+  )
+;; (create-source-product-xml "punduit" ["Panduit14374598.csv"])
+
+;; (swap! exported-products assoc :sap (mapv read-string (:sap @exported-products)))
+;; (swap! exported-products assoc :sap (set (:sap @exported-products)))
+;; (keys @exported-products)
+;; (swap! exported-products assoc :ts (map read-string (:ts @exported-products)))
+;; (set (:ts @exported-products))
 
 (defn process-file-with [path-and-filename fn]
   (with-open [in-file (io/reader path-and-filename)]
