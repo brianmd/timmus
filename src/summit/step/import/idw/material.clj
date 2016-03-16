@@ -129,7 +129,9 @@
   (nth item 6))
 
 (defn process-idw-material [lines]
-  (let [categories (atom #{})]
+  (let [categories (atom #{})
+        matched-products (set (:idw (slurp-source-ids "punduit")))
+        ]
     (->> lines
          rest
          (remove nil?)

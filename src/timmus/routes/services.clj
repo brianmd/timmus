@@ -171,7 +171,7 @@ bb
   (>!! log-request-chan args))
 
 (defn do-log-request
-  ([req] (log-request req "requests"))
+  ([req] (do-log-request req "requests"))
   ([req filename]
    (spit (str "log/" filename ".log")
          (with-out-str
@@ -180,6 +180,7 @@ bb
              (if (map? req) (req->printable req) req)
              (str "end " (timenow))]))
          :append true)))
+;; (do-log-request 3 "requests")
 
 (defn log-request-loop [& args]
   (go-loop []
@@ -284,6 +285,7 @@ bb
 
             (GET "/punchout/order-message/:id" req
               :path-params [id :- Long]
+              (do-log-request req "punchout")
               (let [order-request (p/find-order-request id)
                     punchout-request (p/find-punchout-request (:punchout_id order-request))
                     hiccup (p/cxml-order-message order-request punchout-request)]
@@ -295,7 +297,7 @@ bb
 
             (GET "/punchout" req
                   (println "in get punchout")
-                  (log-request req)
+                  (do-log-request req "punchout")
                   ;; (separately-log-request req (:uri req))
                   (ok (req->printable req)))
 
@@ -304,7 +306,8 @@ bb
                    (let [byte? (= (type (:body req)) org.httpkit.BytesInputStream)
                          req (if byte? (assoc req :body (slurp (:body req))) req)]
                      (def aa req)
-                     (log-request req)
+                     (do-log-request req "punchout")
+                     ;; (log-request req)
                      (let [response (p/process-punchout-request-str (:body req))]
                        ;; text/xml; charset=utf-8
                        {:status 200,

@@ -22,17 +22,17 @@
 
 ;; (def prods (vec (exec-sql punduit-prods-sql)))
 
-(defn round [x]
-  (java.lang.Math/floor (double x)))
+;; (defn round [x]
+;;   (java.lang.Math/floor (double x)))
 
-(defn convert-row-num [row-num num-rows]
-  (round (* num-rows row-num (double 0.01))))
+;; (defn convert-row-num [row-num num-rows]
+;;   (round (* num-rows row-num (double 0.01))))
 
-(defn convert-range [a-range num-rows]
-  [(convert-row-num (first a-range) num-rows) (convert-row-num (second a-range) num-rows)])
+;; (defn convert-range [a-range num-rows]
+;;   [(convert-row-num (first a-range) num-rows) (convert-row-num (second a-range) num-rows)])
 
-(defn select-ranges [num-rows rows & ranges]
-  (mapcat #(apply subvec (vec rows) (convert-range % num-rows)) ranges))
+;; (defn select-ranges [num-rows rows & ranges]
+;;   (mapcat #(apply subvec (vec rows) (convert-range % num-rows)) ranges))
 ;; (def prods (exec-sql (str punduit-prods-sql " limit 100")))
 ;; (select-ranges 5 prods [0 20] [30 44])
 

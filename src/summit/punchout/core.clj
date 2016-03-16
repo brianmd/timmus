@@ -183,7 +183,7 @@
 
 (defn punchout->map [xml]
   (html/html-resource (java.io.StringReader. xml)))
-;; (def x (slurp "test/punchout-request.xml"))
+;; (def x (slurp "test/mocks/punchout-request.xml"))
 ;; x 
 
 ;; (def y (punchout->map x))
@@ -247,6 +247,40 @@
             }
      }))
 
+(defn select [parsed v]
+  (html/select parsed v))
+
+(defn detect [parsed v]
+  (first (select parsed v)))
+
+(defn select-content [parsed v]
+  (if-let [c (first (select parsed v))]
+    (:content c)))
+
+(defn empty-string? [s]
+  (and (= (type s) String) (re-matches #"^\s+$" s)))
+
+(defn prune-empty-strings [v]
+  (filter #(not (empty-string? %)) v))
+
+(defn select-pruned-content [parsed v]
+  (if-let [c (first (select parsed v))]
+    (prune-empty-strings (:content c))))
+
+(defn mapify [v]
+  (reduce #(assoc %1 (:tag %2) (str/join (html/select %2 [html/text-node]))) {} v))
+
+(defn select-content-text [parsed v]
+  (mapify (select parsed v)))
+
+(defn ->address [parsed tag]
+  (let [v [tag :address]
+        addr (select-pruned-content parsed v)]
+    (merge
+     (select-content-text addr [:Name])
+     (mapify (select-pruned-content addr [:PostalAddress])))
+    ))
+
 (defn extract-punchout-data [enlive-parsed]
   (let [extract (partial extract-content enlive-parsed)
         request-type (request-type enlive-parsed)
@@ -308,7 +342,7 @@
 ")
 ;; (def base-punchout-login-url "http://ubkkb140d981.brianmd.koding.io:22222/punchout_login/")
 (def base-punchout-login-url "http://ubkkb140d981.brianmd.koding.io:22223/punchout_login/")
-(def base-punchout-login-url "http://localhost:3000/punchout_login/")
+;; (def base-punchout-login-url "http://localhost:3000/punchout_login/")
 
 (defn create-onetime-url [onetime]
   (str base-punchout-login-url "onetime-" onetime))
