@@ -4,7 +4,6 @@
   (:require
     [clj-http.client :as client]
     [cheshire.core :refer :all]
-    [clojure.pprint :refer [pprint]]
     [config.core :refer [env]]
     [clojure.walk :refer :all]
     [clojure.pprint :refer [pprint]]
@@ -20,10 +19,43 @@
     [net.cgrand.enlive-html :as html]
     ))
 
+(defn pp [& args]
+  (doseq [arg args] (pprint arg))
+  (last args))
+
+(defn pp->str [obj]
+  (with-out-str (pprint obj)))
+
 (def datomic-url "datomic:sql://datomic?jdbc:mysql://localhost:3306/datomic?user=summit&password=qw23er")
 
-(defn exec-sql [sql]
-  (korma.core/exec-raw sql :results))
+(def dbs (atom {}))
+;; (def ^:dynamic *current-db* :default)
+
+(defn new-mysql-connection [m]
+  (korma.db/mysql m))
+
+(defn find-db [db-name]
+  (if-let [db (db-name @dbs)]
+    db
+    (when-let [db (new-mysql-connection (-> env :db db-name))]
+      (swap! dbs assoc db-name db)
+      db)))
+
+(defn exec-sql
+  ([sql]
+   (korma.core/exec-raw sql :results))
+  ([conn sql]
+   (if (= :default conn)
+     (exec-sql sql)
+     (let [conn (if (keyword? conn) (find-db conn) conn)]
+       (korma.core/exec-raw conn sql :results)))))
+;; (exec-sql "select count(*) from customers")
+;; (exec-sql :default "select count(*) from customers")
+;; (exec-sql :bh-neo "select count(*) from customers")
+;; (exec-sql :bh-dev "select count(*) from customers")
+;; (exec-sql :mdm-local "select count(*) from idw_manufacturer")
+
+
 
 (def step-input-path (-> env :paths :local :step-input-path))
 (def step-output-path (-> env :paths :local :step-output-path))
@@ -119,7 +151,9 @@
 ;(as-short-document-num (as-document-num "1"))
 
 (defn as-integer [string]
-  (read-string (as-short-document-num string)))
+  (if (= (type string) String)
+    (read-string (as-short-document-num string))
+    string))
 
 (defn bh_login [email pw]
   (let [cred
@@ -213,22 +247,24 @@
    :required     [required (fn [_] "This field is required.")]
    })
 
+(defn now [] (java.util.Date.))
+
 (defn short-timenow []
-  (.format (java.text.SimpleDateFormat. "yyyyMMddHHmmssZ") (new java.util.Date))
+  (.format (java.text.SimpleDateFormat. "yyyyMMddHHmmssZ") (now))
   )
 
 (def db-time-format (clj-time.format/formatter "yyyy-MM-dd HH:mm:ss"))
 (defn db-timenow []
   (clj-time.format/unparse db-time-format (clj-time.core/now))
-  ;; (.format (java.text.SimpleDateFormat. "yyyy-MM-dd HH:mm:ss Z") (new java.util.Date))
+  ;; (.format (java.text.SimpleDateFormat. "yyyy-MM-dd HH:mm:ss Z") (now))
   )
 
 (defn timenow []
-  (.format (java.text.SimpleDateFormat. "yyyy-MM-dd HH:mm:ss Z") (new java.util.Date))
+  (.format (java.text.SimpleDateFormat. "yyyy-MM-dd HH:mm:ss Z") (now))
   )
 
 (defn plain-timenow []
-  (clean-all (new java.util.Date))
+  (clean-all (now))
   )
 
 (defn stepxml-top-tag []
