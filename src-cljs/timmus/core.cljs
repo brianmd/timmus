@@ -26,14 +26,30 @@
 ;
 ;(logit :top)
 
+;; (def query-keys (r/atom "fetching query names"))
+;; (win/process-url query-keys "/api/admin/queries" {})
+
+(defn query-win []
+  (let [
+        query-keys (r/atom "fetching query names")
+        ]
+    (win/process-url query-keys "/api/admin/queries" {})
+    (fn []
+      [:div
+       "queries: "
+       (str @query-keys)
+       ])))
+
 (defn dialog-test []
-  [:div
-   ;; [:input {:type "button" :value "simple component"
-   ;;          :on-click #(render-simple)}]
-   [:input {:type "button" :value "Make Window--simple component"
-            :on-click #(win/windows-test 3)}]
-   [:div#simple]
-   ])
+  (fn []
+    [:div
+     [:input {:type "button" :value "Make Windows"
+              :on-click #(win/windows-test 3)}]
+     [:input {:type "button" :value "Show Queries"
+              :on-click #(win/new-window query-win {:title "Queries"})}]
+     [:div#simple]
+     ]
+    ))
 
 
 

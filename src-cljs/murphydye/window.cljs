@@ -16,7 +16,7 @@
 
 (def window-number (atom 0))
 
-(defn make-window [content-fn hash]
+(defn new-window [content-fn hash]
   (let [base
         {:showModal false
          :modalOpacity 0.5
@@ -35,7 +35,6 @@
          :onClose #(.log js/console "closed")
          }
         win (.window js/jQuery (clj->js (merge base hash)))
-        ;; $id (.id (.getContainer win))
         win-id (.attr (.getContainer win) "id")
         $ele (.getElementById js/document win-id)
         $content (.item (.getElementsByClassName $ele "window_frame") 0)
@@ -49,11 +48,27 @@
 
 (defn windows-test [n]
   (when (> n 0)
-    (let [win (make-window [:div "Window Test"] {:width 250})]
+    (let [win (new-window [:div "Window Test"] {:width 250})]
       (js/setTimeout
        #(.close win)
        (rand-int 2000)))
     (js/setTimeout #(windows-test (dec n)) (rand-int 1000))
     ))
-  ;; (dotimes [x n] (make-window :test {:content "asdfs"})))
 
+(defn process-url [atom-val url url-options]
+  (let [handler #(reset! atom-val %)
+        error-handler #(println %)
+        options (merge
+                 {:headers {"Accept" "application/json"}
+                  :timeout 240000    ; 2 minutes
+                  :handler handler
+                  :error-handler error-handler}
+                 url-options)
+        ]
+    (println (str "processing " url))
+    (GET url options)))
+
+
+
+(defn make-window [content-fn hash]
+  (new-window content-fn hash))
