@@ -5,7 +5,6 @@
     [clojure.java.io :as io]
     [clojure.xml :as c-xml]
     [clojure.data.xml :as xml]
-    [clojure.pprint :refer [pprint]]
 
     [summit.utils.core :refer :all]
     )

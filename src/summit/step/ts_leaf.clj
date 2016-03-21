@@ -3,7 +3,6 @@
     [clojure.data.csv :as csv]
     [clojure.java.io :as io]
     [clojure.data.codec.base64 :as b64]
-    [clojure.pprint :refer :all]
     [clojure.data.xml :as xml]
 
     ;[csvr.defun]
@@ -253,7 +252,7 @@
 
 ;; (binding [levels-to-save 0
 ;;           levels-to-print 5]
-;;   (pprint
+;;   (pp
 ;;     (create-ts-leaf-hierarchy)
 ;;     ))
 ;; (def x (create-ts-leaf-hierarchy))

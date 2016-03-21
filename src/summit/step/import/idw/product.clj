@@ -1,6 +1,6 @@
-(println "loading summit.step.import.idw.material")
+(println "loading summit.step.import.idw.product")
 
-(ns summit.step.import.idw.material
+(ns summit.step.import.idw.product
   (:require [clojure.string :as str]
             [clojure.java.io :as io :refer [as-url make-parents]]
 
@@ -12,23 +12,23 @@
             [clojure.data.csv :as csv]
             [clojure.java.io :as io]
             [clojure.data.codec.base64 :as b64]
-            [clojure.pprint :refer :all]
 
             [summit.step.xml-output :refer :all]
 
             [summit.utils.core :refer :all]
             [summit.step.import.core :refer :all]
             [summit.step.import.idw.core :refer :all]
-            [summit.step.import.product-selectors :refer [slurp-source-ids]]
+            ;; [summit.step.import.product-selectors :refer [slurp-source-ids]]
+            [summit.step.import.product-selectors :refer :all]
             ))
 
-;; Create sap material record and constructor
+;; Create sap product record and constructor
 
-;; (def material-types #{"HAWA" "KITS" "ZATB" "ZCMF" "ZFIM" "ZLOT"})
+;; (def product-types #{"HAWA" "KITS" "ZATB" "ZCMF" "ZFIM" "ZLOT"})
 ;; (def category-types #{"DIEN" "LUMF" "NLAG" "NORM" "SAMM" "ZFEE" "ZLAG" "ZTBF" "ZZLL"})
 ;; (def uom-types #{"BAG" "BX" "EA" "FT" "LB" "M" "P2" "RL"})
 
-(def material-col-info-array
+(def product-col-info-array
   [;; :seller-id-qualifier nil nil []
    :seller-id "IDW_MANUID" String []
 
@@ -48,25 +48,25 @@
    :msds-flag "IDW_MSDSFLAG" String []
    ])
 
-(def material-col-info
-  (into {} (map (fn [x] [(first x) (apply ->ColumnInfo x)]) (partition 4 material-col-info-array)))
+(def product-col-info
+  (into {} (map (fn [x] [(first x) (apply ->ColumnInfo x)]) (partition 4 product-col-info-array)))
   )
 
-(def material-col-names
-  (->> material-col-info-array (partition 4) (map first)))
+(def product-col-names
+  (->> product-col-info-array (partition 4) (map first)))
 
-(def num-columns (count material-col-names))
+(def num-columns (count product-col-names))
 
-;; (def IdwMaterial (apply create-struct material-col-names))
-(make-record IdwMaterial material-col-names)
-;; (apply ->IdwMaterial (range 12))
+;; (def IdwProduct (apply create-struct product-col-names))
+(make-record IdwProduct product-col-names)
+;; (apply ->IdwProduct (range 12))
 
-(defn idw-material [cols]
+(defn idw-product [cols]
   (let [errors (validate-with* cols [[#(= (count %) num-columns) #(str "Wrong number of columns: " (count %) " instead of " num-columns)]])]
     (if (not-empty errors)
       (do (logit-plain errors cols "----") (println) nil)
-      (let [record (apply ->IdwMaterial (map str/trim cols))
-            errs (validate-record material-col-info record)]
+      (let [record (apply ->IdwProduct (map str/trim cols))
+            errs (validate-record product-col-info record)]
         (if (not-empty errs)
           (do (logit-plain errs cols "----") nil)
           record)
@@ -77,7 +77,7 @@
 
 ;; Xml creation code
 
-#_(defn material-attributes [material-col-info item]
+#_(defn product-attributes [product-col-info item]
   [:Values
    (reduce
     (fn [attrs [name col]]
@@ -86,10 +86,10 @@
                      {:AttributeID (:dbid col)}
                      (escape-html (name item))])
         attrs))
-    () material-col-info)])
+    () product-col-info)])
 
-;(sap-material-attributes y)
-;(x/emit-element (sap-material-attributes y))
+;(sap-product-attributes y)
+;(x/emit-element (sap-product-attributes y))
 ;(x/emit-element {:tag :hello :attrs {:place "world"}})
 ;(x/emit-element {:tag :parent
 ;                 :attrs {:id "22" :name "fritz"}
@@ -97,40 +97,40 @@
 ;                           {:tag :child :attrs {:id "56"}}
 ;                           {:tag :child :attrs {:id "57"}}]})
 
-(defn idw-material-hiccup [item]
+(defn idw-product-hiccup [item]
   [:Product
    {:ID (str "MEM_IDW_" (:idw-index item))
            :UserTypeID "IDW_Member_Record"
            :ParentID "IDW_Member_Records"}
-   (material-attributes material-col-info item)
+   (product-attributes product-col-info item)
    ]
    ;:content
   )
 
-(defn idw-material-xml [item]
+(defn idw-product-xml [item]
   (println
-    (hiccup/html (idw-material-hiccup item)))
+    (hiccup/html (idw-product-hiccup item)))
   item)
 
 
 
-;; Read sap material file
+;; Read sap product file
 
 ;; (def matched-products (set (:idw (slurp-source-ids "punduit"))))
 ;; (def matched-products (set (map str (:idw (slurp-source-ids "punduit")))))
 ;; (contains? matched-products 9566224)
 ;; matched-products 
 
-(defn transform-idw-material [item]
+(defn transform-idw-product [item]
   item)
   ;(assoc item :matnr (as-short-document-num (:matnr item))))
 
 (defn idw-index-of [item]
   (nth item 6))
 
-(defn process-idw-material [lines]
+(defn process-idw-product [lines]
   (let [categories (atom #{})
-        matched-products (set (:idw (slurp-source-ids "punduit")))
+        ;; matched-products (set (:idw (slurp-source-ids "current")))
         ]
     (->> lines
          rest
@@ -140,22 +140,22 @@
          (map #(select-ranges % [3 4] [6 14] [16 19] [34 35]))
          ;; logit-plain
          ;; (filter #(contains? matched-products (nth % 6)))
-         (filter (comp matched-products idw-index-of))
+         (filter (comp *matched-products* as-integer idw-index-of))
          ;; (take 5)
          ;; logit-plain
-         (map idw-material)
-         (map transform-idw-material)
+         (map idw-product)
+         (map transform-idw-product)
          ;; logit-plain
-         (map idw-material-xml)
+         (map idw-product-xml)
          (map :idw-index)
          idw-concat-exported
          (dorun)
          )
     ))
 ;; (time (write-idw-file "Panduit14374598.csv"))
-;; (process-idw-file-with "Panduit14374598.csv" process-idw-material)
+;; (process-idw-file-with "Panduit14374598.csv" process-idw-product)
 
-;; (process-idw-file-with "KleinTools14353859.csv" process-idw-material)
+;; (process-idw-file-with "KleinTools14353859.csv" process-idw-product)
 ;; (-> x first)
 ;; (-> x first count)
 
@@ -164,16 +164,16 @@
   (process-file-with (str idw-input-path filename) fn))
 
 (defn write-idw-file [filename]
-  (with-open [w (clojure.java.io/writer (str idw-output-path "material.xml"))]
+  (with-open [w (clojure.java.io/writer (str idw-output-path "product.xml"))]
     (binding [*out* w]
       (println (opening))
-      (process-idw-file-with filename process-idw-material)
+      (process-idw-file-with filename process-idw-product)
       (println (closing))
       )))
 
 ;; (time (write-idw-file "Panduit14374598.csv"))
-;; (process-idw-file-with "KleinTools14353859.csv" process-idw-material)
-;(def x (process-idw-file-with "STEP_MATERIAL.txt" process-idw-material))
+;; (process-idw-file-with "KleinTools14353859.csv" process-idw-product)
+;(def x (process-idw-file-with "STEP_MATERIAL.txt" process-idw-product))
 
 
 
@@ -300,4 +300,4 @@
 
 )
 
-(println "finished loading summit.step.import.idw.material")
+(println "finished loading summit.step.import.idw.product")

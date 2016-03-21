@@ -1,4 +1,4 @@
-(ns summit.step.import.ts.material
+(ns summit.step.import.ts.product
   (:require [clojure.string :as str]
             [clojure.java.io :as io :refer [as-url make-parents]]
 
@@ -10,25 +10,27 @@
             [clojure.data.csv :as csv]
             [clojure.java.io :as io]
             [clojure.data.codec.base64 :as b64]
-            [clojure.pprint :refer :all]
+            ;; [clojure.pprint :refer :all]
 
             [summit.step.xml-output :refer :all]
 
             [summit.utils.core :refer :all]
             [summit.step.import.core :refer :all]
             [summit.step.import.ts.core :refer :all]
-            [summit.step.import.product-selectors :refer [slurp-source-ids]]
+            ;; [summit.step.import.product-selectors :refer [slurp-source-ids]]
+            [summit.step.import.product-selectors :refer :all]
             ))
 
-;; Create trade service material record and constructor
 
-;; (def material-types #{"HAWA" "KITS" "ZATB" "ZCMF" "ZFIM" "ZLOT"})
+;; Create trade service product record and constructor
+
+;; (def product-types #{"HAWA" "KITS" "ZATB" "ZCMF" "ZFIM" "ZLOT"})
 ;; (def category-types #{"DIEN" "LUMF" "NLAG" "NORM" "SAMM" "ZFEE" "ZLAG" "ZTBF" "ZZLL"})
 ;; (def uom-types #{"BAG" "BX" "EA" "FT" "LB" "M" "P2" "RL"})
 
 
 
-(def material-col-info-array
+(def product-col-info-array
   [:item-pik "ITEMPIK" String [:required :digits]
    :item-action "ITEM_ACTION" String []
    :mfr-pik "MFR_PIK" BigInteger []
@@ -71,30 +73,30 @@
    :upc "TS_UPC" String []
    ])
 
-(def num-material-cols (count (partition 4 material-col-info-array)))
-(def material-col-info
-  (into {} (map (fn [x] [(first x) (apply ->ColumnInfo x)]) (partition 4 material-col-info-array)))
+(def num-product-cols (count (partition 4 product-col-info-array)))
+(def product-col-info
+  (into {} (map (fn [x] [(first x) (apply ->ColumnInfo x)]) (partition 4 product-col-info-array)))
   )
 
-(def material-col-names
-  (->> material-col-info-array (partition 4) (map first)))
+(def product-col-names
+  (->> product-col-info-array (partition 4) (map first)))
 
-(make-record TsMaterial material-col-names)
-;(make-record ^{:col-info material-col-info-array} TsMaterial Material-col-names)
-;; ->TsMaterial 
+(make-record TsProduct product-col-names)
+;(make-record ^{:col-info product-col-info-array} TsProduct product-col-names)
+;; ->TsProduct 
 
-(def ->TsMaterial ^{:col-info material-col-info-array} ->TsMaterial) 
-;; (meta ->TsMaterial)
+(def ->TsProduct ^{:col-info product-col-info-array} ->TsProduct) 
+;; (meta ->TsProduct)
 
-;; TsMaterial 
+;; TsProduct 
 ;; (def x 3)
 ;; (def ^{:r 99} x 45)
 ;; ^#{:abc "hey"} #'x 
 ;; x 
 ;; (def y (with-meta x {:q 17}))
 
-;; (:col-info TsMaterial)
-;; (meta TsMaterial)
+;; (:col-info TsProduct)
+;; (meta TsProduct)
 ;; ((meta #'x) ^{:q 17})
 ;; (meta #'x)
 ;; (meta x)
@@ -106,28 +108,28 @@
 ;;   [1 2 3])
 ;; (meta a)
 
-;(apply ->TsMaterial (range num-material-cols))
+;(apply ->TsProduct (range num-product-cols))
 
 (defn vec->rec [rec-def cols]
-  (let [errors (validate-with* cols [[#(= (count %) num-material-cols) #(str "Wrong number of columns: " (count %) " instead of " num-material-cols)]])]
+  (let [errors (validate-with* cols [[#(= (count %) num-product-cols) #(str "Wrong number of columns: " (count %) " instead of " num-product-cols)]])]
     (if (not-empty errors)
                                         ;(do (logit errors (interleave (range 200) cols) "----") (println (interleave (range 200) cols) errors) nil)
       (do (logit-plain errors (interleave (range) cols) "----") (println cols errors) nil)
-      (let [record (apply ->TsMaterial (map str/trim cols))
-            errs (validate-record material-col-info record)]
+      (let [record (apply ->TsProduct (map str/trim cols))
+            errs (validate-record product-col-info record)]
         (if (not-empty errs)
           (do (logit-plain errs cols "----") nil)
           record)
         )
       )))
 
-(defn ts-material [cols]
-  (let [errors (validate-with* cols [[#(= (count %) num-material-cols) #(str "Wrong number of columns: " (count %) " instead of " num-material-cols)]])]
+(defn ts-product [cols]
+  (let [errors (validate-with* cols [[#(= (count %) num-product-cols) #(str "Wrong number of columns: " (count %) " instead of " num-product-cols)]])]
     (if (not-empty errors)
       ;(do (logit errors (interleave (range 200) cols) "----") (println (interleave (range 200) cols) errors) nil)
       (do (logit errors (interleave (range 200) cols) "----") (println cols errors) nil)
-      (let [record (apply ->TsMaterial (map str/trim cols))
-            errs (validate-record material-col-info record)]
+      (let [record (apply ->TsProduct (map str/trim cols))
+            errs (validate-record product-col-info record)]
         (if (not-empty errs)
           (do (logit errs cols "----") nil)
           record)
@@ -137,7 +139,7 @@
 
 ;; Xml creation code
 
-#_(defn ts-material-attributes [item]
+#_(defn ts-product-attributes [item]
   [:Values
         (reduce
           (fn [attrs [name col]]
@@ -147,10 +149,10 @@
                              {:AttributeID id}
                              (escape-html (name item))])
                 attrs)))
-          () material-col-info)])
+          () product-col-info)])
 
-;(ts-material-attributes y)
-;(x/emit-element (ts-material-attributes y))
+;(ts-product-attributes y)
+;(x/emit-element (ts-product-attributes y))
 ;(x/emit-element {:tag :hello :attrs {:place "world"}})
 ;(x/emit-element {:tag :parent
 ;                 :attrs {:id "22" :name "fritz"}
@@ -158,57 +160,59 @@
 ;                           {:tag :child :attrs {:id "56"}}
 ;                           {:tag :child :attrs {:id "57"}}]})
 
-(defn ts-material-hiccup [item]
+(defn ts-product-hiccup [item]
   [:Product
    {:ID (str "MEM_TS_" (:item-pik item))
            :UserTypeID "TS_Member_Record"
            :ParentID "TS_Member_Records"}
-   (material-attributes material-col-info item)
+   (product-attributes product-col-info item)
    ]
    ;:content
   )
 
-(defn ts-material-xml [item]
+(defn ts-product-xml [item]
   (println
-    (hiccup/html (ts-material-hiccup item)))
+    (hiccup/html (ts-product-hiccup item)))
   item)
 
 
 
-;; Read ts material file
+;; Read ts product file
 
 ;; (def matched-products (set (:ts (slurp-source-ids "punduit"))))
 ;; (contains? matched-products 121959245)
 ;; (def matched-products (set (map str (:ts (slurp-source-ids "punduit")))))
 ;; (contains? matched-products "121959245")
 
-(defn transform-ts-material [item]
+(defn transform-ts-product [item]
   item
   ;; (assoc item
   ;;        :mfr-pik (as-short-document-num (:mfr-pik item))
   ;;        )
   )
 
-(defn process-ts-material [lines]
-  (let [categories (atom #{})]
+(defn process-ts-product [lines]
+  (let [categories (atom #{})
+        ;; matched-products (set (:ts (slurp-source-ids "current")))
+        ]
     (->> lines
          rest
          (remove nil?)
          ;; (filter #(contains? matched-products (first %)))
-         (filter (comp matched-products first))
+         (filter (comp *matched-products* as-integer first))
          ;; (drop 50)
          ;; (take 5)
          ;; logit-plain
-         (map ts-material)
+         (map ts-product)
          ;; (remove nil?)
-         (map transform-ts-material)
-         (map ts-material-xml)
+         (map transform-ts-product)
+         (map ts-product-xml)
          (map :item-pik)
          ts-set-exported
          (dorun)
          )
     ))
-;; (process-ts-file-with "item.txt" process-ts-material)
+;; (process-ts-file-with "item.txt" process-ts-product)
 ;; (time (write-ts-file))
 
 
@@ -220,19 +224,19 @@
 ;;  (process-file-with (str ts-input-path filename) fn))
 
 (defn write-ts-file []
-  (let [full-filename (str ts-output-path "material.xml")]
+  (let [full-filename (str ts-output-path "product.xml")]
     (make-parents full-filename)
     (with-open [w (clojure.java.io/writer full-filename)]
       (binding [*out* w]
         (println (opening))
         (let [result
-              (process-ts-file-with "item.txt" process-ts-material)]
+              (process-ts-file-with "item.txt" process-ts-product)]
           (println (closing))
           result)))))
 
 ;; (time (write-ts-file))
-;(process-ts-file-with "STEP_MATERIAL.txt" process-ts-material)
-;(def x (process-ts-file-with "STEP_MATERIAL.txt" process-ts-material))
+;(process-ts-file-with "STEP_MATERIAL.txt" process-ts-product)
+;(def x (process-ts-file-with "STEP_MATERIAL.txt" process-ts-product))
 
 
-(println "finished loading summit.step.import.ts.material")
+(println "finished loading summit.step.import.ts.product")

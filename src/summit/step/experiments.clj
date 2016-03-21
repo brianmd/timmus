@@ -2,7 +2,6 @@
   (:require
     [clj-http.client :as client]
     [cheshire.core :refer :all]
-    [clojure.pprint :refer [pprint]]
     [config.core :refer [env]]
 
     [summit.utils.core :refer :all]

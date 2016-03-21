@@ -17,6 +17,6 @@
             [summit.utils.core :refer :all]
             ))
 
-(def ts-input-path (str step-input-path "trade-service/"))
-(def ts-output-path (str step-output-path "trade-service/"))
+(def ts-input-path (str step-input-path "ts/"))
+(def ts-output-path (str step-output-path "ts/"))
 
