@@ -25,7 +25,7 @@
 ;; ---------------------------------------------------------------------------------  process punchout request
 
 (def xml (slurp "test/mocks/punchout-request.xml"))
-(def hashxml (punchout->map xml))
+(def hashxml (xml->map xml))
 
 (expect
  {:request {:type :PunchOutSetupRequest, :payloadID "1211221788.71299@ip-10-251-122-83", :browser-form-post "https://qa.coupahost.com/punchout/checkout/4", :operation "create"}, :broker {:id "coupa-t"}, :to {:id "coupa-t"}, :company {:id (-> env :punchout-test :id), :auth (-> env :punchout-test :auth), :agent "myagent"}, :contact {:email "matthew.hamilton@axiall.com", :name "jim"}, :user {:email "matthew.hamilton@axiall.com", :first-name "myfirstname", :last-name "mylastname", :unique-name "myuniquename", :user "myuser", :business-unit "mybusinessunit", :buyer-cookie "c64af92dc27e68172e030d3dfd1bc944"}}

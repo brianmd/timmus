@@ -26,10 +26,14 @@
 (defn pp->str [obj]
   (with-out-str (pprint obj)))
 
-(def datomic-url "datomic:sql://datomic?jdbc:mysql://localhost:3306/datomic?user=summit&password=qw23er")
+(def datomic-url (str "datomic:sql://datomic?jdbc:mysql://localhost:3306/datomic?user=" (-> env :db :bh-local :user)"&password=" (-> env :db :bh-local :password)))
+
 
 (def dbs (atom {}))
 ;; (def ^:dynamic *current-db* :default)
+
+(defmacro dselect [& args]
+  `(korma.core/select ~@args))
 
 (defn new-mysql-connection [m]
   (korma.db/mysql m))
@@ -55,6 +59,13 @@
 ;; (exec-sql :bh-dev "select count(*) from customers")
 ;; (exec-sql :mdm-local "select count(*) from idw_manufacturer")
 
+(def protected-write-dbs (atom #{:bh-prod}))
+
+(defn write-sql [conn sql]
+  "use for insert/update queries"
+  (if (contains? protected-write-dbs conn)
+    (throw (Exception. "attempting to write to a protected database"))
+    (exec-sql conn sql)))
 
 
 (def step-input-path (-> env :paths :local :step-input-path))

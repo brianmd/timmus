@@ -83,6 +83,7 @@
                  ;; [com.jakemccrary/lein-test-refresh "0.13.0"]
                  [zookeeper-clj "0.9.4" :exclusions [org.slf4j/slf4j-log4j12]]
                  [com.rpl/specter "0.9.2"]
+                 [resque-clojure "0.3.0"]
 
                  ]
 

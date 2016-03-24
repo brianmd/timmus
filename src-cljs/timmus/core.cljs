@@ -13,6 +13,7 @@
             ;[timmus.sales-associate.core :refer [csr-page]]
 
             [murphydye.window :as win]
+            [timmus.punchout-demo :as punchout]
             )
   (:import goog.History))
 
@@ -44,7 +45,7 @@
   (fn []
     [:div
      [:input {:type "button" :value "Make Windows"
-              :on-click #(win/windows-test 3)}]
+              :on-click #(win/windows-test 10)}]
      [:input {:type "button" :value "Show Queries"
               :on-click #(win/new-window query-win {:title "Queries"})}]
      [:div#simple]
@@ -101,20 +102,31 @@
    ;(show-table platt-prices)
    ])
  
- (defn about-page []
-   [:div.container
-    [dialog-test]
-    [:div.row
-     [:div.col-md-4
-      "this is the story of timmus... work in progress"]
-     [:div.col-md-4
-      "Already set up for bootstrap"]
-     [:div.col-md-4
-      "in three columns"]
-     ]
-    ;; (if @platt-prices
-    ;;   (show-platt-prices))
-    ])
+(defn about-page []
+  [:div.container
+   [dialog-test]
+   ;; [:div.row
+   ;;  [:div.col-md-4
+   ;;   "this is the story of timmus... work in progress"]
+   ;;  [:div.col-md-4
+   ;;   "Already set up for bootstrap"]
+   ;;  [:div.col-md-4
+   ;;   "in three columns"]
+   ;;  ]
+   ;; (if @platt-prices
+   ;;   (show-platt-prices))
+   ;; [:div
+   ;;  [:a {:href "https://www.google.com/" :target "_blank"} "google"]]
+   [:div
+    [:a {:on-click #(win/new-window
+                     punchout/punchout-demo
+                     {:title "Punchout"
+                      :x 23 :y 10
+                      :width 400 :height 400
+                      })} "Punchout Demo"]]
+
+   ;; :on-click #(win/new-window query-win {:title "Queries"})}]
+   ])
 
 ;(defn csr-page []
 ;  [:div.container

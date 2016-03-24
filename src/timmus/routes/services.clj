@@ -14,7 +14,6 @@
             [clojure.core.async :as  a
              :refer [>! <! >!! <!! go go-loop chan close! thread alts! alts!! timeout
                      buffer sliding-buffer dropping-buffer]]
-            [clojure.pprint :refer [pprint]]
 
             [cemerick.url :refer [url-encode url]]
             [clj-http.client :as client]
@@ -33,6 +32,9 @@
             [timmus.db.core :refer [*db*]]
             [brianmd.db.store-mysql :as mysql]
             [summit.punchout.core :as p]
+            [summit.punchout.punchout :refer [process-punchout-request-str ]]
+            [summit.punchout.order-message :refer [cxml-order-message]]
+            [summit.punchout.order-request :as p3]
             [summit.papichulo.core :refer [papichulo-url papichulo-creds create-papi-url papichulo-url-with-creds]]
             ))
 ;(-> @((-> customer :rel) "cart") :fk-key)
@@ -49,6 +51,24 @@ bb
   {:headers (keys (first hash))
    :rows    (map vals hash)})
 ;(map->table [{:a 9 :b 99}])
+
+
+#_(def queries-array
+  [:orders "select * from contact_emails where type='ORDER'"
+   :number-of-orders "select count(*) from contact_emails where type='ORDER'"
+   ])
+(def queries-array
+  ["Orders" "select * from contact_emails where type='ORDER'"
+   "Number of Orders" "select count(*) from contact_emails where type='ORDER'"
+   "nnNumber of Orders" "select count(*) from contact_emails where type='ORDER'"
+   ])
+
+(defn query-named [name]
+  ())
+
+(defn query-keys []
+  (map first (partition 2 queries-array)))
+;; (query-keys)
 
 
 (s/defschema Thingie {:id Long
@@ -157,6 +177,13 @@ bb
                 ".clj")
            (pr-str hash)))))
 
+(defn log-now [obj]
+  "stores request in its own file as edn"
+   (let [filename (summit.punchout.core/uuid)]
+     (spit (str "log/separate/" filename)
+           (pr-str obj)))
+  obj)
+
 (defn load-log-request [filename]
   (read-string (slurp (str "log/" filename ".clj"))))
 
@@ -175,7 +202,7 @@ bb
   ([req filename]
    (spit (str "log/" filename ".log")
          (with-out-str
-           (pprint
+           (pp
             [(timenow)
              (if (map? req) (req->printable req) req)
              (str "end " (timenow))]))
@@ -283,12 +310,15 @@ bb
                   (let [response (forward-request (papichulo-url-with-creds) req)]
                     response))
 
+            (GET "/admin/queries" req
+              (ok (query-keys)))
+
             (GET "/punchout/order-message/:id" req
               :path-params [id :- Long]
               (do-log-request req "punchout")
               (let [order-request (p/find-order-request id)
                     punchout-request (p/find-punchout-request (:punchout_id order-request))
-                    hiccup (p/cxml-order-message order-request punchout-request)]
+                    hiccup (cxml-order-message order-request punchout-request)]
                 {:status 200,
                  :headers {"Content-Type" "text/xml; charset=utf-8"},
                  :body (p/create-cxml hiccup)}
@@ -299,7 +329,11 @@ bb
                   (println "in get punchout")
                   (do-log-request req "punchout")
                   ;; (separately-log-request req (:uri req))
-                  (ok (req->printable req)))
+                  (log-now {:status 200
+                            :headers {"Content-Type" "text/xml; charset=utf-8"}
+                            :body (p/create-cxml (p/pong-response))
+                            }))
+                  ;; (ok (log-now (req->printable req))))
 
             (POST "/punchout" req
                    (println "in post punchout")
@@ -308,11 +342,11 @@ bb
                      (def aa req)
                      (do-log-request req "punchout")
                      ;; (log-request req)
-                     (let [response (p/process-punchout-request-str (:body req))]
+                     (let [response (process-punchout-request-str (:body req))]
                        ;; text/xml; charset=utf-8
-                       {:status 200,
-                        :headers {"Content-Type" "text/xml; charset=utf-8"},
-                        :body response}
+                       (log-now {:status 200
+                                 :headers {"Content-Type" "text/xml; charset=utf-8"}
+                                 :body response})
                        ;; (ok response)
                        )
                      ;; (separately-log-request req (:uri req))

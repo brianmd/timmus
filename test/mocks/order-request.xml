@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE cXML SYSTEM "http://xml.cxml.org/schemas/cXML/1.2.014/cXML.dtd">
+<cXML xml:lang="en-US" payloadID="93369535150910.10.57.136"
+timestamp="2000-08-03T08:49:11+07:00">
+
+<Header>
+  <From>
+    cXML User’s Guide
+    Purchase Orders 99
+  <Credential domain="AribaNetworkUserId">
+  <Identity>admin@acme.com</Identity>
+  </Credential>
+  </From>
+  <To>
+  <Credential domain="DUNS">
+  <Identity>114315195</Identity>
+  </Credential>
+  </To>
+  <Sender>
+  <Credential domain="AribaNetworkUserId">
+  <Identity>sysadmin@ariba.com</Identity>
+  <SharedSecret>abracadabra</SharedSecret>
+  </Credential>
+  <UserAgent>Network Hub V1.1</UserAgent>
+  </Sender>
+</Header>
+
+
+<Request>
+<OrderRequest>
+ 
+<OrderRequestHeader
+ orderID="DO1234"
+ orderDate="2013-06-03T13:30:23+8.00"
+ type="new"
+ requisitionID="R1234"
+ shipComplete="yes">
+ <Total>
+   <Money currency="USD">65.00</Money>
+ </Total>
+ <Modifications>
+   <Modification>
+     <OriginalPrice>
+       <Money currency = "USD">40.00</Money>
+     </OriginalPrice>
+     <AdditionalCost>
+       <Money currency = "USD">10</Money>
+     </AdditionalCost>
+     <ModificationDetail
+       endDate = "2013-11-30T10:15:00-08:00"
+       name = "Access Charges"
+       startDate = "2013-06-03T10:15:00-08:00">
+       <Description xml:lang = "en-US">Access Charges
+       </Description>
+     </ModificationDetail>
+   </Modification>
+ </Modifications>
+ <ShipTo>
+   <Address>
+     <Name xml:lang="en">Acme Corporation</Name>
+     <PostalAddress name="Headquarters">
+       <DeliverTo>Joe Smith</DeliverTo>
+       <DeliverTo>Mailstop M-543</DeliverTo>
+       <Street>123 Anystreet</Street>
+       <City>Sunnyvale</City>
+       <State>CA</State>
+       <PostalCode>90489</PostalCode>
+       <Country isoCountryCode="US">United States</Country>
+     </PostalAddress>
+   </Address>
+   <CarrierIdentifier domain="companyName">UPS</CarrierIdentifier>
+   <TransportInformation>
+     <Route method="motor"/>
+     <ShippingContractNumber>34567</ShippingContractNumber>
+     <ShippingInstructions>
+       <Description xml:lang="en-US">As per the contract</Description>
+     </ShippingInstructions>
+   </TransportInformation>
+ </ShipTo>
+ <BillTo>
+   <Address>
+     <Name xml:lang="en">Acme Corporation</Name>
+     <PostalAddress name="Finance Building">
+       <Street>124 Anystreet</Street>
+       <City>Sunnyvale</City>
+       <State>CA</State>
+       <PostalCode>90489</PostalCode>
+       <Country isoCountryCode="United States">United States</Country>
+     </PostalAddress>
+   </Address>
+ </BillTo>
+ <Shipping>
+   <Money currency="USD">12.5</Money>
+   <Description xml:lang="en-US">FedEx 2-day</Description>
+ </Shipping>
+ <Tax>
+   <Money currency="USD">2.5</Money>
+   <Description xml:lang="en">CA State Tax</Description>
+ </Tax>
+ <Payment>
+   <PCard number="1234567890123456" expiration="2015-03-12"/>
+ </Payment>
+ <PaymentTerm payInNumberOfDays="45">
+ </PaymentTerm>
+ <PaymentTerm payInNumberOfDays="30">
+   <Discount>
+   <DiscountPercent percent="2"></DiscountPercent>
+   </Discount>
+ </PaymentTerm>
+ <PaymentTerm payInNumberOfDays="20">
+   <Discount>
+     <DiscountPercent percent="3"></DiscountPercent>
+   </Discount>
+ </PaymentTerm>
+ <Contact role="purchasingAgent">
+   <Name xml:lang="en-US">Mr. Purchasing Agent</Name>
+   <Email>puragent@acme.com</Email>
+   <Phone name="Office">
+     <TelephoneNumber>
+       <CountryCode isoCountryCode="US">1</CountryCode>
+       <AreaOrCityCode>800</AreaOrCityCode>
+       <Number>5551212</Number>
+     </TelephoneNumber>
+   </Phone>
+ </Contact>
+ <Comments xml:lang="en-US">
+   Anything well formed in XML can go here.
+   This should maybe be on a separate line?
+ </Comments>
+ <TermsOfDelivery>
+   <TermsOfDeliveryCode value="PriceCondition"/>
+   <ShippingPaymentMethod value="AdvanceCollect"/>
+   <TransportTerms value="Other">Contract Transport terms</TransportTerms>
+   <Address>
+     <Name xml:lang="en-US">SN Services</Name>
+     <PostalAddress name="default">
+       <Street>123 Anystreet</Street>
+       <City>Sunnyvale</City>
+       <State>AL</State>
+       <PostalCode>35762</PostalCode>
+       <Country isoCountryCode="US">United States</Country>
+     </PostalAddress>
+   </Address>
+   <Comments xml:lang="en-US" type="Transport">Transport Terms</Comments>
+   <Comments xml:lang="en-US" type="TermsOfDelivery">Terms per the contract</Comments>
+ </TermsOfDelivery>
+ <DeliveryPeriod>
+   <Period startDate="2013-06-10T14:37:31-07:00"
+           endDate = "2013-06-11T14:37:31-07:00"></Period>
+ </DeliveryPeriod>
+ <IDReference></IDReference>
+ <SupplierOrderInfo orderID="12345"></SupplierOrderInfo>
+</OrderRequestHeader>
+
+
+<ItemOut quantity="2" lineNumber="1">
+ <ItemID>
+   <SupplierPartID>220-3165</SupplierPartID>
+   <SupplierPartAuxiliaryID>E000028901</SupplierPartAuxiliaryID>
+ </ItemID>
+ <ItemDetail>
+   <UnitPrice>
+     <Money currency="USD">55.00</Money>
+     <Modification>
+       <OriginalPrice>
+         <Money currency = "USD">50.00</Money>
+       </OriginalPrice>
+       <AdditionalCost>
+         <Money currency = "USD">5</Money>
+       </AdditionalCost>
+       <ModificationDetail
+             endDate = "2013-11-30T10:15:00-08:00"
+             name = "Royalties"
+             startDate = "2012-08-03T10:15:00-08:00">
+         <Description xml:lang = "en-US">Charge for Royalties
+         </Description>
+       </ModificationDetail>
+     </Modification>
+   </UnitPrice>
+   <Description xml:lang="en">Laptop Computer Notebook Pentium® II
+     processor w/AGP, 300 MHz, with 12.1&quot; TFT XGA
+     Display</Description>
+   <UnitOfMeasure>EA</UnitOfMeasure>
+   <Classification domain="UNSPSC">43171801</Classification>
+   <URL>http://www.supplier.com/Punchout.asp</URL>
+   <Extrinsic name="ExtDescription">Enhanced keyboard</Extrinsic>
+ </ItemDetail>
+ <Distribution>
+   <Accounting name="DistributionCharge">
+     <AccountingSegment id="7720">
+     <Name xml:lang="en-US">Account</Name>
+     <Description xml:lang="en-US">Office Supplies
+     </Description>
+     </AccountingSegment>
+     <AccountingSegment id="610">
+     <Name xml:lang="en-US">Cost Center</Name>
+     <Description xml:lang="en-US">Engineering Management
+     </Description>
+     </AccountingSegment>
+   </Accounting>
+   <Charge>
+     <Money currency="USD">20.00</Money>
+   </Charge>
+ </Distribution>
+</ItemOut>
+
+
+</OrderRequest>
+</Request>
+
+</cXML>
+

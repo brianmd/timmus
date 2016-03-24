@@ -175,6 +175,8 @@
 
 (def actual (get-golden-references))
 (def expected (calculate-expected-golden-matches exported (:prods distribution)))
+(spit "hub.txt" (vec expected))
+(first expected)
 ;; (def expected (calculate-expected-golden-matches @exported-products (:prods distribution)))
 
 (pp (compare-expected-products expected actual))
