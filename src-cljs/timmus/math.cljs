@@ -32,13 +32,16 @@
   (.log js/console "------------------   got entities")
   (reset! entities hash)
   )
-(GET (str base-api-url "entities/definitions")
-     {:headers {"Accept" "application/json"}
-      :timeout 240000                                   ; 2 minutes
-      :handler set-entities
-      :error-handler error-handler
-      }
-     )
+
+(defn get-json-entities []
+  (GET (str base-api-url "entities/definitions")
+      {:headers {"Accept" "application/json"}
+       :timeout 240000                                   ; 2 minutes
+       :handler set-entities
+       :error-handler error-handler
+       }
+    ))
+;; (get-json-entities)
 
 (defn entity-for [entity-name]
   (if @entities (@entities entity-name)))
@@ -162,6 +165,7 @@
           :error-handler element-error-handler
           }
          )))
+
 (defn new-table-element [parent-id query]
   ;(println "----------- query " query)
   (let [entity (TableElement. (next-table-element-id) query (r/atom nil) parent-id (r/atom []) (r/atom false))]
@@ -252,9 +256,13 @@
 
 ;(get-customers handle error-handler)
 
-(def tbl-ele (new-table-element nil ["customers" "id" "28"]))
-(def my-carts (new-table-element nil ["carts" "customer_id" "28"]))
-(swap! (:children-ids tbl-ele) conj (:id my-carts))
+
+
+;; (def tbl-ele (new-table-element nil ["customers" "id" "28"]))
+;; (def my-carts (new-table-element nil ["carts" "customer_id" "28"]))
+;; (swap! (:children-ids tbl-ele) conj (:id my-carts))
+
+
 
 (def atom-n (r/atom 0))
 (defn inc-n [] (swap! atom-n inc))
@@ -310,10 +318,13 @@
    [:div.col-sm-2]
    [:div.col-sm-8
     [:h2 "Multiplier"]
-    [:h2 (:id tbl-ele)]
+    ;; [:h2 (:id tbl-ele)]
     [multiplier-component]
     ]])
 
+
+;; uncomment line below if show entity in math-page
+;; (get-json-entities)
 
 (defn math-page []
   (let [tbl (Table. ["R1" "R2" "R3" "R4"]
@@ -332,8 +343,8 @@
             ]
 
       [:div.container
-       ;[math-component]
-       [show-entity tbl-ele @(:entity tbl-ele) @entities]
+       [math-component]
+       ;; [show-entity tbl-ele @(:entity tbl-ele) @entities]
       ;[show-entities]
        ;[show-table-element {table-elements (:id tbl-ele)}]
        ]))
