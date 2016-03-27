@@ -90,7 +90,7 @@
           :handler platt-handler
           :error-handler error-handler}
          )))
-(request-platt-prices)
+;; (request-platt-prices)
 
 (defn ajax-request-order-spec []
   (request-order-spec @summit-email-address @order-num)

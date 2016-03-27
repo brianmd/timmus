@@ -22,6 +22,8 @@
     [net.cgrand.enlive-html :as html]
     ))
 
+(println "loading summit.utils.core1")
+
 (defn pp [& args]
   (doseq [arg args] (pprint arg))
   (last args))
@@ -73,6 +75,7 @@
     (throw (Exception. "attempting to write to a protected database"))
     (exec-sql conn sql)))
 
+(println "loading summit.utils.core2")
 
 (def step-input-path (-> env :paths :local :step-input-path))
 (def step-output-path (-> env :paths :local :step-output-path))
@@ -85,6 +88,10 @@
 ;; (default-env-setting :db)
 ;; ((default-env-setting :db) :local)
 
+(println "loading summit.utils.core2a")
+
+(println (-> env :defaults))
+(println (default-env-setting :redis))
 
 (def redis-conn {:pool {} :spec (default-env-setting :redis)})
 (defmacro wcar* [& body] `(car/wcar redis-conn ~@body))
@@ -92,6 +99,7 @@
 ;; (wcar* (car/ping))
 
 
+(println "loading summit.utils.core3")
 
 (add-encoder clojure.lang.Delay
              (fn [c jsonGenerator]
@@ -136,6 +144,8 @@
   (let [r (vec rows)]
     (mapcat #(subvec r (first %) (second %)) ranges)))
 ;; (select-ranges [0 1 2 3 4 5 6 7 8 9 10] [0 2] [4 5])
+
+(println "loading summit.utils.core4")
 
 (defn convert-row-num [row-num num-rows]
   (floored (* num-rows row-num (double 0.01))))
@@ -208,6 +218,8 @@
     )
   result)
 
+(println "loading summit.utils.core5")
+
 (defmacro defun [name args & body]
   (if (or (> levels-to-save 0) (> levels-to-print))
     (println "adding debug logging to" name)
@@ -249,6 +261,8 @@
   (field-validations [rec] "returns map: {field-name [predicate (fn [name val rec] msg) ...] ...}")
   (errors [rec] "returns map: {field-name [msg ...] ...")
   (valid? [rec] "returns true if errors is empty map"))
+
+(println "loading summit.utils.core6")
 
 (defn not-re-matches [regex string]
   (not (re-matches regex string)))
