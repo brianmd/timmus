@@ -14,8 +14,9 @@
 
     [summit.utils.core :refer :all]
     ;[summit.db.relationships :as relations]
-    [timmus.db.core :refer :all]
+    ;; [timmus.db.core :refer :all]
     ; [timmus.db.core :refer [*db*]]
+    [timmus.db.core :as dbcore]
     )
   )
 
@@ -45,7 +46,7 @@
            (table "information_schema.KEY_COLUMN_USAGE"))
 
 (defn current-db-name []
-  (-> *db* :pool deref :datasource .getJdbcUrl (str/split #"/") last)
+  (-> dbcore/*db* :pool deref :datasource .getJdbcUrl (str/split #"/") last)
   )
 (defn get-dbname-entityname [full-entity-name]
   (let [tokens (str/split full-entity-name #"\.")

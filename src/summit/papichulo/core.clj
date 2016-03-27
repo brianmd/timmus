@@ -26,7 +26,7 @@
             ;[compojure.core :refer [defroutes GET]]
 
             [summit.utils.core :refer :all]
-            [timmus.db.core :refer [*db*]]
+            ;; [timmus.db.core :refer [*db*]]
             [brianmd.db.store-mysql :as mysql]
             ))
 

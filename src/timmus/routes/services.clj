@@ -1,9 +1,12 @@
+(println "loading timmus.routes.services")
+
 (ns timmus.routes.services
   (:require [ring.util.http-response :refer :all]
             [compojure.api.sweet :refer :all]
             [ring.util.http-response :refer :all]
             [schema.core :as s]
-            [korma.core :refer :all]
+            ;; [korma.core :refer :all]
+            [korma.core :as k]
             [clojure.set]
             [clojure.string :as str]
             [clojure.walk :refer :all]
@@ -29,11 +32,11 @@
             [summit.sales-associate.order-spec :refer [send-spec-email]]
 
 
-            [timmus.db.core :refer [*db*]]
+            ;; [timmus.db.core :refer [*db*]]
             [brianmd.db.store-mysql :as mysql]
             [summit.punchout.core :as p]
             [summit.punchout.punchout :refer [process-punchout-request-str ]]
-            [summit.punchout.order-message :refer [cxml-order-message]]
+            [summit.punchout.order-message :refer [cxml-order-message] :as order-message]
             [summit.punchout.order-request :as p3]
             [summit.papichulo.core :refer [papichulo-url papichulo-creds create-papi-url papichulo-url-with-creds]]
             ))
@@ -79,7 +82,7 @@ bb
 
 
 (defn custs []
-  (let [custs (select customer (limit 2))]
+  (let [custs (k/select customer (k/limit 2))]
     {:headers (vec (map name (keys (first custs))))
      :rows    [(vec (range 31))]
      ;:rows (map vals custs)
@@ -316,9 +319,13 @@ bb
             (GET "/punchout/order-message/:id" req
               :path-params [id :- Long]
               (do-log-request req "punchout")
-              (let [order-request (p/find-order-request id)
+              (let [
+                    id (order-message/last-city-order-num)
+
+                    order-request (p/find-order-request id)
                     punchout-request (p/find-punchout-request (:punchout_id order-request))
                     hiccup (cxml-order-message order-request punchout-request)]
+                (println "order message id: " id)
                 {:status 200,
                  :headers {"Content-Type" "text/xml; charset=utf-8"},
                  :body (p/create-cxml hiccup)}
@@ -373,8 +380,8 @@ bb
 
             (GET "/orders" []
                   ;(ok (select contact-email (where {:type "Order"}) (order :created_at :desc) (limit 5))))
-                  (ok (select contact-email (where {:type "Order"}) (order :created_at :desc) (limit 5)
-                              (fields :email :payment_method :type :sap_document_number :total_price :cart_id))))
+                  (ok (k/select contact-email (k/where {:type "Order"}) (k/order :created_at :desc) (k/limit 5)
+                              (k/fields :email :payment_method :type :sap_document_number :total_price :cart_id))))
 
             (GET "/customers" []
                   ;(let [custs (select customer (limit 20))]
@@ -405,7 +412,7 @@ bb
             (GET "/platt-prices" []
                   (println "in platt-prices")
                   (let [compare-sql "select p1.upc, p1.price sap, p2.price platt, (p1.price-p2.price)/p2.price*100 increase from mdm.prices p1 join mdm.prices p2 on p1.upc=p2.upc where p1.source='sap' and p2.source='platt' and p1.price>0 order by increase"
-                        compared (exec-raw (vector compare-sql) :results)]
+                        compared (k/exec-raw (vector compare-sql) :results)]
                     (println "upc comparison count: " (count compared))
                     (ok (map->table compared))))
 
@@ -447,3 +454,4 @@ bb
 
 
 
+(println "done loading timmus.routes.services")

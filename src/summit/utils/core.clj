@@ -16,6 +16,9 @@
     ;[cats.builtin]
     ;[cats.monad.maybe :as maybe]
 
+    [korma.core :as k]
+    [korma.db :as kdb]
+
     [net.cgrand.enlive-html :as html]
     ))
 
@@ -30,10 +33,13 @@
 
 
 (def dbs (atom {}))
-;; (def ^:dynamic *current-db* :default)
+(def ^:dynamic *db* kdb/*current-db*)
 
 (defmacro dselect [& args]
-  `(korma.core/select ~@args))
+  `(k/select ~@args))
+
+(defmacro ddetect [& args]
+  `(first (dselect ~@args)))
 
 (defn new-mysql-connection [m]
   (korma.db/mysql m))
@@ -47,12 +53,12 @@
 
 (defn exec-sql
   ([sql]
-   (korma.core/exec-raw sql :results))
+   (k/exec-raw sql :results))
   ([conn sql]
    (if (= :default conn)
      (exec-sql sql)
      (let [conn (if (keyword? conn) (find-db conn) conn)]
-       (korma.core/exec-raw conn sql :results)))))
+       (k/exec-raw conn sql :results)))))
 ;; (exec-sql "select count(*) from customers")
 ;; (exec-sql :default "select count(*) from customers")
 ;; (exec-sql :bh-neo "select count(*) from customers")

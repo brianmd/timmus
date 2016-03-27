@@ -39,7 +39,9 @@
     ))
 
 (defstate ^:dynamic *db*
-          :start (connect!))
+          :start (connect!)
+          ;:stop (disconnect! *db*)
+          )
 
 (default-connection *db*)
 
@@ -54,12 +56,6 @@
 
 #_(defn disconnect! [conn]
   (conman/disconnect! conn))
-
-(defstate ^:dynamic *db*
-          :start (connect!)
-          ;:stop (disconnect! *db*)
-          )
-;*db*
 
 ;(conman/bind-connection *db* "sql/queries.sql")
 

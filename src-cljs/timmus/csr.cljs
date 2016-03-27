@@ -9,6 +9,13 @@
             [cljs.core.async :refer [chan close!]]          ; for sleep timeout
             [siren.core :refer [siren! sticky-siren! base-style]]
 
+            [re-com.core :refer [input-text input-textarea]]
+            [re-com.util     :refer [deref-or-value px]]
+            [re-com.popover  :refer [popover-tooltip]]
+            [re-com.box      :refer [h-box v-box box gap line flex-child-style align-style]]
+            [re-com.validate :refer [input-status-type? input-status-types-list regex?
+                                     string-or-hiccup? css-style? html-attr? number-or-string?
+                                     string-or-atom? throbber-size? throbber-sizes-list] :refer-macros [validate-args-macro]]
             [reagent-table.core :as rt]
             ))
 
@@ -104,9 +111,40 @@
     (re-matches #"[a-zA-Z0-9.-]+" @summit-email-address)
     (re-matches #"\d+" @order-num)
     ))
+(def throbber-args-desc
+  [{:name :size     :required false :type "keyword"       :default :regular :validate-fn throbber-size? :description [:span "one of " throbber-sizes-list]}
+   {:name :color    :required false :type "string"        :default "#999"   :validate-fn string?        :description "CSS color"}
+   {:name :class    :required false :type "string"                          :validate-fn string?        :description "CSS class names, space separated"}
+   {:name :style    :required false :type "CSS style map"                   :validate-fn css-style?     :description "CSS styles to add or override"}
+   {:name :attr     :required false :type "HTML attr map"                   :validate-fn html-attr?     :description [:span "HTML attributes, like " [:code ":on-mouse-move"] [:br] "No " [:code ":class"] " or " [:code ":style"] "allowed"]}])
+
+(defn throbber
+  "Render an animated throbber using CSS"
+  [& {:keys [size color class style attr] :as args}]
+  {:pre [(validate-args-macro throbber-args-desc args "throbber")]}
+  (let [seg (fn [] [:li (when color {:style {:background-color color}})])]
+    [box
+     :align :start
+     :child [:ul
+             (merge {:class (str "rc-throbber loader "
+                                 (case size :regular ""
+                                            :small "small "
+                                            :large "large "
+                                            "")
+                                 class)
+                     :style style}
+                    attr)
+             [seg] [seg] [seg] [seg]
+             [seg] [seg] [seg] [seg]]])) ;; Each :li element in [seg] represents one of the eight circles in the throbber
+
+(defn change-it [ev]
+  (.log js/console ev))
 
 (defn order-spec-component []
   [:div.container.well
+   ;; [throbber :color "ff0000" :size :large]
+   [input-text :model summit-email-address :on-change change-it :status :error :placeholder "placeholder text" :status-tooltip "Hey\nbro" :status-icon? true]
+   [input-textarea :model (atom "") :on-change change-it :status :error :placeholder "placeholder text" :status-tooltip "This is a long<br>tip" :rows 10]
    ;[:a {:href "https://www.google.com"} "google"]
    [:div.form-group.row
     [:label.col-sm-4.form-control-label

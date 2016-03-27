@@ -62,7 +62,6 @@
                  [org.clojure/data.codec "0.1.0"]
                  [org.clojure/data.xml "0.0.8"]
 
-                 ;[com.datomic/datomic-pro "0.9.5344"]
                  [com.datomic/datomic-pro "0.9.5344" :exclusions [joda-time org.slf4j/jul-to-slf4j org.slf4j/slf4j-nop org.slf4j/slf4j-over-log4j org.slf4j/slf4j org.slf4j/slf4j-log4j12]]
 
                  [funcool/cats "1.2.1"]
@@ -85,6 +84,8 @@
                  [com.rpl/specter "0.9.2"]
                  [resque-clojure "0.3.0"]
 
+                 ;; https://github.com/binaryage/cljs-devtools-sample/blob/master/project.clj
+                 ;; [binaryage/devtools "0.5.4"]
                  ]
 
   :min-lein-version "2.0.0"
