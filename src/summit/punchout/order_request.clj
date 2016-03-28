@@ -8,6 +8,8 @@
 
             [resque-clojure.core :as resque]
 
+            [com.rpl.specter :as s]
+
             [summit.utils.core :refer :all]
             [summit.punchout.core :refer :all]
             [summit.db.relationships :refer :all]
@@ -91,14 +93,31 @@ p
 
 
 
+
+
+(defn last-orders [n]
+  (reverse
+   (dselect contact-email (database (find-db :bh-prod)) (where {:type "Order"}) (order :id :DESC) (limit n))))
+
 (defn last-order []
   (first
    (dselect contact-email (database (find-db :bh-prod)) (where {:type "Order"}) (order :id :DESC) (limit 1))))
 
 (defn last-order-sans-json []
   (dissoc (last-order) :sap_json_result))
-;; (pp (last-order))
+
+(defn order-vitals [o]
+  (let [o (mapv #(get o %) [:id :total_price :email :name :created_at :sap_document_number])]
+    (assoc o 1 (/ (nth o 1) 100.0))))
+
+(defn order-vitals [o]
+  (let [o (into {} (s/select [s/ALL #(contains? #{:id :total_price :email :name :created_at :sap_document_number} (first %))] o))]
+    (assoc o :total_price (/ (:total_price o) 100.0))))
+;; (def ooo (last-order))
+;; (order-vitals ooo)
+;; (pp (mapv order-vitals (last-orders 5)))
 ;; (pp (last-order-sans-json))
+
 
 
 

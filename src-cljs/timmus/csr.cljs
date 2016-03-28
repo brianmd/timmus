@@ -9,7 +9,7 @@
             [cljs.core.async :refer [chan close!]]          ; for sleep timeout
             [siren.core :refer [siren! sticky-siren! base-style]]
 
-            [re-com.core :refer [input-text input-textarea]]
+            [re-com.core :refer [title p input-text input-textarea button]]
             [re-com.util     :refer [deref-or-value px]]
             [re-com.popover  :refer [popover-tooltip]]
             [re-com.box      :refer [h-box v-box box gap line flex-child-style align-style]]
@@ -143,8 +143,10 @@
 (defn order-spec-component []
   [:div.container.well
    ;; [throbber :color "ff0000" :size :large]
+   [title :level :level2 :label "Order Spec Sheet Request"]
    [input-text :model summit-email-address :on-change change-it :status :error :placeholder "placeholder text" :status-tooltip "Hey\nbro" :status-icon? true]
    [input-textarea :model (atom "") :on-change change-it :status :error :placeholder "placeholder text" :status-tooltip "This is a long<br>tip" :rows 10]
+   [button :disabled? true :class "btn btn-primary" :label "test" :tooltip "press me" :tooltip-position :left-center]
    ;[:a {:href "https://www.google.com"} "google"]
    [:div.form-group.row
     [:label.col-sm-4.form-control-label
