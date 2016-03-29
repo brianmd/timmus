@@ -11,4 +11,5 @@ profiles.clj
 /.env
 *.log
 .nrepl-port
+*.edn
 
