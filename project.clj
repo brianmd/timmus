@@ -34,7 +34,7 @@
                  ;[conman "0.3.0" :exclusions [org.slf4j/slf4j-api org.slf4j/slf4j-log4j12]]
                  [mysql/mysql-connector-java "5.1.6"]
                  [org.clojure/clojurescript "1.7.228" :scope "provided"]
-                 [reagent "0.5.1"]
+                 [reagent "0.6.0-alpha"]
                  [reagent-forms "0.5.13"]
                  [reagent-utils "0.1.7"]
                  [secretary "1.2.3"]
@@ -68,6 +68,7 @@
                  [org.clojure/algo.monads "0.1.5"]
                  [clj-time "0.11.0"]
                  [re-com "0.8.0"]
+                 [re-frame "0.7.0"]
                  ;[criterium "0.4.3"]                        ; benchmarking
 
                  [enlive "1.1.6"]
