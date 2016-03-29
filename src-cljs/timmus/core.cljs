@@ -18,6 +18,7 @@
 
             [murphydye.window :as win]
             [timmus.punchout-demo :as punchout]
+            [timmus.entity :refer [entities-editor]]
             )
   (:import goog.History))
 
@@ -80,15 +81,20 @@
 
 (defn recom-layout-test []
   [v-box
-   :children [[box :child [title :level :level2 :label "Header"]]
-              [h-box
-               :height "100px"
-               :children [[box :size "70px" :child [:h4 "Nav"]]
-                          [box :size "1" :child [:span
-                                                 "Content"
-                                                 [:br]
-                                                 [hyperlink-href :label "google" :target "_blank" :tooltip "google in new window" :tooltip-position :right-center :href "https://www.google.com/"]]]]]
-               [box :child "Footer"]]])
+   :children
+   [[box :child [title :level :level2 :label "Header"]]
+    [h-box
+     :height "100px"
+     :children
+     [[box :size "70px" :child [:h4 "Nav"]]
+      [box
+       :size "1"
+       :child
+       [:span
+        "Content"
+        [:br]
+        [hyperlink-href :label "google" :target "_blank" :tooltip "google in new window" :tooltip-position :right-center :href "https://www.google.com/"]]]]]
+    [box :child "Footer"]]])
 
 
 (defn nav-link [uri title page collapsed?]
@@ -169,6 +175,10 @@
                      recom-layout-test
                      {:title "Re-com test"
                       :width 600 :height 400})} "Re-com test"]
+    [:a {:on-click #(win/new-window
+                     entities-editor
+                     {:title "Entities"
+                      :width 400 :height 400})} "Entities"]
     ]
 
    ;; :on-click #(win/new-window query-win {:title "Queries"})}]

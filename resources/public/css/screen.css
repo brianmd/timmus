@@ -3,6 +3,24 @@
     background-color: #eef;
 }
 
+td {
+    border: 1px dashed red;
+}
+
+.editor tr {
+    height: 50%;
+}
+.editor .top td {
+    width: 33%;
+    vertical-align: top;
+}
+.editor .bottom td {
+    width: 100;
+}
+.editor .entities {
+    color: red;
+}
+
 html,
 body {
 	font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
