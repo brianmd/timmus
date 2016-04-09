@@ -72,17 +72,6 @@
       (replace "=>" ":")
       ))
 
-(defn content-for-name [coll name]
-  (let [section (first (filter #(= name (% "name")) coll))
-        ]
-    (case (section "type")
-      "TABLE" (->> (section "table") second)
-      section)
-    )
-  )
-;(content-for-name saporder "ET_ORDERS_SUMMARY")
-;(content-for-name saporder "ET_ORDERS_DETAIL")
-
 (defn call-papi [fn-name args]
   ;; (let [creds (-> env :papichulo vals)
   (let [creds (default-env-setting :papichulo vals)

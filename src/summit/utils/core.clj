@@ -19,23 +19,50 @@
     [korma.core :as k]
     [korma.db :as kdb]
 
+    [me.raynes.conch :refer [programs with-programs let-programs] :as sh]
+
     [net.cgrand.enlive-html :as html]
     ))
 
+;; (with-programs [ls] (ls {:seq true}))
+;; (with-programs [ssh] (ssh "neo" "ls -l" {:seq true}))
+
 (println "loading summit.utils.core1")
 
+(programs ssh)
+
+(defmacro examples [& forms]
+  `(do ~@forms))
+(defmacro examples [& forms]
+  )
+
+(def map! (comp doall map))
+
+(defn any [s]
+  (nth s (rand-int (count s))))
+
+(defn ppn [& args]
+  (println "\n-------------------")
+  (doseq [arg args] (pprint arg))
+  )
+
 (defn pp [& args]
+  (println "\n-------------------")
   (doseq [arg args] (pprint arg))
   (last args))
 
 (defn pp->str [obj]
   (with-out-str (pprint obj)))
 
+(defn uuid [] (java.util.UUID/randomUUID))
+;; (uuid)
+
 (def datomic-url (str "datomic:sql://datomic?jdbc:mysql://localhost:3306/datomic?user=" (-> env :db :bh-local :user)"&password=" (-> env :db :bh-local :password)))
 
 
 (def dbs (atom {}))
 (def ^:dynamic *db* kdb/*current-db*)
+
 
 (defmacro dselect [& args]
   `(k/select ~@args))
@@ -89,9 +116,6 @@
 ;; ((default-env-setting :db) :local)
 
 (println "loading summit.utils.core2a")
-
-(println (-> env :defaults))
-(println (default-env-setting :redis))
 
 (def redis-conn {:pool {} :spec (default-env-setting :redis)})
 (defmacro wcar* [& body] `(car/wcar redis-conn ~@body))
@@ -290,9 +314,19 @@
   ;; (.format (java.text.SimpleDateFormat. "yyyy-MM-dd HH:mm:ss Z") (now))
   )
 
-(defn timenow []
-  (.format (java.text.SimpleDateFormat. "yyyy-MM-dd HH:mm:ss Z") (now))
+(defn localtime
+  ([] (localtime (now)))
+  ([d]
+   (let [formatter (java.text.SimpleDateFormat. "yyyy-MM-dd HH:mm:ss Z")]
+     (.setTimeZone formatter (java.util.TimeZone/getTimeZone "US/Mountain"))
+     (.format formatter d))))
+;; (localtime)
+
+(defn timenow
+  ([] (timenow (now)))
+  ([d] (.format (java.text.SimpleDateFormat. "yyyy-MM-dd HH:mm:ss Z") d))
   )
+;; (timenow)
 
 (defn plain-timenow []
   (clean-all (now))
@@ -331,11 +365,29 @@
 (defn is-search-page? [txt]
   (re-find #"Refine By" txt))
 
+(defn content-for-name [coll name]
+  (let [section (first (filter #(= name (% "name")) coll))
+        ]
+    (case (section "type")
+      "TABLE" (->> (section "table") second)
+      section)
+    )
+  )
+(examples
+ (content-for-name saporder "ET_ORDERS_SUMMARY")
+ (content-for-name saporder "ET_ORDERS_DETAIL"))
+
+(defn hselect [parsed v]
+  (html/select parsed v))
+
+(defn hdetect [parsed v]
+  (first (hselect parsed v)))
+
 (defn platt-page-category [page]
   (cond
-    (not-empty (html/select page [:span.ProductPriceOrderBox])) :product
-    (not-empty (html/select page [:div.no-products-section])) :not-found
-    (not-empty (html/select page [:div.refineByHeader])) :search
+    (not-empty (hselect page [:span.ProductPriceOrderBox])) :product
+    (not-empty (hselect page [:div.no-products-section])) :not-found
+    (not-empty (hselect page [:div.refineByHeader])) :search
     :else :unknown
     ))
 ;(platt-page-category q)
@@ -368,6 +420,7 @@
       (replace "<" "&lt;")
       (replace ">" "&gt;")
       (replace "\"" "&quot;")))
+
 (defn unescape-html
   "Change special characters into HTML character entities."
   [text]
@@ -450,7 +503,68 @@
 ; span.ProductPriceOrderBox
 ; span.ProductPricePerType
 
+(defn req-sans-unprintable [req]
+  #_["compojure.api.middleware/options",
+     "cookies",
+     "remote-addr",
+     "ring.swagger.middleware/data",
+     "params",
+     "flash",
+     "route-params",
+     "headers",
+     "async-channel",
+     "server-port",
+     "content-length",
+     "form-params",
+     "compojure/route",
+     "websocket?",
+     "session/key",
+     "query-params",
+     "content-type",
+     "path-info",
+     "character-encoding",
+     "context",
+     "uri",
+     "server-name",
+     "query-string",
+     "body",
+     "multipart-params",
+     "scheme",
+     "request-method",
+     "session"]
+  (let [bad-params [                        ; these throw errors when json-izing
+                    :compojure.api.middleware/options
+                    :async-channel
+                    ]
+        x (apply dissoc (concat [req] bad-params))]
+    x))
 
+
+
+(defn req->printable [req]
+  ;; (clean-all (req-sans-unprintable req)))
+  (req-sans-unprintable req))
+
+(defn log-now [obj]
+  "stores request in its own file as edn"
+  (let [filename (uuid)]
+    (spit (str "log/separate/" filename)
+          (pr-str obj)))
+  obj)
+
+(defn do-log-request
+  ([req] (do-log-request req "requests"))
+  ([req filename]
+   (log-now req)   ;; always save separately
+   (spit (str "log/" filename ".log")
+         (with-out-str
+           (pp
+            [(localtime)
+             (if (map? req) (req->printable req) req)
+             ]))
+         :append true)
+   req))
+;; (do-log-request 3 "requests")
 
 
 

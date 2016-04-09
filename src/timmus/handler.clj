@@ -3,6 +3,7 @@
             [timmus.layout :refer [error-page]]
             [timmus.routes.home :refer [home-routes]]
             [timmus.routes.services :refer [service-routes]]
+            [timmus.routes.punchout :refer [punchout-routes]]
             [timmus.middleware :as middleware]
             [clojure.tools.logging :as log]
             [compojure.route :as route]
@@ -35,6 +36,7 @@
 (def app-routes
   (routes
     (var service-routes)
+    (var punchout-routes)
     (wrap-routes #'home-routes middleware/wrap-csrf)
     ;(wrap-cors :access-control-allow-origin [#".*"]
     ;  :access-control-allow-methods [:get :put :post :delete])

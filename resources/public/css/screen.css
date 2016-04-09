@@ -1,9 +1,9 @@
-.rc-box {
+.debug .rc-box {
     border: 1px dashed green;
     background-color: #eef;
 }
 
-td {
+.debug td {
     border: 1px dashed red;
 }
 

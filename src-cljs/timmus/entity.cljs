@@ -67,30 +67,31 @@
         projects (r/atom (make-selection-list (:projects entities)))
         selected-project (r/atom #{})
         selected-entity (r/atom nil)]
-    [:table.editor
+    [:table.editor.debug
      {:style {:width "100%" :height "100%"}}
-     [:tr.top
-      [:td.projects.top
-       [v-box
-        :children
-        [
-        ;; [selection-list
-        ;;   :choices projects
-        ;;   :model selected-project
-        ;;   :on-change #(reset! selected-project %)]
-         [:select
-          {:size 5 :default-value "unkown" :on-click #(js/console.log %)} 
-          [:option "valid"] 
-          [:option "invalid"] 
-          [:option "unkown"]]
-         "+ -"
-         ]]]
-      [:td.entities.top
-       "entities"]
-      [:td.attributes.top
-       "attributes"]
-      ]
-     [:tr
-      [:td.definition.bottom
-       {:col-span "3"}
-       "attribute definition"]]]))
+     [:tbody
+      [:tr.top
+       [:td.projects.top
+        [v-box
+         :children
+         [
+          ;; [selection-list
+          ;;   :choices projects
+          ;;   :model selected-project
+          ;;   :on-change #(reset! selected-project %)]
+          [:select
+           {:size 5 :default-value "unkown" :on-click #(js/console.log %)} 
+           [:option "valid"] 
+           [:option "invalid"] 
+           [:option "unkown"]]
+          "+ -"
+          ]]
+        [:td.entities.top
+         "entities"]]
+       [:td.attributes.top
+        "attributes"]
+       ]
+      [:tr
+       [:td.definition.bottom
+        {:col-span "3"}
+        "attribute definition"]]]]))

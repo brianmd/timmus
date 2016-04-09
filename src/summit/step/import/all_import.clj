@@ -41,7 +41,7 @@
         ids (doall (map (fn [prod] (:ID (:attrs prod))) products))
         ]
     ids))
-;; (get-golden-ids)
+;; (take 5 (get-golden-ids))
 
 (defn get-product [id]
   (let [body (:body (clj-http.client/get (str product-url id "?" search-context) (step-authentication)))
@@ -49,7 +49,7 @@
         ]
     (detect parsed [:Product])
   ))
-;; (get-product "MEM_GLD_101278")
+;; (get-product "MEM_GLD_102633")
 
 (defn get-product-references [id]
   (let [product (get-product id)
@@ -162,7 +162,7 @@
 #_(comment
 
 
-)
+;; )
 
 
 ;; (def distribution (spit-source-ids "hubbell-panduit-500" "Panduit" 500 distribution-per-100))

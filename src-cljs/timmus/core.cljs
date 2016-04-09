@@ -81,6 +81,7 @@
 
 (defn recom-layout-test []
   [v-box
+   :class "debug"
    :children
    [[box :child [title :level :level2 :label "Header"]]
     [h-box
@@ -171,10 +172,22 @@
     ;; [line
     ;;  :size  "3px"
     ;;  :color "red"]
+    " "
+    [:a {:on-click #(win/new-window-url
+                     {:url "https://www.google.com/"
+                      :title "google"}
+                     )} "google"]
+    " "
+    [:a {:on-click #(win/new-window-url
+                     {:url "http://www.w3schools.com/"
+                      :title "Url in a Window"}
+                     )} "Url-in-a-Window"]
+    " "
     [:a {:on-click #(win/new-window
                      recom-layout-test
                      {:title "Re-com test"
                       :width 600 :height 400})} "Re-com test"]
+    " "
     [:a {:on-click #(win/new-window
                      entities-editor
                      {:title "Entities"

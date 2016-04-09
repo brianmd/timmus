@@ -1,3 +1,7 @@
+;; notes:
+;; - need to add the timezone so database records are read in UTC
+;;   :jvm-opts ["-Duser.timezone=UTC -server"]
+
 (defproject timmus "0.1.0-SNAPSHOT"
 
   :description "FIXME: write description"
@@ -61,6 +65,12 @@
                  [org.clojure/data.csv "0.1.3"]
                  [org.clojure/data.codec "0.1.0"]
                  [org.clojure/data.xml "0.0.8"]
+                 [im.chit/hara.reflect "2.2.17"]
+
+                 [me.raynes/conch "0.8.0"]
+                 [potemkin "0.4.3"]
+                 [snipsnap "0.1.0" :exclusions [org.clojure/clojure]]
+                 [zookeeper-clj "0.9.4"]
 
                  [com.datomic/datomic-pro "0.9.5344" :exclusions [joda-time org.slf4j/jul-to-slf4j org.slf4j/slf4j-nop org.slf4j/slf4j-over-log4j org.slf4j/slf4j org.slf4j/slf4j-log4j12]]
 
@@ -75,7 +85,7 @@
 
                  [org.clojure/java.jdbc "0.4.2"]
                  [com.h2database/h2 "1.4.190"]
-                 [gyptis "0.2.2" :exclusions [io.aviso/pretty com.taoensso/timbre]]
+                 ;; [gyptis "0.2.2" :exclusions [io.aviso/pretty com.taoensso/timbre]]   ;; vega plots, conflicts w/ clj-ns-browser
                  [medley "0.7.1"]
                  [com.taoensso/carmine "2.12.2"]
                  [clj-tagsoup/clj-tagsoup "0.3.0" :exclusions [org.clojure/clojure]]
@@ -91,7 +101,7 @@
 
   :min-lein-version "2.0.0"
   :uberjar-name "timmus.jar"
-  :jvm-opts ["-server"]
+  :jvm-opts ["-Duser.timezone=UTC -server"]
   :resource-paths ["resources" "target/cljsbuild"]
 
   :main timmus.core
@@ -142,7 +152,7 @@
                                  [ring/ring-mock "0.3.0"]
                                  [ring/ring-devel "1.4.0"]
                                  [pjstadig/humane-test-output "0.7.1"]
-                                 [com.cemerick/piggieback "0.2.2-SNAPSHOT"]
+                                 [com.cemerick/piggieback "0.2.1"]
                                  [lein-figwheel "0.5.0-6" :exclusions [org.clojure/core.memoize]]
                                  [mvxcvi/puget "1.0.0"]]
                   :plugins [[lein-figwheel "0.5.0-6" :exclusions [org.clojure/clojure org.clojure/core.memoize]] [org.clojure/clojurescript "1.7.228" :exclusions [org.clojure/clojure]]]

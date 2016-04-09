@@ -36,11 +36,17 @@
             [brianmd.db.store-mysql :as mysql]
             [summit.punchout.core :as p]
             [summit.punchout.punchout :refer [process-punchout-request-str ]]
-            [summit.punchout.order-message :refer [cxml-order-message] :as order-message]
+            [summit.punchout.order-message :as order-message]
             [summit.punchout.order-request :as p3]
             [summit.papichulo.core :refer [papichulo-url papichulo-creds create-papi-url papichulo-url-with-creds]]
+            [summit.health-check.blue-harvest :as bh]
             ))
 ;(-> @((-> customer :rel) "cart") :fk-key)
+
+;; (def fffff (into [] (map :matnr (k/select :mdm.price (k/fields :matnr)))))
+;; (first fffff)
+;; (type fffff)
+;; (spit "/Users/bmd/code/kupplervati/matnrs.edn" fffff )
 
 #_(comment
 (.reset (:body aa))
@@ -49,6 +55,9 @@ bb
 (:body aa)
 (p/process-punchout-request-str (:body aa))
 )
+
+
+(def inspector-vals (atom {:a 9}))
 
 (defn map->table [hash]
   {:headers (keys (first hash))
@@ -131,45 +140,6 @@ bb
 
 
 
-(defn req-sans-unprintable [req]
-  #_["compojure.api.middleware/options",
-     "cookies",
-     "remote-addr",
-     "ring.swagger.middleware/data",
-     "params",
-     "flash",
-     "route-params",
-     "headers",
-     "async-channel",
-     "server-port",
-     "content-length",
-     "form-params",
-     "compojure/route",
-     "websocket?",
-     "session/key",
-     "query-params",
-     "content-type",
-     "path-info",
-     "character-encoding",
-     "context",
-     "uri",
-     "server-name",
-     "query-string",
-     "body",
-     "multipart-params",
-     "scheme",
-     "request-method",
-     "session"]
-  (let [bad-params [                        ; these throw errors when json-izing
-                    :compojure.api.middleware/options
-                    :async-channel
-                    ]
-        x (apply dissoc (concat [req] bad-params))]
-     x))
-
-(defn req->printable [req]
-  (clean-all (req-sans-unprintable req)))
-
 (defn separately-log-request
   "stores request in its own file as edn"
   ([req] (separately-log-request req "request"))
@@ -179,13 +149,6 @@ bb
                 (clojure.string/replace filename "/" "-")
                 ".clj")
            (pr-str hash)))))
-
-(defn log-now [obj]
-  "stores request in its own file as edn"
-   (let [filename (summit.punchout.core/uuid)]
-     (spit (str "log/separate/" filename)
-           (pr-str obj)))
-  obj)
 
 (defn load-log-request [filename]
   (read-string (slurp (str "log/" filename ".clj"))))
@@ -199,18 +162,6 @@ bb
 
 (defn log-request [& args]
   (>!! log-request-chan args))
-
-(defn do-log-request
-  ([req] (do-log-request req "requests"))
-  ([req filename]
-   (spit (str "log/" filename ".log")
-         (with-out-str
-           (pp
-            [(timenow)
-             (if (map? req) (req->printable req) req)
-             (str "end " (timenow))]))
-         :append true)))
-;; (do-log-request 3 "requests")
 
 (defn log-request-loop [& args]
   (go-loop []
@@ -316,49 +267,77 @@ bb
             (GET "/admin/queries" req
               (ok (query-keys)))
 
+            (GET "/all-okay" req
+                {:status 200,
+                 :body {:bh-ok (bh/all-okay?)}})
+
+            (GET "/punchout/order-messagej/:id" req
+              :path-params [id :- Long]
+                (do-log-request req "punchout")
+                (try
+                  (do-log-request
+                   {:status 200,
+                    :headers {"Content-Type" "text/json; charset=utf-8"},
+                    :body (order-message/order-message (order-message/retrieve-cart-data id))
+                    }
+                   "punchout"
+                   )
+                  (catch Exception e
+                    {:status 404
+                     :headers {"Content-Type" "text/xml; charset=utf-8"},
+                     :body {:error (str "error: " (.getMessage e))}
+                     })))
+
             (GET "/punchout/order-message/:id" req
               :path-params [id :- Long]
-              (do-log-request req "punchout")
               (let [
-                    id (order-message/last-city-order-num)
-
-                    order-request (p/find-order-request id)
-                    punchout-request (p/find-punchout-request (:punchout_id order-request))
-                    hiccup (cxml-order-message order-request punchout-request)]
-                (println "order message id: " id)
-                {:status 200,
-                 :headers {"Content-Type" "text/xml; charset=utf-8"},
-                 :body (p/create-cxml hiccup)}
-                ;; (ok (p/create-cxml hiccup))
+                    ;; id (order-message/last-city-order-num)
+                    ;; order-request (p/find-order-request id)
+                    ;; punchout-request (p/find-punchout-request (:punchout_id order-request))
+                    ;; hiccup (cxml-order-message order-request punchout-request)
+                    ]
+                ;; (do-log-request {:id id} "punchout")
+                (do-log-request req "punchout")
+                (try
+                  (do-log-request
+                   {:status 200,
+                    :headers {"Content-Type" "text/xml; charset=utf-8"},
+                    :body (order-message/order-message-xml (order-message/retrieve-cart-data id))
+                    ;; :body (p/create-cxml hiccup)
+                    }
+                   "punchout"
+                   )
+                  (catch Exception e
+                    {:status 404
+                     :headers {"Content-Type" "text/xml; charset=utf-8"},
+                     :body {:error (str "error: " (.getMessage e))}
+                     }))
                 ))
 
             (GET "/punchout" req
                   (println "in get punchout")
                   (do-log-request req "punchout")
-                  ;; (separately-log-request req (:uri req))
-                  (log-now {:status 200
-                            :headers {"Content-Type" "text/xml; charset=utf-8"}
-                            :body (p/create-cxml (p/pong-response))
-                            }))
-                  ;; (ok (log-now (req->printable req))))
+                  (do-log-request
+                   {:status 200
+                    :headers {"Content-Type" "text/xml; charset=utf-8"}
+                    :body (p/create-cxml (p/pong-response))
+                    }) "punchout")
 
             (POST "/punchout" req
+              (do-log-request {:punchout (localtime)}) 
                    (println "in post punchout")
+                   (def qqq req)
+                   (binding [*out* *err*]
+                     (println "in post punchout"))
                    (let [byte? (= (type (:body req)) org.httpkit.BytesInputStream)
                          req (if byte? (assoc req :body (slurp (:body req))) req)]
-                     (def aa req)
                      (do-log-request req "punchout")
-                     ;; (log-request req)
                      (let [response (process-punchout-request-str (:body req))]
                        ;; text/xml; charset=utf-8
-                       (log-now {:status 200
+                       (do-log-request {:status 200
                                  :headers {"Content-Type" "text/xml; charset=utf-8"}
-                                 :body response})
-                       ;; (ok response)
-                       )
-                     ;; (separately-log-request req (:uri req))
-                     ;; (ok (req->printable req))
-                     ))
+                                 :body response} "punchout")
+                       )))
 
 
 

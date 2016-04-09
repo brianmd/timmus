@@ -62,32 +62,34 @@
     [:div.container {:style {:margin-left 10}}
      [:h3 "Punchout Demo"]
      [:table
-      [:tr
-       [:td "1. " [:a {:on-click #(logout completed results)} [:span {:style {:color "red"}} "Log out"]]]
-       [:td [show-completion completed :logged-out]]
-       [:td ]]
-      [:tr
-       [:td "2. " [:a {:on-click #(punchout completed results)} "Punch out"] " (log in via portal)"]
-       [:td [show-completion completed :punched-out]]
-       [:td ""]
-       ]
-      [:tr
-       [:td "3. " [:a {:on-click #(order-message completed results 4192)} "Order Message"]]
-       [:td [show-completion completed :order-message]]
-       [:td]]
-      [:tr
-       [:td "4. " [:a {:on-click #(purchase-order completed results)} "Purchase Order"]
-        [:ul
-         [:li {:style {:color "red"}} "show resque worker"]
-         [:li "receive xml"]
-         [:li "create cart, line items, and order"]
-         [:li "tell resque worker to process"]
-         ]]
-       [:td [show-completion completed :purchase-order]]
-       [:td]]
-      [:tr
-       [:td [:i "5. Invoice (not yet implemented)"]]
-       [:td]
-       [:td]]
-      ]
+      [:tbody
+       [:tr
+        [:td "1. " [:a {:on-click #(logout completed results)} "Log out "] [:span {:style {:color "red"}} "(manual)"]]
+        [:td [show-completion completed :logged-out]]
+        [:td ]]
+       [:tr
+        [:td "2. " [:a {:on-click #(punchout completed results)} "Punch out"] " (log in via portal)"]
+        [:td [show-completion completed :punched-out]]
+        [:td ""]
+        ]
+       [:tr
+        ;; [:td "3. " [:a {:on-click #(order-message completed results 4192)} "Order Message"]]
+        [:td "3. " [:a {:on-click #(order-message completed results 747009)} "Order Message"]]
+        [:td [show-completion completed :order-message]]
+        [:td]]
+       [:tr
+        [:td "4. " [:a {:on-click #(purchase-order completed results)} "Purchase Order"]
+         [:ul
+          [:li "show resque worker " [:span {:style {:color "red"}} "(manual)"]]
+          [:li "receive xml"]
+          [:li "create cart, line items, and order"]
+          [:li "tell resque worker to process"]
+          ]]
+        [:td [show-completion completed :purchase-order]]
+        [:td]]
+       [:tr
+        [:td [:i "5. Invoice (not yet implemented)"]]
+        [:td]
+        [:td]]
+       ]]
      ]))

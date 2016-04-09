@@ -23,6 +23,15 @@
 ;    (js/setTimeout (fn [] (close! c)) ms)
 ;    c))
 
+
+(defn iframe-test []
+  [:div
+   [:iframe {:src "http://www.w3schools.com" :width "800" :height "500"}]
+   [:iframe {:src "https://www.google.com" :width "800" :height "500"}]
+   [:iframe {:src "http://localhost:3000" :width "800" :height "500"}]
+   ]
+  )
+
 (def base-api-url "/api/")
 
 (def entities (r/atom nil))
@@ -343,11 +352,13 @@
             ]
 
       [:div.container
+       "boo"
        [math-component]
        ;; [show-entity tbl-ele @(:entity tbl-ele) @entities]
       ;[show-entities]
        ;[show-table-element {table-elements (:id tbl-ele)}]
-       ]))
-    )
+       ]
+      [iframe-test]
+      )))
 
 

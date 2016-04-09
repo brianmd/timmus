@@ -7,6 +7,8 @@
             [korma.core :refer [database limit where values insert order]]
 
             [resque-clojure.core :as resque]
+            [clj-time.core :as t]
+            [clj-time.local :as l]
 
             [com.rpl.specter :as s]
 
@@ -24,20 +26,20 @@ r
 (def p (xml->map r))
 p 
 
-(select p [:BillTo])
-(select p [:BillTo :Name])
-(select p [:BillTo :PostalAddress])
-(select-content p [:BillTo :Address])
-(select-content p [:BillTo :PostalAddress])
-(select-pruned-content p [:BillTo :PostalAddress])
-(html/select (-> (select-pruned-content p [:BillTo :PostalAddress]) vec) html/text-node)
-(html/select (-> (select-pruned-content p [:BillTo :PostalAddress]) first vec) html/text-node)
-(->  (select-pruned-content p [:BillTo :PostalAddress]))
-(->  (select-pruned-content p [:BillTo :PostalAddress]) first )
-(str/join (html/select (->  (select-pruned-content p [:BillTo :PostalAddress]) first ) [html/text-node]))
+(hselect p [:BillTo])
+(hselect p [:BillTo :Name])
+(hselect p [:BillTo :PostalAddress])
+(hselect-content p [:BillTo :Address])
+(hselect-content p [:BillTo :PostalAddress])
+(hselect-pruned-content p [:BillTo :PostalAddress])
+(hselect (-> (select-pruned-content p [:BillTo :PostalAddress]) vec) html/text-node)
+(hselect (-> (select-pruned-content p [:BillTo :PostalAddress]) first vec) html/text-node)
+(->  (hselect-pruned-content p [:BillTo :PostalAddress]))
+(->  (hselect-pruned-content p [:BillTo :PostalAddress]) first )
+(str/join (hselect (->  (hselect-pruned-content p [:BillTo :PostalAddress]) first ) [html/text-node]))
 
-(detect p [:OrderRequestHeader])
-(:attrs (detect p [:OrderRequestHeader]))
+(hdetect p [:OrderRequestHeader])
+(:attrs (hdetect p [:OrderRequestHeader]))
 
 
 (mapify (select-pruned-content p [:BillTo :PostalAddress]))
@@ -106,18 +108,30 @@ p
 (defn last-order-sans-json []
   (dissoc (last-order) :sap_json_result))
 
-(defn order-vitals [o]
-  (let [o (mapv #(get o %) [:id :total_price :email :name :created_at :sap_document_number])]
-    (assoc o 1 (/ (nth o 1) 100.0))))
+;; (defn order-vitals [o]
+;;   (let [o (mapv #(get o %) [:id :total_price :email :name :created_at :sap_document_number])]
+;;     (assoc o 1 (/ (nth o 1) 100.0))))
+
+(defn orders-by [email]
+  (dselect contact-email (database (find-db :bh-prod)) (where {:type "Order" :email email}) (order :id :DESC) (limit 1)))
+;; (order-vitals (last-order))
+;; (count (orders-by (:email (last-order))))
+;; (:created_at (ddetect customer (where {:email (:email (last-order))})))
 
 (defn order-vitals [o]
   (let [o (into {} (s/select [s/ALL #(contains? #{:id :total_price :email :name :created_at :sap_document_number} (first %))] o))]
-    (assoc o :total_price (/ (:total_price o) 100.0))))
+    (assoc o
+           :total_price (/ (:total_price o) 100.0)
+           :created (localtime (:created_at o)))))
 ;; (def ooo (last-order))
 ;; (order-vitals ooo)
 ;; (pp (mapv order-vitals (last-orders 5)))
+;; (pp (order-vitals (last-order)))
 ;; (pp (last-order-sans-json))
 
+(examples
+ (pp (mapv order-vitals (last-orders 5)))
+ )
 
 
 
@@ -128,10 +142,10 @@ p
    :quantity (-> p :attrs :quantity)
    :line-num (-> p :attrs :lineNumber)
    })
-;; (map parse-line-item (select preq [:ItemOut]))
+;; (map parse-line-item (hselect preq [:ItemOut]))
 
 (defn parse [p]
-  (let [header-attrs (:attrs (detect p [:OrderRequestHeader]))]
+  (let [header-attrs (:attrs (hdetect p [:OrderRequestHeader]))]
     {
      :po-num (:orderid header-attrs)
      :shipping :is-it-Shipping/Description-or-ShipTo/CarrierIdentifier?
@@ -144,10 +158,10 @@ p
      ;; :ship-to (->address p :ShipTo)
      ;; :bill-to (->address p :BillTo)
      ;; :terms-of-delivery (->address p :TermsOfDelivery)
-     ;; :delivery-comments (select p [:TermsOfDelivery :Comments])
-     :delivery-comments (select p [:TermsOfDelivery [:Comments (html/attr= :xml:lang "en-US")]])
+     ;; :delivery-comments (hselect p [:TermsOfDelivery :Comments])
+     :delivery-comments (hselect p [:TermsOfDelivery [:Comments (html/attr= :xml:lang "en-US")]])
      ;; :shipping-instructions (select-content-text p [:ShippingInstructions])
-     ;; :contacts (select p [:Contact])
+     ;; :contacts (hselect p [:Contact])
 
 
      :how-about-TransportInformation? 3
@@ -158,18 +172,17 @@ p
      :items {:item-1 3}
      }))
 
-(def req (slurp "test/mocks/order-request.xml"))
-(def preq (xml->map req))
+;; (def req (slurp "test/mocks/order-request.xml"))
+;; (def preq (xml->map req))
 
-(parse preq)
+;; (parse preq)
 
-;; (select p [:TermsOfDelivery])
+;; (hselect p [:TermsOfDelivery])
 ;; (parse p)
 ;; (->  (parse p) :shipping-instructions)
 
 
 ;; )
-
 
 (resque/configure {:host "localhost" :port 6379})
 

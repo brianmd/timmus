@@ -34,8 +34,9 @@
             ))
 
 
-(defn order-header [punchout-request]
-  (let [punchout (parse-string (:params punchout-request))
+(defn order-header [order]
+  (let [punchout-request (:punchout-request order)
+        punchout (parse-string (:params punchout-request))
         from ((punchout "broker") "id")
         to ((punchout "company") "id")
         ]
@@ -52,6 +53,24 @@
       [:UserAgent "Summit cXML Application"]]
      ]))
 ;; (order-header (p/find-punchout-request 4))
+
+(defn item->hiccup [item]
+  (let [prod (find-entity :products (:product_id item))
+        cents (if-let [c (:price_cents item)] c 4.23)
+        cents (if (= 0 cents) 4.23 cents)]
+    [:ItemIn {:quantity (:quantity item)}
+     [:ItemID
+      [:SupplierPartID (:product_id item)]
+      [:SupplierPartAuxiliaryID (:matnr prod)]]
+     [:ItemDetail
+      [:UnitPrice [:Money {:currency "USD"} cents]]
+      [:Description {:xml:lang "en"}
+       [:ShortName (:name prod)]
+       (:LongDescription prod)]
+      [:UnitOfMeasure (:uom prod)]
+      [:URL (str "https://www.summit.com/store/products/" (:product_id item))]
+      (if false [:Classification {:domain "UNSPSC"} (:unspsc prod)])
+      ]]))
 
 (defn load-order-info [order-num]
   (let [order-request (find-entity :contact_emails order-num)
@@ -72,7 +91,26 @@
 
 (println "--------- f")
 
+(defn items-price [items]
+  23)
+
 ;; other params: buyer-cookie, operationAllowed
+;; (defn create-order-message-from [{:keys [cart customer items punchout-request]}]
+(defn create-order-message-from [{:keys [items punchout-request]}]
+  ;; [buyer-cookie operation total-price items]
+  [:Message {:inReplyTo (:payload_id punchout-request)}
+   ;; create disallows inspect/edit. May want to allow these in the future. p. 90
+   [:PunchOutOrderMessage {:operationAllowed "create"}
+    [:BuyerCookie (:buyer_cookie punchout-request)]
+    [:PunchOutOrderMessageHeader {:operationAllowed (:operation punchout-request)}
+     [:Total
+      [:Money {:currency "USD"} (items-price items)]]]
+    ]
+   (map item->hiccup items)
+   ]
+  )
+
+;; (let [order-request (p/find-order-request 4185)]
 (defn create-order-message [order-request punchout-request]
   ;; [buyer-cookie operation total-price items]
   (let [cart (find-entity :carts (:cart_id order-request))
@@ -86,7 +124,7 @@
        [:Total
         [:Money {:currency "USD"} (:total_price order-request)]]]
       ]
-     (map p/item->hiccup items)
+     (map item->hiccup items)
      ]
     ))
 ;; (let [order-request (p/find-order-request 4185)]
@@ -121,7 +159,7 @@
 ;; (k/select service-center)
 ;; (k/select customer (database (find-db :bh-local)) (where {:email "abq@murphydye.com"}))
 ;; (dselect customer  (where {:email "abq@murphydye.com"}))
-(defn last-city-order-num []
+#_(defn last-city-order-num []
   (let [db (find-db :bh-local)
         customer-id (:id (ddetect customer (database db) (where {:email "abq@murphydye.com"})))
         cart-id (:id (ddetect cart (database db) (where {:customer_id customer-id}) (order :created_at :DESC) (limit 1)))]
@@ -130,33 +168,86 @@
     (:id (ddetect contact-email (database db) (where {:type "Order" :cart_id cart-id})))
     ))
 ;; (last-city-order-num)
-
-;; (def db (find-db :bh-local))
-
-(defn set-order-to-max-punchout []
+#_(defn set-order-to-max-punchout []
   (let [db (find-db :bh-local)
         max-id (-> (exec-sql db "select max(id) id from punchouts") first :id)]
     (exec-sql db (str "update contact_emails set punchout_id=" max-id " where id=" (last-city-order-num)))))
 ;; (set-order-to-max-punchout)
 
 
+(defn retrieve-cart-data [cart-id]
+  (try
+    (let [cart (find-entity :carts cart-id)
+          customer (find-entity :customers (:customer_id cart))
+          items (find-entity-by :line_items :cart_id cart-id)
+          punchout-request (p/find-punchout-request (:active_punchout_id customer))
+          ]
+      (when-not punchout-request
+        (throw (Exception. (str "No corresponding punchout request for cart #" cart-id))))
+      {:cart cart
+       :customer customer
+       :items items
+       :punchout-request punchout-request}
+      )
+    (catch Exception e (throw (Exception. (str "Cart #" cart-id " had invalid data."))))))
+;; (retrieve-cart-data 747016)
+
+(defn order-message-xml [order-message-data]
+  (let [head (order-header order-message-data)
+        msg (create-order-message-from order-message-data)]
+    (p/create-cxml (p/cxml head msg))
+    ))
+;; (order-message-xml (retrieve-cart-data 747016))
+    ;; (def xyz punchout-request)
+    ;; (def xyy url)
+    ;; (println "order message id: " id)
+    ;; (println "order request " order-request)
+    ;; (println "punchout-request" punchout-request)
+    ;; (println "hiccup " hiccup)
+    ;; (do-log-request
+    ;;  (client/post
+    ;;   url
+    ;;   {:headers {:content-type :xml}
+    ;;    :body (p/create-cxml hiccup)})
+    ;;  "punchout")
+    ;; )
+
+
+(defn order-message [order-message-data]
+  (let [str (order-message-xml order-message-data)
+        url (:browser_form_post (:punchout-request order-message-data))]
+    {:method :post
+     :url url
+     :cxml str}))
+;; (order-message (retrieve-cart-data 747016))
+
 (defn submit-order-message []
-  (let [id (last-city-order-num)
+  (let [
+        ;; id (last-city-order-num)
+        id 444
         order-request (p/find-order-request id)
         punchout-request (p/find-punchout-request (:punchout_id order-request))
-        hiccup (cxml-order-message order-request punchout-request)]
-    (def xyz punchout-request)
-    (println "order message id: " id)
-    (println "order request " order-request)
-    (println "punchout-request" punchout-request)
-    (println "hiccup " hiccup)
-    (client/post
-     (:browser_form_post punchout-request)
-     {:headers {:content-type :xml}
-      :body (p/create-cxml hiccup)})
+        hiccup (cxml-order-message order-request punchout-request)
+        url (:browser_form_post punchout-request)]
+    ;; (def xyz punchout-request)
+    ;; (def xyy url)
+    ;; (println "order message id: " id)
+    ;; (println "order request " order-request)
+    ;; (println "punchout-request" punchout-request)
+    ;; (println "hiccup " hiccup)
+    (do-log-request
+     (client/post
+      url
+      {:headers {:content-type :xml}
+       :body (p/create-cxml hiccup)})
+     "punchout")
   ))
 
+;; (p/find-order-request 4193)
+;; (timmus.routes.services/do-log-request {:b "fd"} "punchout")
+;; (timmus.routes.services/do-log-request {:a "asdff"} "punchout")
 ;; (submit-order-message)
+;; xyy 
 
 
 ;; (:browser_form_post xyz)

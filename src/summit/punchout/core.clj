@@ -1,5 +1,11 @@
 (println "loading summit.punchout.core")
 
+;; Data resides in three formats: xml, vector (hiccup), and map (enlive).
+;; As we transform the same data in each of these formats, a suffix is sometimes added.
+;; For example, order-message-xml, order-message-vector, and order-message-map.
+;; 
+;; When data is in default format (input as map and output as vector), no suffix is needed.
+
 (ns summit.punchout.core
   (:require [clojure.string :as str]
             [clojure.java.io :as io :refer [as-url make-parents]]
@@ -33,22 +39,6 @@
 
 
 (println "--------- d")
-
-(defn item->hiccup [item]
-  (let [prod (find-entity :products (:product_id item))]
-    [:ItemIn {:quantity (:quantity item)}
-     [:ItemID
-      [:SupplierPartID (:product_id item)]
-      [:SupplierPartAuxiliaryID (:matnr prod)]]
-     [:ItemDetail
-      [:UnitPrice [:Money {:currency "USD"} (:price_cents item)]]
-      [:Description {:xml:lang "en"}
-       [:ShortName (:name prod)]
-       (:LongDescription prod)]
-      [:UnitOfMeasure (:uom prod)]
-      [:URL (str "https://www.summit.com/store/products/" (:product_id item))]
-      (if false [:Classification {:domain "UNSPSC"} (:unspsc prod)])
-      ]]))
 
 (defn xml->map [xml]
   (html/xml-resource (java.io.StringReader. xml)))
@@ -89,17 +79,11 @@
 (defn request-type [hash]
   (-> (html/select hash [:Request]) first :content only-maps first :tag))
 
-(defn select [parsed v]
-  (html/select parsed v))
-
-(defn detect [parsed v]
-  (first (select parsed v)))
-
 (defn extract-attribute [enlive-parsed selector-vector attribute]
-  (attribute (:attrs (detect enlive-parsed selector-vector))))
+  (attribute (:attrs (hdetect enlive-parsed selector-vector))))
 
 (defn select-content [parsed v]
-  (if-let [c (first (select parsed v))]
+  (if-let [c (first (hselect parsed v))]
     (:content c)))
 
 (defn empty-string? [s]
@@ -109,14 +93,14 @@
   (filter #(not (empty-string? %)) v))
 
 (defn select-pruned-content [parsed v]
-  (if-let [c (first (select parsed v))]
+  (if-let [c (first (hselect parsed v))]
     (prune-empty-strings (:content c))))
 
 (defn mapify [v]
-  (reduce #(assoc %1 (:tag %2) (str/join (html/select %2 [html/text-node]))) {} v))
+  (reduce #(assoc %1 (:tag %2) (str/join (hselect %2 [html/text-node]))) {} v))
 
 (defn select-content-text [parsed v]
-  (mapify (select parsed v)))
+  (mapify (hselect parsed v)))
 
 (defn ->address [parsed tag]
   (let [v [tag :Address]
@@ -125,9 +109,6 @@
      (select-content-text addr [:Name])
      (mapify (select-pruned-content addr [:PostalAddress])))
     ))
-
-(defn uuid [] (java.util.UUID/randomUUID))
-;; (uuid)
 
 
 (println "--------- e")
