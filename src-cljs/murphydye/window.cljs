@@ -16,6 +16,11 @@
 
 (def window-number (atom 0))
 
+(defn new-window-url
+  "map should have minimally :url"
+  [m]
+  (.window js/jQuery (clj->js m)))
+
 (defn new-window [content-fn hash]
   (let [base
         {:showModal false
