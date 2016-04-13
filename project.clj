@@ -70,7 +70,8 @@
                  [me.raynes/conch "0.8.0"]
                  [potemkin "0.4.3"]
                  [snipsnap "0.1.0" :exclusions [org.clojure/clojure]]
-                 [zookeeper-clj "0.9.4"]
+                 ;; [zookeeper-clj "0.9.4"]
+                 [clojurewerkz/neocons "3.0.0"]  ; neo4j
 
                  [com.datomic/datomic-pro "0.9.5344" :exclusions [joda-time org.slf4j/jul-to-slf4j org.slf4j/slf4j-nop org.slf4j/slf4j-over-log4j org.slf4j/slf4j org.slf4j/slf4j-log4j12]]
 

@@ -3,7 +3,8 @@
             [luminus.repl-server :as repl]
             [luminus.http-server :as http]
             [timmus.db.migrations :as migrations]
-            [config.core :refer [env]])
+            [config.core :refer [env]]
+            )
   (:gen-class))
 
 (defn parse-port [port]

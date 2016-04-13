@@ -8,10 +8,13 @@
             [clojure.tools.logging :as log]
             [compojure.route :as route]
             [config.core :refer [env]]
-            [timmus.config :refer [defaults]]
             [mount.core :as mount]
             ; [ring.middleware.cors :refer [wrap-cors]]
-            [luminus.logger :as logger]))
+            [luminus.logger :as logger]
+
+            [timmus.config :refer [defaults]]
+            [timmus.routes.websockets :refer [websocket-routes]]
+            ))
 
 (defn init
   "init will be called once when
@@ -35,6 +38,7 @@
 
 (def app-routes
   (routes
+    #'websocket-routes
     (var service-routes)
     (var punchout-routes)
     (wrap-routes #'home-routes middleware/wrap-csrf)

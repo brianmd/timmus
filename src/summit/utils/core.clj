@@ -20,6 +20,8 @@
     [korma.db :as kdb]
 
     [me.raynes.conch :refer [programs with-programs let-programs] :as sh]
+    [com.rpl.specter :as s]
+
 
     [net.cgrand.enlive-html :as html]
     ))
@@ -31,10 +33,15 @@
 
 (programs ssh)
 
+;; for debugging examples
 (defmacro examples [& forms]
   `(do ~@forms))
 (defmacro examples [& forms]
   )
+
+(defmacro assert-false
+  ([x] `(assert (clojure.core/not ~x)))
+  ([x message] `(assert (clojure.core/not ~x) message)))
 
 (def map! (comp doall map))
 
@@ -142,6 +149,44 @@
 (defn stringify-all [x]
   (postwalk str x))
   ;(postwalk #(if(keyword? %)(name %) %) x))
+
+(defonce clojurized-keywords (atom {}))
+
+(defn set-clojurized-keyword [from-key to-key]
+  (swap! clojurized-keywords assoc from-key to-key))
+
+(defn clear-clojurized-keywords []
+  (reset! clojurized-keywords {}))
+;; (clear-clojurized-keywords)
+
+(defn clojurize-keyword
+  "convert mixed case to lower case with hyphens. Considers 'ID' as a token.
+  Memoized, so can override this function's output with your own."
+  [key]
+  (let [skey (if (keyword? key) (name key) (str key))]
+    (if-let [k (@clojurized-keywords skey)]
+      k
+      (let [s (str/replace skey #"ID" "Id")
+            s (str/replace s #"_" "-")
+            s (str/join (map #(if (and (<= 65 (int %)) (<= (int %) 90)) (str \- (str/lower-case %)) %) s))
+            k (keyword (if (= \- (first s)) (subs s 1) s))]
+        (swap! clojurized-keywords assoc skey k)
+        k))))
+
+(defn clojurize-map [m]
+  (into {}
+        (map! (fn [[k v]] [(clojurize-keyword k) v]) m)))
+;; (clojurize-map {"ab_cd" 4 "AbcDef" 9})
+
+(defn clojurize-map-keywords [m]
+  (s/transform (s/walker keyword?)
+               clojurize-keyword
+               m))
+(examples
+ (clojurize-keyword :ParentID)
+ @clojurized-keywords
+ (clojurize-map-keywords {:ParentID "394" :SubMap {:TestID ["a" 3 :ParentTrap]}})
+ )
 
 (defn save-to-x
   "may be used in a threading macro"

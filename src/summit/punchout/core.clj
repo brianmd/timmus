@@ -27,7 +27,7 @@
             [config.core :refer [env]]
             [korma.core :as k]
 
-            [com.rpl.specter :as s]
+            [com.rpl.specter :as s :refer [ALL LAST]]
 
             [summit.step.xml-output :refer :all]
 
@@ -39,6 +39,9 @@
 
 
 (println "--------- d")
+
+(defn html->map [xml]
+  (html/xml-resource (java.io.StringReader. xml)))
 
 (defn xml->map [xml]
   (html/xml-resource (java.io.StringReader. xml)))

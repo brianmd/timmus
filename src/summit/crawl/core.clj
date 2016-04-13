@@ -18,6 +18,8 @@
  (def all-files (file-seq directory))
  (def files (filter #(re-find #"\.html$" (.getName %)) all-files))
  (count files)
+ (def upcs (map #(re-find #"[^.]+" (.getName %)) files))
+ (count upcs)
  )
 
 (defn find-attribute [entity from-attr to-attr val]
@@ -110,6 +112,7 @@
  (def nonzero-prices (filter #(not= 0.00M (:price %)) price-records))
  (count nonzero-prices)
  (first nonzero-prices)
+ )
 
  (defn sap-price->dbprice [p]
    (let [matnr (:matnr p)
@@ -131,35 +134,40 @@
      (pp p)
      (insert :mdm.price (values p))))
 
- (sap-price->dbprice (first nonzero-prices))
- (dselect :mdm.sap_material (where {:matnr (as-matnr (:matnr (first nonzero-prices)))}))
+ (defn save-price [m]
+   (let [m (assoc m
+                  :specs1 (pr-str (:specs1 m))
+                  :specs2 (pr-str (:specs2 m))
+                  )
+         result (insert :mdm.price (values m))]
+     (assoc m :id (:generated_key result))
+     ))
 
- (map! sap-price->dbprice nonzero-prices)
- )
-(filter #(and (= "048011040288" (:upc %) %)) nonzero-prices)
-(filter #(and (= "048011040288" (:upc %) %)) price-records)
-(first prices)
-(prices 23395)
-(apply ->Price (prices 23395))
-(:price (apply ->Price (prices 23395)))
+ (examples
+  (sap-price->dbprice (first nonzero-prices))
+  (dselect :mdm.sap_material (where {:matnr (as-matnr (:matnr (first nonzero-prices)))}))
+
+  (map! sap-price->dbprice nonzero-prices)
+  
+  (filter #(and (= "048011040288" (:upc %) %)) nonzero-prices)
+  (filter #(and (= "048011040288" (:upc %) %)) price-records)
+  (first prices)
+  (prices 23395)
+  (apply ->Price (prices 23395))
+  (:price (apply ->Price (prices 23395))))
 
 
 
-
-(defn save-price [m]
-  (let [m (assoc m
-                 :specs1 (pr-str (:specs1 m))
-                 :specs2 (pr-str (:specs2 m))
-                 )
-        result (insert :mdm.price (values m))]
-    (assoc m :id (:generated_key result))
-    ))
 
 
 
 
 (examples
  (save-price (platt-vitals "04524204507"))
+
+ ;; first delete platt prices in price table
+ (doseq [upc upcs]
+   (save-price (platt-vitals upc)))
 
  (doseq [upc (drop 4394 upcs)]
    (save-price (platt-vitals upc)))

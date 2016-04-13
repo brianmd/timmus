@@ -19,6 +19,7 @@
             [murphydye.window :as win]
             [timmus.punchout-demo :as punchout]
             [timmus.entity :refer [entities-editor]]
+            [murphydye.chatr :as chatr]
             )
   (:import goog.History))
 
@@ -279,6 +280,7 @@
 
 (defn init! []
   (fetch-docs!)
+  (chatr/init!)
   (hook-browser-navigation!)
   (mount-components))
 

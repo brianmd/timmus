@@ -21,8 +21,6 @@
             [config.core :refer [env]]
             [korma.core :as k]
 
-            [com.rpl.specter :as s]
-
             [summit.step.xml-output :refer :all]
 
             [summit.utils.core :refer :all]
