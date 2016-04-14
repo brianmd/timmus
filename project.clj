@@ -22,7 +22,7 @@
                  [ring-webjars "0.1.1"]
                  [ring/ring-defaults "0.2.0"]
                  [mount "0.1.10"]
-                 ;; [cprop "0.1.7"]
+                 [cprop "0.1.7"]
                  [luminus/config "0.8"]
                  [org.clojure/tools.cli "0.3.3"]
                  [luminus-nrepl "0.1.4"]
@@ -121,8 +121,9 @@
   :main timmus.core
   :migratus {:store :database}
 
-  :plugins [[lein-cprop "1.0.1"]
-  ;; :plugins [[lein-environ "1.0.2"]
+  :plugins [
+            [lein-environ "1.0.2"]
+            [lein-cprop "1.0.1"]
             [migratus-lein "0.2.6"]
             [lein-cljsbuild "1.1.1"]
             [lein-uberwar "0.2.0"]]

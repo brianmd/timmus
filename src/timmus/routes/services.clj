@@ -40,6 +40,7 @@
             [summit.punchout.order-request :as p3]
             [summit.papichulo.core :refer [papichulo-url papichulo-creds create-papi-url papichulo-url-with-creds]]
             [summit.health-check.blue-harvest :as bh]
+            [summit.step.manufacturer-lookup :refer [create-manufacturer-lookup-tables]]
             ))
 ;(-> @((-> customer :rel) "cart") :fk-key)
 
@@ -324,7 +325,7 @@ bb
                     }) "punchout")
 
             (POST "/punchout" req
-              (do-log-request {:punchout (localtime)}) 
+              (do-log-request {:punchout (localtime)})
                    (println "in post punchout")
                    (def qqq req)
                    (binding [*out* *err*]
@@ -339,6 +340,12 @@ bb
                                  :body response} "punchout")
                        )))
 
+            (GET "/manufacturerlookup" req
+              (do
+                (create-manufacturer-lookup-tables)
+                {:status 200
+                 :headers {"Content-Type" "text/json; charset=utf-8"},
+                 :body {:message "http://10.9.0.105:3449/manufacturer-lookup.zip"}}))
 
 
             (PUT "/echo" []

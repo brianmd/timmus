@@ -29,6 +29,10 @@
     (do
       (set! (.-onmessage chan) (receive-transit-msg! receive-handler))
       (reset! ws-chan chan)
+      (win/qgrowl "websocket connected")
       (println "Websocket connection established with: " url))
-    (throw (js/Error. "Websocket connection failed!"))))
+    (let [msg "Websocket connection failed"]
+      (win/qgrowl msg)
+      (throw (js/Error. msg))
+      )))
 

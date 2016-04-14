@@ -111,13 +111,16 @@
   (let [raw (download-manufacturer-children id)]
     (parse-manufacturer-children raw)))
 
-(defn root-manufacturer []
-  (manufacturer "Manufacturer"))
-
 (defn force-manufacturer [id]
   (let [a (manufacturer-attrs id)
         c (manufacturer-children id)
         m (merge a c)]
+    m))
+
+(defn force-manufacturer [id]
+  (let [a (future (manufacturer-attrs id))
+        c (future (manufacturer-children id))
+        m (merge @a @c)]
     m))
 
 (defn manufacturer [id]
@@ -126,6 +129,9 @@
     (let [m (force-manufacturer id)]
       (swap! manufacturers-cache assoc id m)
       m)))
+
+(defn root-manufacturer []
+  (manufacturer "Manufacturer"))
 
 (defn golden-manufacturer? [m]
   (case (:type m)

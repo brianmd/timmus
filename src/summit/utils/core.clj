@@ -123,6 +123,7 @@
 ;; ((default-env-setting :db) :local)
 
 (println "loading summit.utils.core2a")
+(println "(an error here indicates you need a profile.clj file with redis settings!)")
 
 (def redis-conn {:pool {} :spec (default-env-setting :redis)})
 (defmacro wcar* [& body] `(car/wcar redis-conn ~@body))
