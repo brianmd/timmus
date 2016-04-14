@@ -17,6 +17,7 @@
 
 
             [murphydye.window :as win]
+            [murphydye.components :as md-components]
             [timmus.punchout-demo :as punchout]
             [timmus.entity :refer [entities-editor]]
             [murphydye.chatr :as chatr]
@@ -149,7 +150,8 @@
  
 (defn about-page []
   [:div.container
-   [dialog-test]
+   [md-components/components]
+  ;; [dialog-test]
    ;; [:div.row
    ;;  [:div.col-md-4
    ;;   "this is the story of timmus... work in progress"]

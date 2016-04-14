@@ -19,7 +19,7 @@
                      buffer sliding-buffer dropping-buffer]]
 
             [cemerick.url :refer [url-encode url]]
-            [clj-http.client :as client]
+            ;; [clj-http.client :as client]
             [config.core :refer [env]]
 
             ;[compojure.core :refer [defroutes GET]]
@@ -179,7 +179,7 @@ bb
 
 
 
-(defn forward-request [to-uri req]
+#_(defn forward-request [to-uri req]
   (let [uri (str to-uri ((:params req) :*))
         method (:request-method req)
         base-req (select-keys req [:headers :cookies :body :remote-addr
@@ -260,9 +260,9 @@ bb
                   ;;  )
                   )
 
-            (GET "/papi/*" req
-                  (let [response (forward-request (papichulo-url-with-creds) req)]
-                    response))
+            ;; (GET "/papi/*" req
+            ;;       (let [response (forward-request (papichulo-url-with-creds) req)]
+            ;;         response))
 
             (GET "/admin/queries" req
               (ok (query-keys)))

@@ -4,6 +4,7 @@
             [luminus.http-server :as http]
             [timmus.db.migrations :as migrations]
             [config.core :refer [env]]
+            ;; [timmus.config :refer [env]]
             )
   (:gen-class))
 

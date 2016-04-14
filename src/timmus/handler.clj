@@ -38,7 +38,7 @@
 
 (def app-routes
   (routes
-    #'websocket-routes
+    (var websocket-routes)
     (var service-routes)
     (var punchout-routes)
     (wrap-routes #'home-routes middleware/wrap-csrf)

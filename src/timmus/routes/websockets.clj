@@ -77,4 +77,3 @@
 
 (defroutes websocket-routes
   (GET "/ws" [] ws-handler))
-

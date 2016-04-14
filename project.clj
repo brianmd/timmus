@@ -8,75 +8,87 @@
   :url "http://example.com/FIXME"
 
   :dependencies [[org.clojure/clojure "1.8.0"]
-                 [org.clojure/tools.logging "0.3.1"]
-                 [ch.qos.logback/logback-classic "1.1.3"]
-                 [com.taoensso/encore "2.36.0"]
-                 [selmer "1.0.0"]
-                 [markdown-clj "0.9.85"]
-                 [luminus/config "0.8"]
+                 [domina "1.0.3"]
+                 [selmer "1.0.4"]
+                 [markdown-clj "0.9.87"]
                  [ring-middleware-format "0.7.0"]
                  [metosin/ring-http-response "0.6.5"]
                  [bouncer "1.0.0"]
                  [org.webjars/bootstrap "4.0.0-alpha.2"]
                  [org.webjars/font-awesome "4.5.0"]
                  [org.webjars.bower/tether "1.1.1"]
-                 [org.webjars/jquery "2.2.0"]
-                 [org.webjars/jquery-ui "1.11.4"]
-                 [org.webjars/jquery-window "5.03"]
-                 [org.webjars/codemirror "5.12"]
-                 [com.taoensso/carmine "2.12.2"]
-                 [com.taoensso/tower "3.1.0-beta4"]
-                 [compojure "1.4.0"]
+                 [org.clojure/tools.logging "0.3.1"]
+                 [compojure "1.5.0"]
                  [ring-webjars "0.1.1"]
-                 [ring/ring-defaults "0.1.5"]
-                 [ring "1.4.0" :exclusions [ring/ring-jetty-adapter]]
-                 [mount "0.1.8"]
-                 [luminus-nrepl "0.1.2"]
-                 [buddy "0.10.0"]
-                 [migratus "0.8.9"]
-                 [conman "0.4.5"]
-                 ;[conman "0.3.0" :exclusions [org.slf4j/slf4j-api org.slf4j/slf4j-log4j12]]
+                 [ring/ring-defaults "0.2.0"]
+                 [mount "0.1.10"]
+                 ;; [cprop "0.1.7"]
+                 [luminus/config "0.8"]
+                 [org.clojure/tools.cli "0.3.3"]
+                 [luminus-nrepl "0.1.4"]
+                 [org.webjars/webjars-locator-jboss-vfs "0.1.0"]
+                 ;; [luminus-immutant "0.1.9" :exclusions [org.jboss.logging/jboss-logging]]
+                 [luminus-immutant "0.1.9"]
+                 [buddy "0.11.0"]
+                 [luminus-migrations "0.1.0"]
+                 ;; [migratus "0.8.9"]
+                 [conman "0.4.8"]
+                                        ;[conman "0.3.0" :exclusions [org.slf4j/slf4j-api org.slf4j/slf4j-log4j12]]
                  [mysql/mysql-connector-java "5.1.6"]
-                 [org.clojure/clojurescript "1.7.228" :scope "provided"]
-                 [reagent "0.6.0-alpha"]
-                 [reagent-forms "0.5.13"]
+                 [org.clojure/clojurescript "1.8.40" :scope "provided"]
+                 ;; [reagent "0.6.0-alpha"]
+                 [reagent "0.5.1"]
+                 [reagent-forms "0.5.22"]
                  [reagent-utils "0.1.7"]
                  [secretary "1.2.3"]
-                 [org.clojure/core.async "0.2.374" :exclusions [org.clojure/core.memoize]]
-                 [cljs-ajax "0.5.3"]
-                 [metosin/compojure-api "1.0.0"]
-                 [metosin/ring-swagger-ui "2.1.4-0"]
-                 [org.webjars/webjars-locator-jboss-vfs "0.1.0"]
-                 ;this one caused errors:
-                 [luminus-immutant "0.1.1" :exclusions [org.jboss.logging/jboss-logging]]
-                 ;[luminus-immutant "0.1.0"]
-                 [luminus-log4j "0.1.2" :exclusions [org.slf4j/slf4j-api org.slf4j/slf4j-log4j12]]
-                 ;[luminus-log4j "0.1.2" :exclusions [org.slf4j/slf4j-nop]]
-                 ;[luminus-log4j "0.1.2"]
-                 [korma "0.4.2"]
-                 [com.draines/postal "1.11.3"]              ; email support
-                 [org.clojure/data.xml "0.0.8"]
-                 [ring-cors "0.1.7"]
+                 ;; [org.clojure/core.async "0.2.374" :exclusions [org.clojure/core.memoize]]
+                 [cljs-ajax "0.5.4"]
+                 [metosin/compojure-api "1.0.2"]
+                 ;; [luminus-log4j "0.1.3" :exclusions [org.slf4j/slf4j-api org.slf4j/slf4j-log4j12]]
+                 [luminus-log4j "0.1.3"]
 
-                 [siren "0.2.0"]
-                 [org.clojars.frozenlock/reagent-table "0.1.3"]
+                 ;; clj libraries
+
+                 [com.taoensso/carmine "2.12.2"]
                  [clj-http "2.1.0"]
-                 [com.cemerick/url "0.1.1"]
                  [org.clojure/data.csv "0.1.3"]
                  [org.clojure/data.codec "0.1.0"]
                  [org.clojure/data.xml "0.0.8"]
-                 [im.chit/hara.reflect "2.2.17"]
-
+                 ;; [im.chit/hara.reflect "2.2.17"]
                  [me.raynes/conch "0.8.0"]
                  [potemkin "0.4.3"]
                  [snipsnap "0.1.0" :exclusions [org.clojure/clojure]]
-                 ;; [zookeeper-clj "0.9.4"]
-                 [clojurewerkz/neocons "3.0.0"]  ; neo4j
+                 [korma "0.4.2"]
+                 [com.draines/postal "1.11.3"]              ; email support
+                 [org.clojure/data.xml "0.0.8"]
+                 [com.cemerick/url "0.1.1"]
 
-                 [com.datomic/datomic-pro "0.9.5344" :exclusions [joda-time org.slf4j/jul-to-slf4j org.slf4j/slf4j-nop org.slf4j/slf4j-over-log4j org.slf4j/slf4j org.slf4j/slf4j-log4j12]]
 
-                 [funcool/cats "1.2.1"]
-                 [org.clojure/algo.monads "0.1.5"]
+                 ;; cljs libraries
+
+                 [org.webjars/jquery "2.2.0"]
+                 [org.webjars/jquery-ui "1.11.4"]
+                 [org.webjars/jquery-ui-themes "1.11.4"]
+                 [org.webjars/jquery-window "5.03"]
+                 [siren "0.2.0"]
+                 [org.clojars.frozenlock/reagent-table "0.1.3"]
+                 ;; [org.webjars/codemirror "5.12"]
+                 ;; [com.taoensso/tower "3.1.0-beta4"] ; i18n
+                 ;; [ring "1.4.0" :exclusions [ring/ring-jetty-adapter]]
+                 ;; [ch.qos.logback/logback-classic "1.1.3"] ; for easier log setup
+                 ;; [com.taoensso/encore "2.36.0"]  ; core clojure utils
+;; [metosin/ring-swagger-ui "2.1.4-0"]
+                 ;this one caused errors:
+                 ;[luminus-immutant "0.1.0"]
+                 ;; [ring-cors "0.1.7"]
+
+
+                 ;; [clojurewerkz/neocons "3.0.0"]  ; neo4j
+
+                 ;; [com.datomic/datomic-pro "0.9.5344" :exclusions [joda-time org.slf4j/jul-to-slf4j org.slf4j/slf4j-nop org.slf4j/slf4j-over-log4j org.slf4j/slf4j org.slf4j/slf4j-log4j12]]
+
+                 ;; [funcool/cats "1.2.1"]
+                 ;; [org.clojure/algo.monads "0.1.5"]
                  [clj-time "0.11.0"]
                  [re-com "0.8.0"]
                  [re-frame "0.7.0"]
@@ -85,14 +97,15 @@
                  [enlive "1.1.6"]
 
                  [org.clojure/java.jdbc "0.4.2"]
-                 [com.h2database/h2 "1.4.190"]
+                 ;; [com.h2database/h2 "1.4.190"]
                  ;; [gyptis "0.2.2" :exclusions [io.aviso/pretty com.taoensso/timbre]]   ;; vega plots, conflicts w/ clj-ns-browser
-                 [medley "0.7.1"]
+                 ;; [medley "0.7.1"]  ;lightweight library of useful Clojure functions
                  [com.taoensso/carmine "2.12.2"]
                  [clj-tagsoup/clj-tagsoup "0.3.0" :exclusions [org.clojure/clojure]]
                  ;; [lein-ancient "0.6.8"]
                  ;; [com.jakemccrary/lein-test-refresh "0.13.0"]
-                 [zookeeper-clj "0.9.4" :exclusions [org.slf4j/slf4j-log4j12]]
+                 ;; [zookeeper-clj "0.9.4"]
+                 ;; [zookeeper-clj "0.9.4" :exclusions [org.slf4j/slf4j-log4j12]]
                  [com.rpl/specter "0.9.2"]
                  [resque-clojure "0.3.0"]
 
@@ -108,8 +121,9 @@
   :main timmus.core
   :migratus {:store :database}
 
-  :plugins [[lein-environ "1.0.2"]
-            [migratus-lein "0.2.0"]
+  :plugins [[lein-cprop "1.0.1"]
+  ;; :plugins [[lein-environ "1.0.2"]
+            [migratus-lein "0.2.6"]
             [lein-cljsbuild "1.1.1"]
             [lein-uberwar "0.2.0"]]
   :uberwar
@@ -154,9 +168,9 @@
                                  [ring/ring-devel "1.4.0"]
                                  [pjstadig/humane-test-output "0.7.1"]
                                  [com.cemerick/piggieback "0.2.1"]
-                                 [lein-figwheel "0.5.0-6" :exclusions [org.clojure/core.memoize]]
+                                 [lein-figwheel "0.5.2" :exclusions [org.clojure/core.memoize]]
                                  [mvxcvi/puget "1.0.0"]]
-                  :plugins [[lein-figwheel "0.5.0-6" :exclusions [org.clojure/clojure org.clojure/core.memoize]] [org.clojure/clojurescript "1.7.228" :exclusions [org.clojure/clojure]]]
+                  :plugins [[lein-figwheel "0.5.2" :exclusions [org.clojure/clojure org.clojure/core.memoize]] [org.clojure/clojurescript "1.7.228" :exclusions [org.clojure/clojure]]]
                    :cljsbuild
                    {:builds
                     {:app
