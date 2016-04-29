@@ -52,6 +52,7 @@
                  [com.taoensso/carmine "2.12.2"]
                  [clj-http "2.1.0"]
                  [org.clojure/data.csv "0.1.3"]
+                 [semantic-csv "0.1.0"]
                  [org.clojure/data.codec "0.1.0"]
                  [org.clojure/data.xml "0.0.8"]
                  ;; [im.chit/hara.reflect "2.2.17"]
@@ -108,6 +109,7 @@
                  ;; [zookeeper-clj "0.9.4" :exclusions [org.slf4j/slf4j-log4j12]]
                  [com.rpl/specter "0.9.2"]
                  [resque-clojure "0.3.0"]
+                 [local/ojdbc6 "11.2.0.4"]
 
                  ;; https://github.com/binaryage/cljs-devtools-sample/blob/master/project.clj
                  ;; [binaryage/devtools "0.5.4"]
@@ -116,7 +118,7 @@
   :min-lein-version "2.0.0"
   :uberjar-name "timmus.jar"
   :jvm-opts ["-Duser.timezone=UTC -server"]
-  :resource-paths ["resources" "target/cljsbuild"]
+  :resource-paths ["resources" "target/cljsbuild" "jars/*"]
 
   :main timmus.core
   :migratus {:store :database}
@@ -126,7 +128,9 @@
             [lein-cprop "1.0.1"]
             [migratus-lein "0.2.6"]
             [lein-cljsbuild "1.1.1"]
-            [lein-uberwar "0.2.0"]]
+            [lein-uberwar "0.2.0"]
+            [lein-expand-resource-paths "0.0.1"]
+            ]
   :uberwar
   {:handler timmus.handler/app
    :init timmus.handler/init
@@ -170,7 +174,10 @@
                                  [pjstadig/humane-test-output "0.7.1"]
                                  [com.cemerick/piggieback "0.2.1"]
                                  [lein-figwheel "0.5.2" :exclusions [org.clojure/core.memoize]]
-                                 [mvxcvi/puget "1.0.0"]]
+                                 [org.clojure/tools.namespace "0.2.11"]
+                                 [org.clojure/java.classpath "0.2.0"]
+                                 [mvxcvi/puget "1.0.0"]
+                                 ]
                   :plugins [[lein-figwheel "0.5.2" :exclusions [org.clojure/clojure org.clojure/core.memoize]] [org.clojure/clojurescript "1.7.228" :exclusions [org.clojure/clojure]]]
                    :cljsbuild
                    {:builds

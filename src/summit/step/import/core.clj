@@ -84,10 +84,10 @@
 )
 
 
-(defn process-file-with [path-and-filename fn]
+(defn process-file-with [path-and-filename f]
   (with-open [in-file (io/reader path-and-filename)]
     (let [lines (csv/read-csv in-file :separator \| :quote \^)]
-      (fn lines)
+      (f lines)
       )))
 
 (defn lookup-validator [lookup-table]

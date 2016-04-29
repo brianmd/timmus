@@ -346,6 +346,7 @@ bb
                 {:status 200
                  :headers {"Content-Type" "text/json; charset=utf-8"},
                  :body {:message "http://10.9.0.105:3449/manufacturer-lookup.zip"}}))
+                 ;; :body {:message "http://192.168.2.5:3449/manufacturer-lookup.zip"}}))
 
 
             (PUT "/echo" []

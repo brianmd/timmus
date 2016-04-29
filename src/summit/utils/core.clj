@@ -31,31 +31,53 @@
 
 (println "loading summit.utils.core1")
 
-(programs ssh)
-
 ;; for debugging examples
-(defmacro examples [& forms]
-  `(do ~@forms))
+;; (defmacro examples [& forms]
+;;   `(do ~@forms))
 (defmacro examples [& forms]
   )
+
+(programs ssh)
+
+(defmacro assert= [& args]
+  `(assert (= ~@args)))
+(defmacro assert-= [& args]
+  `(assert (= ~@args)))
+
+(examples
+ (assert= nil (->int nil) (->int "    "))
+ (assert= 34 (->int "   34") (->int "   000000034")))
 
 (defmacro assert-false
   ([x] `(assert (clojure.core/not ~x)))
   ([x message] `(assert (clojure.core/not ~x) message)))
 
 (def map! (comp doall map))
+(def maprun (comp dorun map))
 
 (defn any [s]
   (nth s (rand-int (count s))))
 
+(defn detect
+  ([predicate] #(detect predicate %))
+  ([predicate coll]
+   (some #(if (predicate %) %) coll)))
+(examples
+ (assert= 9 (detect #(> % 5) [2 9 4 7]) ((detect #(> % 5)) [2 9 4 7]))
+ (assert= 6 (detect #(> % 5) (range)) ((detect #(> % 5)) (range))))
+
+(def ppout *out*)
+(defn reset-pp []
+  (def ppout *out*))
+;; (reset-pp)
+
 (defn ppn [& args]
-  (println "\n-------------------")
-  (doseq [arg args] (pprint arg))
-  )
+  (binding [*out* ppout]
+    (println "\n-------------------")
+    (doseq [arg args] (pprint arg))))
 
 (defn pp [& args]
-  (println "\n-------------------")
-  (doseq [arg args] (pprint arg))
+  (apply ppn args)
   (last args))
 
 (defn pp->str [obj]
@@ -160,6 +182,17 @@
   (reset! clojurized-keywords {}))
 ;; (clear-clojurized-keywords)
 
+(defn clojurize-keyword!
+  "convert mixed case to lower case with hyphens. Considers 'ID' as a token."
+  [key]
+  (let [skey (if (keyword? key) (name key) (str key))
+        s (str/replace skey #"_" "-")
+        s (str/replace s #"[^A-Z-][A-Z]" #(str (first %) "-" (second %)))
+        s (str/lower-case s)
+        ;; s (str/join (map #(if (and (<= 65 (int %)) (<= (int %) 90)) (str \- (str/lower-case %)) %) s))
+        k (keyword (if (= \- (first s)) (subs s 1) s))]
+      k))
+
 (defn clojurize-keyword
   "convert mixed case to lower case with hyphens. Considers 'ID' as a token.
   Memoized, so can override this function's output with your own."
@@ -167,12 +200,16 @@
   (let [skey (if (keyword? key) (name key) (str key))]
     (if-let [k (@clojurized-keywords skey)]
       k
-      (let [s (str/replace skey #"ID" "Id")
-            s (str/replace s #"_" "-")
-            s (str/join (map #(if (and (<= 65 (int %)) (<= (int %) 90)) (str \- (str/lower-case %)) %) s))
-            k (keyword (if (= \- (first s)) (subs s 1) s))]
-        (swap! clojurized-keywords assoc skey k)
-        k))))
+      (clojurize-keyword! skey))))
+
+(examples
+ (clear-clojurized-keywords)
+ (clojurize-keyword! "ParentIDW")
+ (clojurize-keyword! "PREParentIDW") ; probably want :pre-parent-idw.
+ (clojurize-keyword "ParentIDW")
+ (str/split "ParentIDW" #"[^A-Z][A-Z]")
+ (str/replace "ParentIDW" #"[^A-Z-_][A-Z]" #(str (first %) "-" (second %)))
+ (str/replace "Parent-IDW" #"[^A-Z-_][A-Z]" #(str (first %) "-" (second %))))
 
 (defn clojurize-map [m]
   (into {}
@@ -189,11 +226,11 @@
  (clojurize-map-keywords {:ParentID "394" :SubMap {:TestID ["a" 3 :ParentTrap]}})
  )
 
-(defn save-to-x
+(defn save-to-xyz1
   "may be used in a threading macro"
   [obj]
-  (def x obj)
-  x)
+  (def xyz1 obj)
+  xyz1)
 
 (defn logit [& args]
   (binding [*out* *err*]
@@ -233,24 +270,66 @@
     @i))
 ;; (select-keyword [:a [:b 3 4] [:c]] :b)
 
+(defn zero-pad [width string]
+  (if string
+    (let [s (str (apply str (repeat width "0")) string)]
+      (subs s (- (count s) width)))))
+
 (defn as-matnr [string]
-  (if string
-    (let [s (str "000000000000000000" string)]
-      (subs s (- (count s) 18)))))
+  (zero-pad 18 string))
+
 (defn as-document-num [string]
-  (if string
-    (let [s (str "0000000000" string)]
-      (subs s (- (count s) 10)))))
+  (zero-pad 10 string))
 ;; (as-document-num "asdf")
+
 (defn as-short-document-num [string]
   "remove leading zeros"
   (if string (str/replace string #"^0*" "")))
-;(as-short-document-num (as-document-num "1"))
+;; (as-short-document-num (as-document-num "00001"))
+
+(defn ->str [a-name]
+  (if (string? a-name)
+    a-name
+    (if (number? a-name)
+      a-name
+      (str/replace
+       (str/upper-case
+        (if (keyword? a-name)
+          (name a-name)
+          (str a-name)))
+       "-" "_"))))
+
+(defn ->keyword [a-string]
+  (if (keyword? a-string)
+    a-string
+    (keyword
+     (str/lower-case (str/replace (str a-string) "_" "-")))))
+
+(defn ->int [v]
+  (if (nil? v)
+    nil
+    (if (string? v)
+      (let [v (str/trim v)]
+        (if (empty? v)
+          nil
+          (-> v Double/parseDouble int)))
+      (int v))))
+
+(defn ->float [v]
+  (if (nil? v)
+    nil
+    (if (string? v)
+      (let [v (str/trim v)]
+        (if (empty? v)
+          nil
+          (Double/parseDouble v)))
+      (double v))))
 
 (defn as-integer [string]
-  (if (= (type string) String)
-    (read-string (as-short-document-num string))
-    string))
+  (->int string))
+  ;; (if (= (type string) String)
+  ;;   (read-string (as-short-document-num string))
+  ;;   string))
 
 (defn bh_login [email pw]
   (let [cred
@@ -264,12 +343,16 @@
         {:body         (generate-string cred)
          :content-type :json
          :accept       :json}
-        ]
-    (client/post
-      "https://www.summit.com/store/customers/sign_in.json"
-      params)
-    ))
-; => {:status 201, :headers {"Server" "nginx/1.4.6 (Ubuntu)", "Content-Type" "application/json; charset=utf-8", "X-Content-Type-Options" "nosniff", "X-Runtime" "0.107563", "X-Frame-Options" "SAMEORIGIN", "Connection" "close", "X-CSRF-Token" "2yucxbJnvTNt2oHJBzvXEcrKbsDkZzU7xMIpo5J4zdA=", "Location" "/", "Transfer-Encoding" "chunked", "ETag" "\"3e601d8f4e7c7ce73f0e89041750abe2\"", "Date" "Mon, 29 Feb 2016 16:18:35 GMT", "X-CSRF-Param" "authenticity_token", "X-Request-Id" "2f903ed7-8458-4945-a4f5-f774ac01abbb", "X-XSS-Protection" "1; mode=block", "Cache-Control" "max-age=0, private, must-revalidate"}, :body "{\"customers\":[{\"id\":28,\"first_name\":\"Brian\",\"last_name\":\"\",\"email\":\"brian@murphydye.com\",\"office_phone\":\"\",\"cell_phone\":\"\",\"address1\":\"\",\"address2\":\"\",\"city\":\"Seattle\",\"state\":\"WA\",\"zip\":\"\",\"sign_in_count\":151,\"active_account_number\":\"1000736\",\"active_job_account_number\":null,\"jobAccount\":null,\"links\":{\"accounts\":\"/store/accounts\"}}]}", :request-time 176, :trace-redirects ["https://www.summit.com/store/customers/sign_in.json"], :orig-content-encoding nil, :cookies {"customer_id" {:discard true, :path "/", :secure false, :value "28", :version 0}, "_blueharvest_session" {:discard true, :path "/", :secure false, :value "SlJEM0ZkOTdNSWJaWVFlQ0xmWGtTWFZVSWJtMC8vTk05aExES1gzT3FUMGgvRXBUYW5qUU5nZjBjNno4Yk00Ym8rWXhVQkpNOWpPVkkvS2dma2pUclR0eHJOUnNKeEwrTU14MS91Y2U4OW42eGlmdTJ3N0tUdmRDdVB4ODJ4aWd0cGlPaCtiaHZMejMvcGVRbEcrWVpONmNjaHFIdGlBd3JuOWM4cGpaUVF3ay9aUmdXNDZIUUQ1eElodEtLZUdueHJhM1JzVTJUZDk0Ni93ZjFwdHZSSEtOVUpPeHd3bXc1YzhzNXVJdjZ3bnJoWWpuVmRaUEtDTzVYSTdpTzNDbTJ2RlJUSkpoUmFXenBGMmI3MnRDcVd1MWlvaUJWSTJTcXhjNlQySFhyNjg9LS1CdzM3M3JFK1lEcWZlb0FEWUxpVWtRPT0%3D--76d2f3c88be29bc3d4c79b87b711dbe2b7f2d7f5", :version 0}}}
+        result (client/post
+                "https://www.summit.com/store/customers/sign_in.json"
+                params)
+        ;; (clojurize-map-keywords
+        result (assoc result :body (parse-string (:body result)))
+        m (clojurize-map (clojure.walk/keywordize-keys result))]
+    (assoc m
+           :auth-token (:X-CSRF-Token (:headers m))
+           :customer (-> m :body :customers first)
+           )))
 
 
 (def ^:dynamic level-function-names (list))
@@ -613,7 +696,34 @@
 ;; (do-log-request 3 "requests")
 
 
+(defn fempty
+  "returns function that replaces nil or empty strings with new values"
+  [func & defaults]
+  (fn [& fargs]
+    (let [args (mapv (fn [value default]
+                       (if (or (nil? value) (and (seq? value) (empty? value))) default value))
+                     fargs defaults)]
+      (apply func args))))
+;; ((fempty (fn [& args] (println args)) 3 4 6) nil 5 nil)
+;; ((fempty (fn [& args] (println args)) 3 4 nil 'abc) nil 5 nil nil)
 
+(defn upc-check-digit [string]
+  (let [zero (int \0)]
+    (loop [accum 0
+           s (seq string)
+           even-digit? false]
+      (if (empty? s)
+        (mod (- 10 (mod accum 10)) 10)
+        (let [x (- (int (first s)) zero)]
+          (println even-digit? x)
+          (recur (+ accum (if even-digit? x (* 3 x))) (rest s) (not even-digit?)))))))
+
+(defn add-checksum [string]
+  (let [s (zero-pad 11 string)]
+    (str s (upc-check-digit s))))
+;; (upc-check-digit "87663000027")
+;; (upc-check-digit "80432546052")
+;; (assert (= "804325460521" (add-checksum "80432546052")))
 
 (println "done loading summit.utils.core")
 

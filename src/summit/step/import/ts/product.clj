@@ -31,7 +31,7 @@
 
 
 (def product-col-info-array
-  [:item-pik "ITEMPIK" String [:required :digits]
+  [:item-pik "ITEM_PIK" String [:required :digits]
    :item-action "ITEM_ACTION" String []
    :mfr-pik "MFR_PIK" BigInteger []
    :item-country "ITEM_COUNTRY" String []
@@ -40,7 +40,7 @@
    :ean "EAN" String []
    :upc-flag "UPC_FLAG" String []
    :barcode-type "BARCODE_TYPE" String []
-   :mfr-cat-num "MFR_CAT_NUM" String []
+   :mfr-cat-num "PART_NUMBER" String []
    :tsc-cat-num "TSC_CAT_NUM" String []
    :lookup-cat-num "LOOKUP_CAT_NUM" String []
    :alt-cat-num "ALT_CAT_NUM" String []
@@ -61,16 +61,16 @@
    :leaf-class  "LEAF_CLASS" String []
    :maintenance-code "TS_MAINTENANCE_CODE" String []
    :maintenance-month "TS_MAINTENANCE_MONTH" String []
-   :unspsc "TS_MAINTENANCE_MONTH" String []
-   :unspsc40 "TS_UNSPSC40" String []
-   :brand-name "TS_BRAND_NAME" String []
+   :unspsc "UNSPSC" String []
+   :unspsc40 "UNSPSC40" String []
+   :brand-name "BRAND_NAME" String []
    :mfr-replaced-by-upc "MFR_REPLACED_BY_UPC" String []
    :mfr-replaced-by-cat-no "MFR_REPLACED_BY_CAT_NO" String []
    :mfr-replaces-upc "MFR_REPLACES_UPC" String []
    :mfr-replaces-cat-no "MFR_REPLACES_CAT_NO" String []
-   :product-name "TS_PRODUCT_NAME" String []
-   :gtin "TS_GTIN" String []
-   :upc "TS_UPC" String []
+   :product-name "PRODUCT_NAME" String []
+   :gtin "GTIN" String []
+   :upc "UPC" String []
    ])
 
 (def num-product-cols (count (partition 4 product-col-info-array)))
@@ -161,14 +161,16 @@
 ;                           {:tag :child :attrs {:id "57"}}]})
 
 (defn ts-product-hiccup [item]
-  [:Product
-   {:ID (str "MEM_TS_" (:item-pik item))
-           :UserTypeID "TS_Member_Record"
-           :ParentID "TS_Member_Records"}
-   (product-attributes product-col-info item)
-   ]
-   ;:content
-  )
+  (let [parent-id (let [p (:unspsc item)]
+                    (if (or (nil? p) (= p ""))
+                      "TS_Member_Records"
+                      (str "TS_" p)))]
+    [:Product
+     {:ID (str "MEM_TS_" (:item-pik item))
+      :UserTypeID "TS_Member_Record"
+      :ParentID parent-id}
+     (product-attributes product-col-info item)
+     ]))
 
 (defn ts-product-xml [item]
   (println
@@ -184,12 +186,17 @@
 ;; (def matched-products (set (map str (:ts (slurp-source-ids "punduit")))))
 ;; (contains? matched-products "121959245")
 
+
 (defn transform-ts-product [item]
   item
   ;; (assoc item
   ;;        :mfr-pik (as-short-document-num (:mfr-pik item))
   ;;        )
   )
+
+(def ts-mfr-arlington "1009")
+(def ts-mfr-hubbell "762")
+(def ts-mfr-milwaukee "112")
 
 (defn process-ts-product [lines]
   (let [categories (atom #{})
@@ -199,9 +206,11 @@
          rest
          (remove nil?)
          ;; (filter #(contains? matched-products (first %)))
-         (filter (comp *matched-products* as-integer first))
-         ;; (drop 50)
+         ;; (filter (comp *matched-products* as-integer first))
          ;; (take 5)
+         ;; pp
+         (filter #(= ts-mfr-milwaukee (nth % 2)))  ;; mfr-pik
+         ;; (drop 50)
          ;; logit-plain
          (map ts-product)
          ;; (remove nil?)
@@ -213,7 +222,9 @@
          )
     ))
 ;; (process-ts-file-with "item.txt" process-ts-product)
-;; (time (write-ts-file))
+(examples
+ (time (write-ts-file))
+ )
 
 
 (defn process-ts-file-with [filename fn]

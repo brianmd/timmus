@@ -74,23 +74,27 @@
 (defn download-manufacturer-attrs [id]
   (first (get-url-content (manufacturer-url id))))
 
-(defn parse-manufacturer-attrs [m]
+(defn extract-attrs [m]
   (let [attrs (clojurize-map-keywords (:attrs m))
         content (:content m)
-        name (ffirst (s/select [ALL #(= (:tag %) :Name) :content] content))
+        ;; name (ffirst (s/select [ALL #(= (:tag %) :Name) :content] content))
         name (->> content (filter-tag-named :tag :Name) :content first)
         value-tags (->> content (filter-tag-named :tag :Values) :content)
         values (map #(vector (keyword (:AttributeID (:attrs %))) (first (:content %))) value-tags)
+        xref-tags (->> content (filter-tags-named :tag :ProductCrossReference))
+        xref (map #(vector (:ProductID (:attrs %)) (:Type (:attrs %))) xref-tags)
         ]
-    {:name name
-     :attrs attrs
-     :specs (clojurize-map-keywords (into {} values))}
     (merge
      (clojurize-map-keywords (into {} values))
      (clojure.set/rename-keys attrs {:user-type-id :type})
-     {:name name}
+     {:name name :source-references xref}
      )
     ))
+;; (parse-product gldprod)
+;; {:parent-id "Unclassified_Golden_Records", :id "MEM_GLD_150247", :context "Context1", :workspace "Main", :type "GoldenRecordItem", :name nil, :source-references (["MEM_IDW_8963576" "GoldenRecord"])}{:parent-id "Unclassified_Golden_Records", :id "MEM_GLD_150247", :context "Context1", :workspace "Main", :type "GoldenRecordItem", :name nil, :xref ({:tag :ProductCrossReference, :attrs {:ProductID "MEM_IDW_8963576", :title "Hubbell Incorporated CWP1CR", :Type "GoldenRecord"}, :content ({:tag :Values, :attrs nil, :content nil})})}
+
+;; (parse-product idwprod)
+;; (ppn idwprod)
 
 (defn download-manufacturer-children [id]
   (get-url-content (str (manufacturer-url id) "/children")))
@@ -105,7 +109,7 @@
   )
 
 (defn manufacturer-attrs [id]
-  (parse-manufacturer-attrs (download-manufacturer-attrs id)))
+  (extract-attrs (download-manufacturer-attrs id)))
 
 (defn manufacturer-children [id]
   (let [raw (download-manufacturer-children id)]
@@ -147,6 +151,7 @@
  (ppn (force-manufacturer "TsMfr3534"))
  (ppn (manufacturer "GoldenMfr8260"))
  (ppn (manufacturer "TsMfr3534"))
+ (ppn (manufacturer "GoldenMfr110202")) ; ""3M Test""
  (ppn (manufacturer "Manufacturer")))
 
 ;; (:type (manufacturer "GoldenMfr8260"))
@@ -170,19 +175,23 @@
 ;;   (get-url (str (product-url id) "/children")))
 
 (defn parse-product [p]
-  (let [attrs (:attrs p)
-        sources (s/select [ALL #(= (:tag %) :ProductCrossReference) :attrs #(= (:Type %) "GoldenRecord") :ProductID] (:content p))]
-    {:id (:ID attrs)
-     :parent-id (:ParentID attrs)
-     :source-ids sources
-     ;; :attrs attrs
-     ;; :raw p
-     })
-  )
+  (extract-attrs p))
+
+
 (examples
  (def ppp (download-product "MEM_GLD_102633"))
- (parse-product ppp))
+ (parse-product ppp)
+ (def ppp (download-product "MEM_SAP_1327768"))
+ (parse-product ppp)
+ )
 
+(def idwprod (download-product "MEM_IDW_8963576"))
+(def gldprod (download-product "MEM_GLD_150247"))
+(parse-product gldprod)
+
+;; (ppn ppp)
+
+;; (extract-attrs ppp)
 
 (defn product [id]
   (let [p (download-product id)]

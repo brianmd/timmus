@@ -33,12 +33,12 @@
    :seller-id "IDW_MANUID" String []
 
    :item-ctrl-number "IDW_ITEM_CTRL" String []
-   :upc "IDW_UPC" String []
-   :gtin "IDW_GTIN" String []
-   :ean13 "IDW_EAN" String []
-   :catalog-num "IDW_catalog" String []
+   :upc "UPC" String []
+   :gtin "GTIN" String []
+   :ean13 "EAN" String []
+   :catalog-num "PART_NUMBER" String []
    :idw-index "idw_index" String []
-   :unspsc "IDW_UNSPSC" String []
+   :unspsc "UNSPSC" String []
    :igcc "IDW_IGCC" String []
 
    :update-status "IDW_STATUS" String []
@@ -98,14 +98,16 @@
 ;                           {:tag :child :attrs {:id "57"}}]})
 
 (defn idw-product-hiccup [item]
-  [:Product
-   {:ID (str "MEM_IDW_" (:idw-index item))
-           :UserTypeID "IDW_Member_Record"
-           :ParentID "IDW_Member_Records"}
-   (product-attributes product-col-info item)
-   ]
-   ;:content
-  )
+  (let [parent-id (let [p (:unspsc item)]
+                    (if (or (nil? p) (= p """"))
+                      "IDW_Member_Records"
+                      (str "IDW_UNSPSC_" p)))]
+    [:Product
+     {:ID (str "MEM_IDW_" (:idw-index item))
+      :UserTypeID "IDW_Member_Record"
+      :ParentID parent-id}
+     (product-attributes product-col-info item)
+     ]))
 
 (defn idw-product-xml [item]
   (println
@@ -129,6 +131,7 @@
   (nth item 6))
 
 (defn process-idw-product [lines]
+  (pp "processing idw product")
   (let [categories (atom #{})
         ;; matched-products (set (:idw (slurp-source-ids "current")))
         ]
@@ -137,28 +140,22 @@
          (remove nil?)
          ;; (take 2)
          ;; logit-plain
+         ;; pp
          (map #(select-ranges % [3 4] [6 14] [16 19] [34 35]))
-         ;; logit-plain
+         ;; (take 200)
          ;; (filter #(contains? matched-products (nth % 6)))
-         (filter (comp *matched-products* as-integer idw-index-of))
-         ;; (take 5)
-         ;; logit-plain
+         ;; (filter (comp *matched-products* as-integer idw-index-of))
+         ;; ;; logit-plain
          (map idw-product)
          (map transform-idw-product)
-         ;; logit-plain
+         ;; ;; logit-plain
          (map idw-product-xml)
          (map :idw-index)
+         ;; pp
          idw-concat-exported
          (dorun)
          )
     ))
-;; (time (write-idw-file "Panduit14374598.csv"))
-;; (process-idw-file-with "Panduit14374598.csv" process-idw-product)
-
-;; (process-idw-file-with "KleinTools14353859.csv" process-idw-product)
-;; (-> x first)
-;; (-> x first count)
-
 
 (defn process-idw-file-with [filename fn]
   (process-file-with (str idw-input-path filename) fn))
@@ -171,133 +168,12 @@
       (println (closing))
       )))
 
-;; (time (write-idw-file "Panduit14374598.csv"))
-;; (process-idw-file-with "KleinTools14353859.csv" process-idw-product)
-;(def x (process-idw-file-with "STEP_MATERIAL.txt" process-idw-product))
+(examples
+ (time (write-idw-file "Panduit14374598.csv"))
+ (time (write-idw-file "Arlington14798724.csv"))
+ (time (write-idw-file "HubbellWiringDevice-Kellems14490913.csv"))
+ (time (write-idw-file "MilwaukeeElectricTool14870760.csv"))
+ )
 
-
-
-
-#_(comment
-
-   :reserved-1 nil nil []
-   :reserved-2 nil nil []
-   :reserved-3 nil nil []
-   :reserved-4 nil nil []
-   :reserved-5 nil nil []
-   :attr-name-1 nil String []
-   :attr-value-1 nil String []
-   :attr-1-uom nil String []
-   :attr-name-2 nil String []
-   :attr-value-2 nil String []
-   :attr-2-uom nil String []
-   :attr-name-3 nil String []
-   :attr-value-3 nil String []
-   :attr-3-uom nil String []
-   :attr-name-4 nil String []
-   :attr-value-4 nil String []
-   :attr-4-uom nil String []
-   :attr-name-5 nil String []
-   :attr-value-5 nil String []
-   :attr-5-uom nil String []
-   :attr-name-6 nil String []
-   :attr-value-6 nil String []
-   :attr-6-uom nil String []
-   :attr-name-7 nil String []
-   :attr-value-7 nil String []
-   :attr-7-uom nil String []
-   :attr-name-8 nil String []
-   :attr-value-8 nil String []
-   :attr-8-uom nil String []
-   :attr-name-9 nil String []
-   :attr-value-9 nil String []
-   :attr-9-uom nil String []
-   :attr-name-10 nil String []
-   :attr-value-10 nil String []
-   :attr-10-uom nil String []
-   :attr-name-11 nil String []
-   :attr-value-11 nil String []
-   :attr-11-uom nil String []
-   :attr-name-12 nil String []
-   :attr-value-12 nil String []
-   :attr-12-uom nil String []
-   :attr-name-13 nil String []
-   :attr-value-13 nil String []
-   :attr-13-uom nil String []
-   :attr-name-14 nil String []
-   :attr-value-14 nil String []
-   :attr-14-uom nil String []
-   :attr-name-15 nil String []
-   :attr-value-15 nil String []
-   :attr-15-uom nil String []
-   :attr-name-16 nil String []
-   :attr-value-16 nil String []
-   :attr-16-uom nil String []
-   :attr-name-17 nil String []
-   :attr-value-17 nil String []
-   :attr-17-uom nil String []
-   :attr-name-18 nil String []
-   :attr-value-18 nil String []
-   :attr-18-uom nil String []
-   :attr-name-19 nil String []
-   :attr-value-19 nil String []
-   :attr-19-uom nil String []
-   :attr-name-20 nil String []
-   :attr-value-20 nil String []
-   :attr-20-uom nil String []
-   :attr-name-21 nil String []
-   :attr-value-21 nil String []
-   :attr-21-uom nil String []
-   :attr-name-22 nil String []
-   :attr-value-22 nil String []
-   :attr-22-uom nil String []
-   :attr-name-23 nil String []
-   :attr-value-23 nil String []
-   :attr-23-uom nil String []
-   :attr-name-24 nil String []
-   :attr-value-24 nil String []
-   :attr-24-uom nil String []
-   :attr-name-25 nil String []
-   :attr-value-25 nil String []
-   :attr-25-uom nil String []
-   :attr-name-26 nil String []
-   :attr-value-26 nil String []
-   :attr-26-uom nil String []
-   :attr-name-27 nil String []
-   :attr-value-27 nil String []
-   :attr-27-uom nil String []
-   :attr-name-28 nil String []
-   :attr-value-28 nil String []
-   :attr-28-uom nil String []
-   :attr-name-29 nil String []
-   :attr-value-29 nil String []
-   :attr-29-uom nil String []
-   :attr-name-30 nil String []
-   :attr-value-30 nil String []
-   :attr-30-uom nil String []
-   :attr-name-31 nil String []
-   :attr-value-31 nil String []
-   :attr-31-uom nil String []
-   :attr-name-32 nil String []
-   :attr-value-32 nil String []
-   :attr-32-uom nil String []
-   :attr-name-33 nil String []
-   :attr-value-33 nil String []
-   :attr-33-uom nil String []
-   :attr-name-34 nil String []
-   :attr-value-34 nil String []
-   :attr-34-uom nil String []
-   :attr-name-35 nil String []
-   :attr-value-35 nil String []
-   :attr-35-uom nil String []
-   :attr-name-36 nil String []
-   :attr-value-36 nil String []
-   :attr-36-uom nil String []
-   :attr-name-37 nil String []
-   :attr-value-37 nil String []
-   :attr-37-uom nil String []
-
-
-)
 
 (println "finished loading summit.step.import.idw.product")

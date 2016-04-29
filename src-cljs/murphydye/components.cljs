@@ -119,6 +119,7 @@
         ;;          :on-click #(win/new-window chatr-component {:title "Chatr" :x 50 :y 100 :width 400 :height 400})}]
         [:input {:type "button" :value "Create Mfr Lookup"
                  :on-click #(win/new-window-url {:url "http://10.9.0.105:3449/api/manufacturerlookup":title "Create Manufacturer Lookup" :x 50 :y 100 :width 400 :height 400})}]
+                 ;; :on-click #(win/new-window-url {:url "http://192.168.2.5:3449/api/manufacturerlookup":title "Create Manufacturer Lookup" :x 50 :y 100 :width 400 :height 400})}]
         ]
        [test-links]
        ]

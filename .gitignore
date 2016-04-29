@@ -4,6 +4,7 @@
 /checkouts
 .#*
 pom.xml
+jars/*
 *.jar
 *.class
 /.lein-*
@@ -12,4 +13,5 @@ profiles.clj
 *.log
 .nrepl-port
 *.edn
+*.jcoDestination
 

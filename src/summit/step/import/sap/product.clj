@@ -31,18 +31,18 @@
   [:matnr "MARA-MATNR" String [:required :digits]
    :type "MARA-MTART" String [:required (lookup-validator product-types)]
    :title "MAKT-MAKTX" String [:required]
-   :uom "MARA-MEINS" String [(lookup-validator uom-types)]
+   :uom "UOM" String [(lookup-validator uom-types)]
    :summit-part "MARA-BISMT" String []
 
    :pp-restrict "MARA-MSTAE" String []
 
    :category-type "MARA-MTPOS_MARA" String [(lookup-validator category-types)]
-   :ean11 "MARA-EAN11" String [:digits]
+   :ean11 "UPC" String [:digits]
    :using-upc "MARA-NUMTP" String []
    :generic-non-stock? "MARA-ZZGNONSTK" String []
    :ts-item-pik "MARA-ZZTS-ITEM-PIK" String []
    :batch? "MARA-XCHPF" String []
-   :mfr-part-num "MARA-MFRPN" String []
+   :mfr-part-num "PART_NUMBER" String []
    :mfr-id "MARA-MFRNR" String []
    :delivery-unit "MVKE-SCMNG" String []
    :category-group "MVKE-MTPOS" String [(lookup-validator category-types)]         ; mvke => sales data for product
@@ -156,6 +156,10 @@
 ;;       (cons (f (first s)) (mapp f (rest s)))))))
 ;; (mapp inc [3 4 5])
 
+(def mfr-arlington "0092000734")
+(def mfr-hubbell "0092003655")
+(def mfr-milwaukee "0092005450")
+
 (defn process-sap-product [lines]
   (reset-file-line-num)
   (let [categories (atom #{})
@@ -168,7 +172,8 @@
          ;; (filter #(contains? matched-products (first %)))
          ;; logit-plain
          (filter #(> (count %) 10))
-         (filter (comp *matched-products* as-integer first))
+         ;; (filter (comp *matched-products* as-integer first))
+         (filter #(= mfr-milwaukee (nth % 13)))  ;; arlington. who we pay
          ;; (filter (comp matched-products first))
          ;; (take 2)
          ;; logit-plain
@@ -198,7 +203,9 @@
       (println (closing))
       )))
 
-;; (time (write-sap-file))
+(examples
+ (time (write-sap-file))
+ )
 ;(process-sap-file-with "STEP_MATERIAL.txt" process-sap-product)
 ;(def x (process-sap-file-with "STEP_MATERIAL.txt" process-sap-product))
 

@@ -37,7 +37,7 @@
 (defn get-golden-ids []
   (let [body (:body (clj-http.client/get golden-search-url (step-authentication)))
         parsed (xml->map body)
-        products (select parsed [:Product])
+        products (hselect parsed [:Product])
         ids (doall (map (fn [prod] (:ID (:attrs prod))) products))
         ]
     ids))
@@ -47,13 +47,13 @@
   (let [body (:body (clj-http.client/get (str product-url id "?" search-context) (step-authentication)))
         parsed (xml->map body)
         ]
-    (detect parsed [:Product])
+    (hdetect parsed [:Product])
   ))
 ;; (get-product "MEM_GLD_102633")
 
 (defn get-product-references [id]
   (let [product (get-product id)
-        references (select product [:ProductCrossReference])
+        references (hselect product [:ProductCrossReference])
         ids (doall (map (fn [prod] (:productid (:attrs prod))) references))
         ]
     ids))
