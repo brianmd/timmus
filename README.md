@@ -3,6 +3,15 @@
 This app was created with:
    lein new luminus timmus +cljs +swagger +mysql +auth +war
 
+To install this project:
+
+  $ git clone git@github.com:brianmd/timmus.git
+  $ cd timmus
+  $ git clone git@bitbucket.org:summitelectricsupply/jars.git
+
+  also will need [dev|qas|prd].jcoDestination
+
+
 ## Prerequisites
 
 You will need [Leiningen][1] 2.0 or above installed.
