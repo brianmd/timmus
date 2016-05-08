@@ -1,7 +1,10 @@
+(println "loading summit.essence")
+
 (ns summit.essence
   (:require [korma.core :as k]
             [summit.utils.core :refer :all]
             [summit.step.restapi :as restapi]
+            [summit.db.step :refer [get-golden-product]]
             ))
 
 ;; (defrecord Essence [data])
@@ -56,34 +59,51 @@
 
 (defprotocol BlueHarvestEssence
   (bh-id [this])
+  (bh-attrs! [this])
+  (bh-attrs [this])
   )
 
 (defprotocol BlueHarvestProduct
-  (bh-attrs! [this])
-  (bh-attrs [this])
   (bh-manufacturer [this]))
+
+
+
 
 (defprotocol MdmProduct
   (mdm-attrs [this])
   (mdm-manufacturer [this]))
 
-(defprotocol StepEssence
-  (step-id [this]))
 
-(defprotocol StepProduct
+
+(defprotocol StepEssence
+  (step-id [this])
   (step-attrs! [this])
   (step-attrs [this])
-  (step-others [this])
   (step-golden [this])
   )
+
+(defprotocol StepProduct
+  (step-others [this]) ; sources if this is golden, golden if this is a source
+  )
+
+(defn make-product [m]
+  "map should contain minimally an id"
+  (->Product (atom m)))
 
 ;; essence of Product is matnr
 (defrecord Product [cache]
   StepEssence
-  (step-id [this] (str "MEM_SAP_" (id this)))
+  ;; (step-id [this] (str "MEM_SAP_" (id this)))
+  (step-id [this] (if-let [id (get-val this :step-id)]
+                    id
+                    (str "MEM_SAP_" (id this))))
   StepProduct
-  (step-attrs [this]
+  (step-attrs! [this]
     (restapi/product (step-id this)))
+  (step-attrs [this]
+    (get-cached this :step-attrs step-attrs!))
+  (step-golden [this]
+    (make-product {:step-id (:NAME (get-golden-product (step-id this)))}))
 
   BlueHarvestEssence
   (bh-id [this] (get-cached this :bh-id #(as-matnr (id %))))
@@ -94,15 +114,39 @@
     (get-cached this :bh-attrs bh-attrs!))
   )
 
-(defn make-product [m]
-  "map should contain minimally an id"
-  (->Product (atom m)))
 
 
 (examples
 
 
-(def bhp (make-product {:id 2856162}))
+
+(step-golden (make-product {:step-id "MEM_IDW_9509892"}))
+(id (make-product {:id 9509892}))
+(step-id (make-product {:id 1327768}))
+(id (make-product {:id 1327768}))
+(step-attrs! (make-product {:id 1327768}))
+
+ (def ip (make-product {:step-id "MEM_IDW_9509892"}))
+ (step-attrs! ip)
+ (step-golden ip)
+ (step-attrs! (step-golden ip))
+
+ (def tsp (make-product {:step-id "MEM_TS_112136798"}))
+ (step-attrs! (step-golden tsp))
+
+ (step-golden (make-product {:step-id "MEM_IDW_8940033"}))
+ (-> (make-product {:step-id "MEM_TS_112136798"})
+     (step-golden)
+     (step-attrs!)
+     ;; :id
+     pp)
+ (-> (make-product {:step-id "MEM_IDW_8940033"})
+     (step-golden)
+     ;; (step-attrs!)
+     ;; :id
+     step-id
+     pp)
+
 ;; (def bhp (SapProduct. (id->atom 2856162)))
 (bh-id bhp)
 (bh-attrs bhp)
@@ -140,18 +184,13 @@
 
 
 (defprotocol BlueHarvestManufacturer
-  (bh-attrs! [this])
-  (bh-attrs [this])
   )
 
 (defprotocol StepManufacturer
-  (step-attrs! [this])
-  (step-attrs [this])
   (step-children [this])
   (step-children! [this])
   (step-golden-children [this])
   (step-source-children [this])
-  (step-golden [this])
   (step-sap [this])
   (step-ts [this])
   (step-idw [this])

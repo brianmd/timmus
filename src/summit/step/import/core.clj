@@ -84,9 +84,36 @@
 )
 
 
-(defn process-file-with [path-and-filename f]
+(defn transduce-tabbed-file-with [path-and-filename f]
   (with-open [in-file (io/reader path-and-filename)]
-    (let [lines (csv/read-csv in-file :separator \| :quote \^)]
+    (let [lines (csv/read-csv in-file :separator \tab :quote (char 2))]
+      (transduce
+       f
+       (fn [& _])
+       lines)
+      )))
+
+(defn transduce-verticalbar-file-with [path-and-filename f]
+  (with-open [in-file (io/reader path-and-filename)]
+    (let [lines (csv/read-csv in-file :separator \| :quote (char 2))]
+      (transduce
+       f
+       (fn [& _])
+       lines)
+      )))
+
+(defn process-tabbed-file-with [path-and-filename f]
+  (with-open [in-file (io/reader path-and-filename)]
+    (let [lines (csv/read-csv in-file :separator \tab :quote (char 2))]
+      (f lines)
+      )))
+
+(defn process-verticalbar-file-with [path-and-filename f]
+  (with-open [in-file (io/reader path-and-filename)]
+    ;; (let [lines (csv/read-csv in-file :separator \| :quote \^)]
+    ;; we don't want quoted characters, but nil doesn't seem to be allowed
+    ;; using a character that should never occur
+    (let [lines (csv/read-csv in-file :separator \| :quote (char 2))]
       (f lines)
       )))
 

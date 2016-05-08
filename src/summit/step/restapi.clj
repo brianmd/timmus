@@ -49,9 +49,7 @@
 (def base-url "http://stibo-prd-01.insummit.com/restapi/")
 (def context "?context=Context1")
 
-(set-clojurized-keyword "MfrUCC" :mfr-ucc)
 (set-clojurized-keyword "MfrUCCRegistered" :mfr-ucc-registered)
-(set-clojurized-keyword "MfrUCC" :mfr-ucc)
 
 (defn step-authentication []
   {:basic-auth ["Stepsys" "stepsys"]})
@@ -63,7 +61,6 @@
     (if (= 200 (:status response))
       (xml->map (:body response))
       nil)))
-
 
 (defn entity-url [id]
   (str "entities/" id))

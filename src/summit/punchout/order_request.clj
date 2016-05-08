@@ -4,7 +4,13 @@
   (:require [clojure.string :as str]
 
             [net.cgrand.enlive-html :as html]
-            [korma.core :refer [database limit where values insert order]]
+            [korma.core :as k :refer [database limit where values insert order fields]]
+
+            [incanter.charts :as c]
+            [incanter.core :as i]
+            [incanter.distributions :as d]
+            [incanter.stats :as stats]
+            [incanter.svg :as svg]
 
             [resque-clojure.core :as resque]
             [clj-time.core :as t]
@@ -15,7 +21,8 @@
             [summit.utils.core :refer :all]
             [summit.punchout.core :refer :all]
             [summit.db.relationships :refer :all]
-            ))
+
+            [summit.utils.core :as utils]))
 
 #_(comment
 
@@ -100,6 +107,50 @@ p
 (defn last-orders [n]
   (reverse
    (dselect contact-email (database (find-db :bh-prod)) (where {:type "Order"}) (order :id :DESC) (limit n))))
+;; (k/select :blue_harvest_dev.customers (k/database (utils/find-db :bh-local)) (k/where {:id 28}))
+;; (k/select :service_centers (k/database (find-db :bh-local)))
+;; (-> (k/select* :service_centers)
+;;     (k/as-sql))
+
+(defn order-dollars []
+  (map (comp #(/ % 100.0) :total_price)
+       (dselect contact-email (database (find-db :bh-prod)) (where {:type "Order"}) (fields [:total_price]))))
+
+(defn qqplot-order-dollars []
+  (let [os (order-dollars)]
+    (-> (c/qq-plot os)
+        (i/view))))
+;; (qqplot-order-dollars)
+
+(defn boxplot-order-dollars []
+  (let [os (order-dollars)]
+    (-> (c/box-plot os
+                   :series-label "Dollars per Order"
+                   :legend true
+                   :y-label "$")
+        (i/view)
+        )))
+;; (boxplot-order-dollars)
+
+(defn plot-order-dollars []
+  (let [os (order-dollars)]
+    (-> (c/xy-plot (range 1000) os
+                   :series-label "Dollars per Order"
+                   :legend true
+                   :x-label "Order #"
+                   :y-label "$")
+        (c/add-points (range 1000) os)
+        (i/view)
+        )))
+
+;; (-> (c/bar-chart (range 1000) os
+;;                :series-label "Dollars per Order"
+;;                :legend true
+;;                :x-label "Order #"
+;;                :y-label "$"
+;;                )
+;;     (i/view)
+;;     )
 
 (defn last-order []
   (first
@@ -123,6 +174,8 @@ p
     (assoc o
            :total_price (/ (:total_price o) 100.0)
            :created (localtime (:created_at o)))))
+
+
 ;; (def ooo (last-order))
 ;; (order-vitals ooo)
 ;; (pp (mapv order-vitals (last-orders 5)))
@@ -197,6 +250,10 @@ p
 ;; not this one ...(resque/enqueue "bourne.insummit.com.mail" "WorkQueue::SubmitSapOrderTask" 4183)
 
 
+(examples
+ (pp (mapv order-vitals (last-orders 5)))
+ (plot-order-dollars)
+ )
 
 (println "done loading summit.punchout.order-request")
 

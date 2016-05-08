@@ -46,7 +46,8 @@
    :mfr-id "MARA-MFRNR" String []
    :delivery-unit "MVKE-SCMNG" String []
    :category-group "MVKE-MTPOS" String [(lookup-validator category-types)]         ; mvke => sales data for product
-   :descript "STXH/STXL-GRUN_TXT" String []
+   ;; :descript "STXH/STXL-GRUN_TXT" String []
+   :descript "DESCRIPTION" String []
    ])
 
 (def product-col-info
@@ -160,6 +161,11 @@
 (def mfr-hubbell "0092003655")
 (def mfr-milwaukee "0092005450")
 
+(defn keep-good [v]
+  (if (= (count v) 17)
+    v
+    (ppn "bad record:" v)))
+
 (defn process-sap-product [lines]
   (reset-file-line-num)
   (let [categories (atom #{})
@@ -171,18 +177,19 @@
          (remove nil?)
          ;; (filter #(contains? matched-products (first %)))
          ;; logit-plain
-         (filter #(> (count %) 10))
+         ;; (filter #(> (count %) 10))
+         (filter keep-good)
          ;; (filter (comp *matched-products* as-integer first))
-         (filter #(= mfr-milwaukee (nth % 13)))  ;; arlington. who we pay
+;;   (filter #(= mfr-milwaukee (nth % 13)))  ;; arlington. who we pay
          ;; (filter (comp matched-products first))
-         ;; (take 2)
+         ;; (take 200)
          ;; logit-plain
          (map sap-product)
          ;; (remove nil?)
          (map transform-sap-product)
          (map sap-product-xml)
          (map :matnr)
-         sap-set-exported
+         ;; sap-set-exported
          (dorun)
          )
     ))
@@ -193,7 +200,7 @@
 ;; (process-sap-file-with "STEP_MATERIAL.txt" process-sap-product)
 
 (defn process-sap-file-with [filename fn]
-  (process-file-with (str sap-input-path filename) fn))
+  (process-verticalbar-file-with (str sap-input-path filename) fn))
 
 (defn write-sap-file []
   (with-open [w (clojure.java.io/writer (str sap-output-path "product.xml"))]

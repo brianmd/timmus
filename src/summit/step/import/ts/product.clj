@@ -198,6 +198,11 @@
 (def ts-mfr-hubbell "762")
 (def ts-mfr-milwaukee "112")
 
+(defn keep-good [v]
+  (if (= (count v) 40)
+    v
+    (ppn "bad record:" v (str "count " (count v)))))
+
 (defn process-ts-product [lines]
   (let [categories (atom #{})
         ;; matched-products (set (:ts (slurp-source-ids "current")))
@@ -207,9 +212,10 @@
          (remove nil?)
          ;; (filter #(contains? matched-products (first %)))
          ;; (filter (comp *matched-products* as-integer first))
-         ;; (take 5)
+         (take 5)
+         (filter keep-good)
          ;; pp
-         (filter #(= ts-mfr-milwaukee (nth % 2)))  ;; mfr-pik
+ ;;   (filter #(= ts-mfr-milwaukee (nth % 2)))  ;; mfr-pik
          ;; (drop 50)
          ;; logit-plain
          (map ts-product)
@@ -217,7 +223,7 @@
          (map transform-ts-product)
          (map ts-product-xml)
          (map :item-pik)
-         ts-set-exported
+   ;; ts-set-exported
          (dorun)
          )
     ))
@@ -227,11 +233,13 @@
  )
 
 
-(defn process-ts-file-with [filename fn]
-  (let [full-filename (str ts-input-path filename)]
-    (with-open [in-file (io/reader full-filename)]
-      (let [lines (csv/read-csv in-file :separator \tab)]
-        (fn lines)))))
+(defn process-ts-file-with [filename f]
+  (process-tabbed-file-with (str ts-input-path filename) f))
+;; (defn process-ts-file-with [filename fn]
+;;   (let [full-filename (str ts-input-path filename)]
+;;     (with-open [in-file (io/reader full-filename)]
+;;       (let [lines (csv/read-csv in-file :separator \tab)]
+;;         (fn lines)))))
 ;;  (process-file-with (str ts-input-path filename) fn))
 
 (defn write-ts-file []

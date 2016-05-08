@@ -22,8 +22,8 @@
 
 (mount/start)
 
-;(select customer (limit 1))
-;(select :customers (limit 1))
+;; (select customer (limit 1))
+;; (select :customers (database (find-db :bh-local)) (limit 1))
 
 ;;;;;;;   NOTE:  have set :naming in db.core to convert all attribute names to lowercase.
 ;;;;;;;          if revert this, will need to uppercase TABLE_NAME and COLUMN_NAME below

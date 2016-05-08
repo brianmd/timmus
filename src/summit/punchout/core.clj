@@ -59,6 +59,8 @@
 ;; (pp (exec-sql :bh-prod "select * from contact_emails where type='Order' order by created_at desc limit 1"))
 ;; (pp (exec-sql :bh-prod "select * from contact_emails where type='Order' order by created_at desc limit 1"))
 ;; (korma.core/select customer (find-db :prod-db) (korma.core/where {:id 4453}))
+;; (korma.core/select customer (find-db :bh-local) (korma.core/where {:id 4453}))
+;; (find-db :bh-local)
 ;; (korma.core/select :contact_emails (korma.core/database (find-db :bh-prod)) (korma.core/where {:id 4453}))
 ;; (korma.core/select contact-email (korma.core/database (find-db :bh-prod)) (korma.core/where {:id 4453}))
 

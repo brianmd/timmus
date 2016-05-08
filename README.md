@@ -5,9 +5,9 @@ This app was created with:
 
 To install this project:
 
-  $ git clone git@github.com:brianmd/timmus.git
-  $ cd timmus
-  $ git clone git@bitbucket.org:summitelectricsupply/jars.git
+    $ git clone git@github.com:brianmd/timmus.git
+    $ cd timmus
+    $ git clone git@bitbucket.org:summitelectricsupply/jars.git
 
   also will need [dev|qas|prd].jcoDestination
 

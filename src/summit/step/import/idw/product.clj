@@ -158,7 +158,7 @@
     ))
 
 (defn process-idw-file-with [filename fn]
-  (process-file-with (str idw-input-path filename) fn))
+  (process-verticalbar-file-with (str idw-input-path filename) fn))
 
 (defn write-idw-file [filename]
   (with-open [w (clojure.java.io/writer (str idw-output-path "product.xml"))]

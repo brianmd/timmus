@@ -59,10 +59,13 @@
                  [me.raynes/conch "0.8.0"]
                  [potemkin "0.4.3"]
                  [snipsnap "0.1.0" :exclusions [org.clojure/clojure]]
+                 ;; [org.clojure/java.jdbc "0.4.2"]  removed because korma requires 0.3.7
+                 [org.clojure/java.jdbc "0.3.7"]
                  [korma "0.4.2"]
                  [com.draines/postal "1.11.3"]              ; email support
                  [org.clojure/data.xml "0.0.8"]
                  [com.cemerick/url "0.1.1"]
+                 [incanter "1.5.7"]
 
 
                  ;; cljs libraries
@@ -97,7 +100,6 @@
 
                  [enlive "1.1.6"]
 
-                 [org.clojure/java.jdbc "0.4.2"]
                  ;; [com.h2database/h2 "1.4.190"]
                  ;; [gyptis "0.2.2" :exclusions [io.aviso/pretty com.taoensso/timbre]]   ;; vega plots, conflicts w/ clj-ns-browser
                  ;; [medley "0.7.1"]  ;lightweight library of useful Clojure functions

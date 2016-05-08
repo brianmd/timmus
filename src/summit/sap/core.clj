@@ -111,16 +111,6 @@
 
 
 
-(defn pull [f name & args]
-  (apply get-data (find-field f name) args))
-
-(defn pull-map [f name & args]
-  (let [fld (find-field f name)
-        names (map first (last (field-definition fld)))
-        vals (apply get-data fld args)
-        ]
-    (apply assoc {} (interleave names vals))))
-
 
 
 (defn set-cols
@@ -227,11 +217,21 @@
       (.getValue im fld)
       (.getValue (.getTableParameterList f) fld))))
 
-(defn get-values [f fldname]
-  )
+(defn pull [f name & args]
+  (apply get-data (find-field f name) args))
 
-(defn set-values [f hash]
-  )
+(defn pull-map [f name & args]
+  (let [fld (find-field f name)
+        names (map first (last (field-definition fld)))
+        vals (apply get-data fld args)
+        ]
+    (apply assoc {} (interleave names vals))))
+
+;; (defn get-values [f fldname]
+;;   )
+
+;; (defn set-values [f hash]
+;;   )
 
 
 (defrecord sap-data-translation

@@ -37,23 +37,26 @@
 (defmacro examples [& forms]
   )
 
-(programs ssh)
+;; (programs ssh)
 
 (defmacro assert= [& args]
   `(assert (= ~@args)))
 (defmacro assert-= [& args]
   `(assert (= ~@args)))
+(defmacro assert-false
+  ([x] `(assert (clojure.core/not ~x)))
+  ([x message] `(assert (clojure.core/not ~x) message)))
+
 
 (examples
  (assert= nil (->int nil) (->int "    "))
  (assert= 34 (->int "   34") (->int "   000000034")))
 
-(defmacro assert-false
-  ([x] `(assert (clojure.core/not ~x)))
-  ([x message] `(assert (clojure.core/not ~x) message)))
-
 (def map! (comp doall map))
 (def maprun (comp dorun map))
+
+(defn third [s]
+  (first (next (next s))))
 
 (defn any [s]
   (nth s (rand-int (count s))))
@@ -725,5 +728,11 @@
 ;; (upc-check-digit "80432546052")
 ;; (assert (= "804325460521" (add-checksum "80432546052")))
 
-(println "done loading summit.utils.core")
+(defn object-id [o]
+  (System/identityHashCode o))
 
+(examples
+ (reset-pp)
+ )
+
+(println "done loading summit.utils.core")
