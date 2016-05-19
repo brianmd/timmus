@@ -66,6 +66,7 @@
                  [org.clojure/data.xml "0.0.8"]
                  [com.cemerick/url "0.1.1"]
                  [incanter "1.5.7"]
+                 [dk.ative/docjure "1.10.0"]    ; access to excel
 
 
                  ;; cljs libraries
@@ -87,7 +88,7 @@
                  ;; [ring-cors "0.1.7"]
 
 
-                 ;; [clojurewerkz/neocons "3.0.0"]  ; neo4j
+                 [clojurewerkz/neocons "3.1.0"]  ; neo4j
 
                  ;; [com.datomic/datomic-pro "0.9.5344" :exclusions [joda-time org.slf4j/jul-to-slf4j org.slf4j/slf4j-nop org.slf4j/slf4j-over-log4j org.slf4j/slf4j org.slf4j/slf4j-log4j12]]
 

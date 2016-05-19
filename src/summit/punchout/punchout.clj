@@ -28,12 +28,14 @@
             [summit.utils.core :refer :all]
             [summit.punchout.core :refer :all]
             [summit.db.relationships :refer :all]
-            ))
 
-(defn extract-punchout-data [enlive-parsed]
+            [clojure.tools.logging :as log]))
+
+(defn extract-header-data [enlive-parsed]
   (let [extract (partial extract-content enlive-parsed)
         request-type (request-type enlive-parsed)
-        email (if-let [e (extract [:Contact :Email])] e "abq@murphydye.com")
+        email (if-let [e (extract [:Contact :Email])] e "cityabq@murphydye.com")
+        email "axiall@murphydye.com"
         ]
     {:request {:type request-type
                :payloadID (-> (html/select enlive-parsed [:cXML]) first :attrs :payloadID)
@@ -41,28 +43,39 @@
                :operation (-> (html/select enlive-parsed (vector request-type)) first :attrs :operation)
                ;; :operation-allowed (-> (html/select enlive-parsed (vector request-type)) first :attrs :operation)
                }
-     :broker {:id (extract [:From :Identity])}
+     :from {:id (extract [:From :Identity])}
      :to {:id (extract [:To :Identity])}
-     :company {:id (extract [:Sender :Identity])
+     :sender {:id (extract [:Sender :Identity])
                :auth (extract [:Sender :SharedSecret])
                :agent (extract [:Sender :UserAgent])}
-     :contact {:email email
-               :name (extract [:Contact :Name])
-            }
-     :user {:email email ; (extract [(html/attr= :name "UserEmail")])
-            :first-name (extract [(html/attr= :name "FirstName")])
-            :last-name (extract [(html/attr= :name "LastName")])
-            :unique-name (extract [(html/attr= :name "UniqueName")])
-            :user (extract [(html/attr= :name "User")])
-            :business-unit (extract [(html/attr= :name "BusinessUnit")])
-            :buyer-cookie (extract [:BuyerCookie])
-            }
      }))
 
+(defn extract-punchout-data [enlive-parsed]
+  (let [extract (partial extract-content enlive-parsed)
+        request-type (request-type enlive-parsed)
+        email (if-let [e (extract [:Contact :Email])] e "cityabq@murphydye.com")
+        email "axiall@murphydye.com"
+        ]
+    (merge
+     (extract-header-data enlive-parsed)
+     {
+      :contact {:email email
+                :name (extract [:Contact :Name])
+                }
+      :user {:email email ; (extract [(html/attr= :name "UserEmail")])
+             :first-name (extract [(html/attr= :name "FirstName")])
+             :last-name (extract [(html/attr= :name "LastName")])
+             :unique-name (extract [(html/attr= :name "UniqueName")])
+             :user (extract [(html/attr= :name "User")])
+             :business-unit (extract [(html/attr= :name "BusinessUnit")])
+             :buyer-cookie (extract [:BuyerCookie])
+             }})
+     ))
+
 (defn validate-punchout-request [hash]
-  (and ;; (= (-> hash :broker :id) "coupa-t")  ; coupa sends axiall in this location
-   (= (-> hash :company :id) (-> env :punchout-test :id))
-   (= (-> hash :company :auth) (-> env :punchout-test :auth))
+  (and ;; (= (-> hash :from :id) "coupa-t")  ; coupa sends axiall in this location
+   (= (-> hash :sender :id) (-> env :punchout-test :id))
+   (= (-> hash :sender :auth) (-> env :punchout-test :auth))
    )
 
   true
@@ -101,15 +114,27 @@
 ;; (create-cxml (punchout-response nil nil "4123479 43212341 1234"))
 
 
-;; (def punchhash {:request {:type :PunchOutSetupRequest, :payloadID "1211221788.71299@ip-10-251-122-83", :browser-form-post "https://qa.coupahost.com/punchout/checkout/4"}, :broker {:id "coupa-t"}, :to {:id "coupa-t"}, :company {:id (-> env :punchout-test :id), :auth (-> env :punchout-test :auth), :agent "myagent"}, :contact {:email "matthew.hamilton@axiall.com", :name "jim"}, :user {:email "matthew.hamilton@axiall.com", :first-name "myfirstname", :last-name "mylastname", :unique-name "myuniquename", :user "myuser", :business-unit "mybusinessunit", :buyer-cookie "c64af92dc27e68172e030d3dfd1bc944"}})
+;; (def punchhash {:request {:type :PunchOutSetupRequest, :payloadID "1211221788.71299@ip-10-251-122-83", :browser-form-post "https://qa.coupahost.com/punchout/checkout/4"}, :from {:id "coupa-t"}, :to {:id "coupa-t"}, :sender {:id (-> env :punchout-test :id), :auth (-> env :punchout-test :auth), :agent "myagent"}, :contact {:email "matthew.hamilton@axiall.com", :name "jim"}, :user {:email "matthew.hamilton@axiall.com", :first-name "myfirstname", :last-name "mylastname", :unique-name "myuniquename", :user "myuser", :business-unit "mybusinessunit", :buyer-cookie "c64af92dc27e68172e030d3dfd1bc944"}})
+
+;; (k/select :customers (k/database (find-db :bh-local)) (k/where {:email "brian@murphydye.com"}))
+;; (k/select :punchouts (k/where {:id 90}))
+;; from 
+;; (k/select broker (k/where {:authkey "-t"}) (k/with company))
 
 (defn save-punchout-request! [hash cxml]
-  (let [email (if-let [e (-> hash :user :email)] (str/lower-case e) "abq@murphydye.com")
-        cust (first (k/select :customers (k/where {:email email})))
+  ;; (println "about to save punchout request" hash)
+  ;; (ppn (-> hash :user :email))
+  ;; (println (k/select :customers (k/database (find-db :bh-local)) (k/where {:email "brian@murphydye.com"})))
+  (let [email (if-let [e (-> hash :user :email)] (str/lower-case e) "cityabq@murphydye.com")
+        email "axiall@murphydye.com"
+        ;; _ (println "\n\nemail" email)
+        cust (first (k/select :customers (k/database (find-db :bh-local)) (k/where {:email email})))
+        ;; _ (println "\n\ncust" cust)
         broker (first (k/select broker
-                                (k/where {:authkey (-> hash :broker :id)})
+                                (k/where {:authkey (-> hash :from :id)})
                                 (k/with company)
                                 ))
+        ;; _ (println "\n\nbroker" broker)
         punch-params {:request_type (-> hash :request :type str)
                       :operation (-> hash :request :operation str)
                       :payload_id (-> hash :request :payloadID)
@@ -123,11 +148,14 @@
                       :created_at (db-timenow)
                       :updated_at (db-timenow)
                       }
+        ;; _ (println "\n\npunch-params" punch-params)
         inserted (k/insert :punchouts (k/values punch-params))
         ]
+    ;; (println "\n\ninserted ...")
     (k/update :customers
               (k/set-fields {:active_punchout_id (:generated_key inserted)})
               (k/where {:id (:id cust)}))
+    ;; (println "done updating customer" cust)
     ))
 ;; (save-punchout-request! punchhash "cxml ....")
 ;; (k/select :contact_emails (k/where {:id 4183}))
@@ -149,19 +177,42 @@
 (defn process-punchout-request [string]
   (let [parsed (xml->map string)
         hash (extract-punchout-data parsed)
-        valid? (validate-punchout-request hash)
-        onetime (if valid? (uuid))]
-    (when (not valid?)
-            (logit-plain "process-punchout-request not valid")
-            (logit-plain "string" string)
-            (logit-plain "hash" hash))
-    (when valid?
-      (store-onetime onetime hash)
-      (save-punchout-request! hash string)
-      (punchout-response nil nil onetime))
-    ))
+        valid? (validate-punchout-request hash)]
+    (log/info "is punchout valid?" valid?)
+    (if valid?
+      (let [onetime (uuid)]
+        (store-onetime onetime hash)
+        (save-punchout-request! hash string)
+        (punchout-response nil nil onetime))
+      (do
+        (logit-plain "process-punchout-request not valid")
+        (logit-plain "string" string)
+        (logit-plain "hash" hash)
+        (throw (Exception. "Punchout request not valid"))))))
 
 (defn process-punchout-request-str [xml-string]
   (create-cxml (process-punchout-request xml-string)))
+
+
+(defn test-punchout [s]
+  ;; (clj-http.client/post "http://localhost:3449/api/punchout" {:debug true :debug-body true :body s}))
+  (clj-http.client/post "http://localhost:3449/api/punchout" {:body s}))
+
+(defn test-get-punchout-redirect [s]
+  (let [response (test-punchout s)]
+    (if-not (= 200 (:status response))
+      (throw (Exception. (str "Invalid http response (" (:status response) ") when on PunchoutSetUp"))  ))
+    (last (re-find #".*URL>(http[^<]+).*" (:body response)))
+    ))
+
+;; (extract-punchout-data (xml->map coupa-test-str))
+;; (html/select (xml->map coupa-test-str) [:Request])
+
+;; (test-punchout coupa-test-str)
+;; (test-get-punchout-redirect coupa-test-str)
+
+;; (def aaa (test-punchout coupa-test-str))
+;; (last (re-find #".*URL>(http[^<]+).*" (:body aaa)))
+
 
 (println "done loading summit.punchout.punchout")

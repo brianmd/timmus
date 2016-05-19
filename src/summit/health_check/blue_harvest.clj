@@ -1,10 +1,13 @@
 (ns summit.health-check.blue-harvest
-  (require [
-            summit.utils.core :refer :all
-            ])
+  (require 
+            [me.raynes.conch :refer [programs with-programs let-programs] :as sh]
+            [summit.utils.core :refer :all]
+            )
   (:require [clojure.string :as str]))
 
 (def ^:private bh-ports (range 7300 7312))
+
+(programs ssh)
 
 (defmacro bh-ssh [& args]
   `(ssh "blue-harvest.prod" ~@args))

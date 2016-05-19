@@ -68,7 +68,7 @@
         [:td [show-completion completed :logged-out]]
         [:td ]]
        [:tr
-        [:td "2. " [:a {:on-click #(punchout completed results)} "Punch out"] " (log in via portal)"]
+        [:td "2. " [:a {:on-click #(punchout completed results)} "Punchout"] " (log in via portal)"]
         [:td [show-completion completed :punched-out]]
         [:td ""]
         ]

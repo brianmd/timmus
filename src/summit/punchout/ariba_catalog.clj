@@ -32,7 +32,8 @@
 
 
             [korma.core :as k]
-            [korma.db :refer [defdb oracle]]))
+            ;; [korma.db :refer [defdb oracle]]
+            ))
 
 (def dow-account-number 1007135)
 (def dow-service-center "CLU1")

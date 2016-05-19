@@ -1,3 +1,5 @@
+(println "loading summit.sap.restapi")
+
 (ns summit.step.restapi
   (:require [clojure.string :as str]
             [net.cgrand.enlive-html :as html]
@@ -143,6 +145,7 @@
  (assert (golden-manufacturer? (manufacturer "GoldenMfr8260")))
  (assert (golden-manufacturer? (manufacturer "Manufacturer")))
  (assert-false (golden-manufacturer? (manufacturer "TsMfr3534"))))
+
 (examples
  (ppn (force-manufacturer "GoldenMfr8260"))
  (ppn (force-manufacturer "TsMfr3534"))
@@ -182,9 +185,9 @@
  (parse-product ppp)
  )
 
-(def idwprod (download-product "MEM_IDW_8963576"))
-(def gldprod (download-product "MEM_GLD_150247"))
-(parse-product gldprod)
+;; (def idwprod (download-product "MEM_IDW_8963576"))
+;; (def gldprod (download-product "MEM_GLD_150247"))
+;; (parse-product gldprod)
 
 ;; (ppn ppp)
 
@@ -199,3 +202,5 @@
  (ppn (download-product "Unclassified_Golden_Records"))
  (ppn (product "MEM_GLD_102633"))
  )
+
+(println "done loading summit.sap.restapi")

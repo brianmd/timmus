@@ -1,5 +1,8 @@
 (println "loading summit.punchout.core")
 
+;; TODO: issue with many City of Abq customers on one cart
+
+
 ;; Data resides in three formats: xml, vector (hiccup), and map (enlive).
 ;; As we transform the same data in each of these formats, a suffix is sometimes added.
 ;; For example, order-message-xml, order-message-vector, and order-message-map.
@@ -33,8 +36,6 @@
 
             [summit.utils.core :refer :all]
             [summit.db.relationships :refer :all]
-            ;; [summit.step.import.core :refer :all]
-            ;; [summit.step.import.ts.core :refer :all]
             ))
 
 
@@ -52,28 +53,9 @@
   )
 
 ;; (def x (slurp "test/mocks/punchout-request.xml"))
-;; x 
-
+;; x
 ;; (def y (xml->map x))
-;; y 
-;; (pp (exec-sql :bh-prod "select * from contact_emails where type='Order' order by created_at desc limit 1"))
-;; (pp (exec-sql :bh-prod "select * from contact_emails where type='Order' order by created_at desc limit 1"))
-;; (korma.core/select customer (find-db :prod-db) (korma.core/where {:id 4453}))
-;; (korma.core/select customer (find-db :bh-local) (korma.core/where {:id 4453}))
-;; (find-db :bh-local)
-;; (korma.core/select :contact_emails (korma.core/database (find-db :bh-prod)) (korma.core/where {:id 4453}))
-;; (korma.core/select contact-email (korma.core/database (find-db :bh-prod)) (korma.core/where {:id 4453}))
-
-
-
-
-;; Work w/ Jarred to see what other data we should start capturing in our database from cXML.
-
-;; issue with many City of Abq customers on one cart
-
-;; want java stibo class
-
-
+;; y
 
 (defn extract-content [enlive-parsed selector-vector]
   (first (html/select enlive-parsed (conj (vec selector-vector) html/text-node))))

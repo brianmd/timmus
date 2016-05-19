@@ -25,6 +25,10 @@
 
 (def ^:dynamic *sap-server* :qas)
 
+(defmacro with-sap-server [server-keyword & body]
+  `(binding [*sap-server* ~server-keyword]
+     ~@body))
+
 (defn classMethodNames [klass]
   (sort
    (map #(.getName %)
@@ -43,7 +47,9 @@
 
 
 (defn find-destination [server-name]
-  (JCoDestinationManager/getDestination (servers server-name)))
+  (if (keyword? server-name)
+    (JCoDestinationManager/getDestination (servers server-name))
+    server-name))
 
 (defn find-repository [destination]
   (.getRepository destination))
@@ -172,8 +178,8 @@
 
 (defn field-definition [fld]
   (let [param-field? (parameter-field? fld)
-        name (.getName fld)
-        web-name (->keyword name)
+        title (.getName fld)
+        keyword-name (->keyword title)
         typ (->keyword (.getTypeAsString fld))
         descript (.getDescription fld)
         len (.getLength fld)
@@ -183,7 +189,7 @@
         default-val (if param-field? (.getDefault fld) :no-default)
         columns (if (composite-field? fld)
                   (composite-field-definitions fld))]
-    (let [arr [web-name name descript typ len where required? default-val]]
+    (let [arr [keyword-name title descript typ len where required? default-val]]
       (if columns
         (conj arr columns)
         (conj arr [])
@@ -225,7 +231,11 @@
         names (map first (last (field-definition fld)))
         vals (apply get-data fld args)
         ]
-    (apply assoc {} (interleave names vals))))
+    (if (seq? (first vals))
+      (map #(apply assoc {} (interleave names %)) vals)
+      (apply assoc {} (interleave names vals))
+      )
+    ))
 
 ;; (defn get-values [f fldname]
 ;;   )
@@ -299,6 +309,7 @@
 
 (def dev-bapi-avail (find-function :dev :bapi-material-availability))
 (def qas-avail (find-function :default :z-isa-mat-availability))
+(def qas-avail (find-function :dev :z-isa-mat-availability))
 (def dev-jarred-avail (find-function :dev :z-o-material-availability))
 
 (find-field (:function dev-jarred-avail) "MAT_ATP")

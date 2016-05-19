@@ -41,6 +41,8 @@
             [summit.papichulo.core :refer [papichulo-url papichulo-creds create-papi-url papichulo-url-with-creds]]
             [summit.health-check.blue-harvest :as bh]
             [summit.step.manufacturer-lookup :refer [create-manufacturer-lookup-tables]]
+
+            [summit.sap.projects :refer [projects]]
             ))
 ;(-> @((-> customer :rel) "cart") :fk-key)
 
@@ -140,6 +142,11 @@ bb
 ;(postwalk #(if(keyword? %)(name %) %) thing)
 
 
+
+
+;; (println "\n\n\nhelp me, i'm in services.clj")
+;; (println (k/select :customers (k/database (find-db :bh-local)) (k/where {:email "brian@murphydye.com"})))
+;; (println "done with select command\n\n\n")
 
 (defn separately-log-request
   "stores request in its own file as edn"
@@ -271,6 +278,13 @@ bb
             (GET "/all-okay" req
                 {:status 200,
                  :body {:bh-ok (bh/all-okay?)}})
+
+            (GET "/projects/:id" req
+              :path-params [id :- Long]
+              {:status 200,
+               :headers {"Content-Type" "text/json; charset=utf-8"},
+               :body (projects id)}
+              )
 
             (GET "/punchout/order-messagej/:id" req
               :path-params [id :- Long]

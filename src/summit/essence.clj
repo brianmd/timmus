@@ -86,9 +86,7 @@
   (step-others [this]) ; sources if this is golden, golden if this is a source
   )
 
-(defn make-product [m]
-  "map should contain minimally an id"
-  (->Product (atom m)))
+(declare new-product)
 
 ;; essence of Product is matnr
 (defrecord Product [cache]
@@ -103,7 +101,7 @@
   (step-attrs [this]
     (get-cached this :step-attrs step-attrs!))
   (step-golden [this]
-    (make-product {:step-id (:NAME (get-golden-product (step-id this)))}))
+    (new-product {:step-id (:NAME (get-golden-product (step-id this)))}))
 
   BlueHarvestEssence
   (bh-id [this] (get-cached this :bh-id #(as-matnr (id %))))
@@ -114,33 +112,37 @@
     (get-cached this :bh-attrs bh-attrs!))
   )
 
+(defn new-product [m]
+  "map should contain minimally an id"
+  (->Product (atom m)))
+
 
 
 (examples
 
 
 
-(step-golden (make-product {:step-id "MEM_IDW_9509892"}))
-(id (make-product {:id 9509892}))
-(step-id (make-product {:id 1327768}))
-(id (make-product {:id 1327768}))
-(step-attrs! (make-product {:id 1327768}))
+(step-golden (new-product {:step-id "MEM_IDW_9509892"}))
+(id (new-product {:id 9509892}))
+(step-id (new-product {:id 1327768}))
+(id (new-product {:id 1327768}))
+(step-attrs! (new-product {:id 1327768}))
 
- (def ip (make-product {:step-id "MEM_IDW_9509892"}))
+ (def ip (new-product {:step-id "MEM_IDW_9509892"}))
  (step-attrs! ip)
  (step-golden ip)
  (step-attrs! (step-golden ip))
 
- (def tsp (make-product {:step-id "MEM_TS_112136798"}))
+ (def tsp (new-product {:step-id "MEM_TS_112136798"}))
  (step-attrs! (step-golden tsp))
 
- (step-golden (make-product {:step-id "MEM_IDW_8940033"}))
- (-> (make-product {:step-id "MEM_TS_112136798"})
+ (step-golden (new-product {:step-id "MEM_IDW_8940033"}))
+ (-> (new-product {:step-id "MEM_TS_112136798"})
      (step-golden)
      (step-attrs!)
      ;; :id
      pp)
- (-> (make-product {:step-id "MEM_IDW_8940033"})
+ (-> (new-product {:step-id "MEM_IDW_8940033"})
      (step-golden)
      ;; (step-attrs!)
      ;; :id
@@ -151,7 +153,7 @@
 (bh-id bhp)
 (bh-attrs bhp)
 
-(def bhp (make-product {:bh-id "000000000002856162"}))
+(def bhp (new-product {:bh-id "000000000002856162"}))
 (bh-attrs bhp)
 (cache bhp)
 
@@ -199,6 +201,7 @@
   (step-type [this])
   )
 
+(declare new-manufacturer)
 
 (defrecord Manufacturer [cache]
   StepEssence

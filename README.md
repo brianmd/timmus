@@ -9,7 +9,7 @@ To install this project:
     $ cd timmus
     $ git clone git@bitbucket.org:summitelectricsupply/jars.git
 
-  also will need [dev|qas|prd].jcoDestination
+  also will need [dev|qas|prd].jcoDestination and a profiles.clj
 
 
 ## Prerequisites

@@ -6,11 +6,11 @@
             [net.cgrand.enlive-html :as html]
             [korma.core :as k :refer [database limit where values insert order fields]]
 
-            [incanter.charts :as c]
-            [incanter.core :as i]
-            [incanter.distributions :as d]
-            [incanter.stats :as stats]
-            [incanter.svg :as svg]
+            ;; [incanter.charts :as c]
+            ;; [incanter.core :as i]
+            ;; [incanter.distributions :as d]
+            ;; [incanter.stats :as stats]
+            ;; [incanter.svg :as svg]
 
             [resque-clojure.core :as resque]
             [clj-time.core :as t]
@@ -21,39 +21,7 @@
             [summit.utils.core :refer :all]
             [summit.punchout.core :refer :all]
             [summit.db.relationships :refer :all]
-
-            [summit.utils.core :as utils]))
-
-#_(comment
-
-
-(def r (slurp "test/mocks/order-request.xml"))
-r 
-
-(def p (xml->map r))
-p 
-
-(hselect p [:BillTo])
-(hselect p [:BillTo :Name])
-(hselect p [:BillTo :PostalAddress])
-(hselect-content p [:BillTo :Address])
-(hselect-content p [:BillTo :PostalAddress])
-(hselect-pruned-content p [:BillTo :PostalAddress])
-(hselect (-> (select-pruned-content p [:BillTo :PostalAddress]) vec) html/text-node)
-(hselect (-> (select-pruned-content p [:BillTo :PostalAddress]) first vec) html/text-node)
-(->  (hselect-pruned-content p [:BillTo :PostalAddress]))
-(->  (hselect-pruned-content p [:BillTo :PostalAddress]) first )
-(str/join (hselect (->  (hselect-pruned-content p [:BillTo :PostalAddress]) first ) [html/text-node]))
-
-(hdetect p [:OrderRequestHeader])
-(:attrs (hdetect p [:OrderRequestHeader]))
-
-
-(mapify (select-pruned-content p [:BillTo :PostalAddress]))
-(->address p :BillTo)
-
-)
-
+            ))
 
 
 (def ^:dynamic *db-name* :bh-local)
@@ -76,115 +44,13 @@ p
       cart-id))
     )
 
-(def cart-map {:service_center_id 7 :customer_id 28})
-(def items-vals [{:product_id 128035 :quantity 7}
-                 {:product_id 14528 :quantity 22}
-                 ])
+;; (def cart-map {:service_center_id 7 :customer_id 28})
+;; (def items-vals [{:product_id 128035 :quantity 7}
+;;                  {:product_id 14528 :quantity 22}
+;;                  ])
 ;; (create-cart cart-map items-vals)
 
 (defn create-order [cust-id ])
-
-{:id 3
- :cart_id 3
- :created_at 3
- :updated_at 3
- :email 3
- :message 3
- :contact_preference "email"
- :include_order_items 1
- :include_request_info 0
- }
-;; (write-sql :bh-local cart (values cart-vals))
-;; (insert cart (database (find-db *db-name*)) (values cart-vals))
-
-;; (pp (exec-sql :bh-local "select * from contact_emails where type='Order' limit 1"))
-;; (dselect customer (database (find-db *db-name*)) (limit 1))
-
-
-
-
-
-(defn last-orders [n]
-  (reverse
-   (dselect contact-email (database (find-db :bh-prod)) (where {:type "Order"}) (order :id :DESC) (limit n))))
-;; (k/select :blue_harvest_dev.customers (k/database (utils/find-db :bh-local)) (k/where {:id 28}))
-;; (k/select :service_centers (k/database (find-db :bh-local)))
-;; (-> (k/select* :service_centers)
-;;     (k/as-sql))
-
-(defn order-dollars []
-  (map (comp #(/ % 100.0) :total_price)
-       (dselect contact-email (database (find-db :bh-prod)) (where {:type "Order"}) (fields [:total_price]))))
-
-(defn qqplot-order-dollars []
-  (let [os (order-dollars)]
-    (-> (c/qq-plot os)
-        (i/view))))
-;; (qqplot-order-dollars)
-
-(defn boxplot-order-dollars []
-  (let [os (order-dollars)]
-    (-> (c/box-plot os
-                   :series-label "Dollars per Order"
-                   :legend true
-                   :y-label "$")
-        (i/view)
-        )))
-;; (boxplot-order-dollars)
-
-(defn plot-order-dollars []
-  (let [os (order-dollars)]
-    (-> (c/xy-plot (range 1000) os
-                   :series-label "Dollars per Order"
-                   :legend true
-                   :x-label "Order #"
-                   :y-label "$")
-        (c/add-points (range 1000) os)
-        (i/view)
-        )))
-
-;; (-> (c/bar-chart (range 1000) os
-;;                :series-label "Dollars per Order"
-;;                :legend true
-;;                :x-label "Order #"
-;;                :y-label "$"
-;;                )
-;;     (i/view)
-;;     )
-
-(defn last-order []
-  (first
-   (dselect contact-email (database (find-db :bh-prod)) (where {:type "Order"}) (order :id :DESC) (limit 1))))
-
-(defn last-order-sans-json []
-  (dissoc (last-order) :sap_json_result))
-
-;; (defn order-vitals [o]
-;;   (let [o (mapv #(get o %) [:id :total_price :email :name :created_at :sap_document_number])]
-;;     (assoc o 1 (/ (nth o 1) 100.0))))
-
-(defn orders-by [email]
-  (dselect contact-email (database (find-db :bh-prod)) (where {:type "Order" :email email}) (order :id :DESC) (limit 1)))
-;; (order-vitals (last-order))
-;; (count (orders-by (:email (last-order))))
-;; (:created_at (ddetect customer (where {:email (:email (last-order))})))
-
-(defn order-vitals [o]
-  (let [o (into {} (s/select [s/ALL #(contains? #{:id :total_price :email :name :created_at :sap_document_number} (first %))] o))]
-    (assoc o
-           :total_price (/ (:total_price o) 100.0)
-           :created (localtime (:created_at o)))))
-
-
-;; (def ooo (last-order))
-;; (order-vitals ooo)
-;; (pp (mapv order-vitals (last-orders 5)))
-;; (pp (order-vitals (last-order)))
-;; (pp (last-order-sans-json))
-
-(examples
- (pp (mapv order-vitals (last-orders 5)))
- )
 
 
 

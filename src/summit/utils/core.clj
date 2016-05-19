@@ -19,7 +19,7 @@
     [korma.core :as k]
     [korma.db :as kdb]
 
-    [me.raynes.conch :refer [programs with-programs let-programs] :as sh]
+    ;; [me.raynes.conch :refer [programs with-programs let-programs] :as sh]
     [com.rpl.specter :as s]
 
 
@@ -37,8 +37,6 @@
 (defmacro examples [& forms]
   )
 
-;; (programs ssh)
-
 (defmacro assert= [& args]
   `(assert (= ~@args)))
 (defmacro assert-= [& args]
@@ -47,10 +45,12 @@
   ([x] `(assert (clojure.core/not ~x)))
   ([x message] `(assert (clojure.core/not ~x) message)))
 
-
 (examples
  (assert= nil (->int nil) (->int "    "))
  (assert= 34 (->int "   34") (->int "   000000034")))
+
+(defmacro defn-memo [name & body]
+  `(def ~name (memoize (fn ~body))))
 
 (def map! (comp doall map))
 (def maprun (comp dorun map))
@@ -69,22 +69,47 @@
  (assert= 9 (detect #(> % 5) [2 9 4 7]) ((detect #(> % 5)) [2 9 4 7]))
  (assert= 6 (detect #(> % 5) (range)) ((detect #(> % 5)) (range))))
 
-(def ppout *out*)
-(defn reset-pp []
-  (def ppout *out*))
-;; (reset-pp)
-
 (defn ppn [& args]
-  (binding [*out* ppout]
-    (println "\n-------------------")
+  (binding [clojure.pprint/*print-miser-width* 120
+            clojure.pprint/*print-right-margin* 120]
     (doseq [arg args] (pprint arg))))
 
 (defn pp [& args]
   (apply ppn args)
   (last args))
+;; (ppn 3 {:a 3 :q "rew"})
+
+(def rppout *out*)
+(defn reset-rpp []
+  (def rppout *out*))
+;; (reset-rpp)
+
+(defn rppn [& args]
+  (binding [*out* rppout]
+    (println "\n-------------------")
+    (apply ppn args)))
+    ;; (doseq [arg args] (pprint arg))))
+
+(defn rpp [& args]
+  (apply rppn args)
+  (last args))
 
 (defn pp->str [obj]
   (with-out-str (pprint obj)))
+
+(defn spit-fn
+  "spits each element of seq with ele-fn"
+  [ele-fn filename coll & opts]
+  (with-open [out (apply clojure.java.io/writer filename :encoding "UTF-8" opts)]
+    (binding [*out* out]
+      (maprun ele-fn coll))))
+(defn spitln
+  "spits seq with linefeeds between elements"
+  [filename coll & opts]
+  (apply spit-fn pp filename coll opts)
+  )
+;; (spitln "junky" [1 3 5 7 11])
+;; (spitln "junky" {:a [1 2 3 4] :b "hey"})
 
 (defn uuid [] (java.util.UUID/randomUUID))
 ;; (uuid)
@@ -179,7 +204,8 @@
 (defonce clojurized-keywords (atom {}))
 
 (defn set-clojurized-keyword [from-key to-key]
-  (swap! clojurized-keywords assoc from-key to-key))
+  (swap! clojurized-keywords assoc from-key to-key)
+  to-key)
 
 (defn clear-clojurized-keywords []
   (reset! clojurized-keywords {}))
@@ -189,21 +215,28 @@
   "convert mixed case to lower case with hyphens. Considers 'ID' as a token."
   [key]
   (let [skey (if (keyword? key) (name key) (str key))
-        s (str/replace skey #"_" "-")
+        s (str/replace skey #"[_\s-()]+" "-")
         s (str/replace s #"[^A-Z-][A-Z]" #(str (first %) "-" (second %)))
+        s (str/replace s #"^-+" "")
+        s (str/replace s #"-+$" "")
         s (str/lower-case s)
-        ;; s (str/join (map #(if (and (<= 65 (int %)) (<= (int %) 90)) (str \- (str/lower-case %)) %) s))
         k (keyword (if (= \- (first s)) (subs s 1) s))]
       k))
+;; (clojurize-keyword! "ParentID of middle-child2 (API)")
+;; (clojurize-keyword! "ParentID of middle-child2")
+;; (clojurize-keyword! "ParentID of middle _--_ _   child2")
+;; (clojurize-keyword! "Arbor Size - Fractional")
+;; (clojurize-keyword "Arbor Size - Fractional")
+;; (humanize! "Arbor Size - Fractional")
+;; (humanize "Arbor Size - Fractional")
 
 (defn clojurize-keyword
-  "convert mixed case to lower case with hyphens. Considers 'ID' as a token.
-  Memoized, so can override this function's output with your own."
+  "memoized. can override this function's output with your own via set-clojurized-keyword."
   [key]
   (let [skey (if (keyword? key) (name key) (str key))]
     (if-let [k (@clojurized-keywords skey)]
       k
-      (clojurize-keyword! skey))))
+      (set-clojurized-keyword key (clojurize-keyword! skey)))))
 
 (examples
  (clear-clojurized-keywords)
@@ -228,6 +261,42 @@
  @clojurized-keywords
  (clojurize-map-keywords {:ParentID "394" :SubMap {:TestID ["a" 3 :ParentTrap]}})
  )
+
+(defn humanize! [s]
+  (str/join " "
+            (map str/capitalize
+                 (-> s clojurize-keyword name (str/split #"-") ))))
+;; (assert= "Parent Id" (humanize! "ParentID"))
+;; note: we would prefer "Parent ID"
+
+(defonce humanized-words (atom {}))
+
+(defn set-humanized [from-word to-word]
+  (swap! humanized-words assoc from-word to-word)
+  to-word)
+
+(defn clear-humanized-words []
+  (reset! humanized-words {}))
+;; (clear-humanized-words)
+
+(defn humanize
+  "memoized. can override this function's output with your own via set-humanized."
+  [word]
+  (let [word (str/trim word)
+        low-word (str/lower-case word)]
+    (if-let [w (@humanized-words low-word)]
+      w
+      (set-humanized low-word (humanize! word)))))
+;; (clojurize-keyword! "ParentID of middle-child2")
+;; (humanize! "ParentID of middle-child3")
+;; (humanize "ParentID of middle-child3")
+;; (humanize! "Arbor Size - Fractional")
+;; (clear-humanized-words)
+;; (humanize "Arbor Size - Fractional")
+
+(defn humanized->id [humanized-string]
+  (str/join "_" (str/split humanized-string #"\s")))
+;; (assert= "Parent_Id_Of_Middle_Child3" (humanized->id (humanize "ParentID of middle-child3")))
 
 (defn save-to-xyz1
   "may be used in a threading macro"
@@ -732,7 +801,7 @@
   (System/identityHashCode o))
 
 (examples
- (reset-pp)
+ (reset-rpp)
  )
 
 (println "done loading summit.utils.core")

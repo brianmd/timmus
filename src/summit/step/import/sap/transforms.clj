@@ -1,3 +1,9 @@
+(println "loading summit.step.import.sap.transforms")
+
+"
+uses transducers for sap files, such as inventory, bought-with, ...
+"
+
 (ns summit.step.import.sap.transforms
   (:require [clojure.string :as str]
             [clojure.java.io :as io :refer [as-url make-parents]]
@@ -290,3 +296,5 @@ match (p:Product {matnr: 7662})-[r]-(n) return p,r,n limit 25;
              line
 
              ))))
+
+(println "done loading summit.step.import.sap.transforms")

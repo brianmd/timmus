@@ -110,9 +110,7 @@
    ]
   )
 
-;; (let [order-request (p/find-order-request 4185)]
 (defn create-order-message [order-request punchout-request]
-  ;; [buyer-cookie operation total-price items]
   (let [cart (find-entity :carts (:cart_id order-request))
         cust (find-entity :customers (:customer_id cart))
         items (find-entity-by :line_items :cart_id (:cart_id order-request))
@@ -175,6 +173,10 @@
 ;; (set-order-to-max-punchout)
 
 
+;; (find-entity :carts 750336)
+;; (find-entity :customers 6079)
+;; (:active_punchout_id (find-entity :customers 6079))
+
 (defn retrieve-cart-data [cart-id]
   (try
     (let [cart (find-entity :carts cart-id)
@@ -184,6 +186,7 @@
           ]
       (when-not punchout-request
         (throw (Exception. (str "No corresponding punchout request for cart #" cart-id))))
+      (println "\n\ncart:" cart)
       {:cart cart
        :customer customer
        :items items
@@ -197,20 +200,22 @@
         msg (create-order-message-from order-message-data)]
     (p/create-cxml (p/cxml head msg))
     ))
-;; (order-message-xml (retrieve-cart-data 747016))
-    ;; (def xyz punchout-request)
-    ;; (def xyy url)
-    ;; (println "order message id: " id)
-    ;; (println "order request " order-request)
-    ;; (println "punchout-request" punchout-request)
-    ;; (println "hiccup " hiccup)
-    ;; (do-log-request
-    ;;  (client/post
-    ;;   url
-    ;;   {:headers {:content-type :xml}
-    ;;    :body (p/create-cxml hiccup)})
-    ;;  "punchout")
-    ;; )
+
+(examples
+ (order-message-xml (retrieve-cart-data 747016))
+ (def xyz punchout-request)
+ (def xyy url)
+ (println "order message id: " id)
+ (println "order request " order-request)
+ (println "punchout-request" punchout-request)
+ (println "hiccup " hiccup)
+ (do-log-request
+  (client/post
+   url
+   {:headers {:content-type :xml}
+    :body (p/create-cxml hiccup)})
+  "punchout")
+ )
 
 
 (defn order-message [order-message-data]
@@ -219,7 +224,7 @@
     {:method :post
      :url url
      :cxml str}))
-;; (order-message (retrieve-cart-data 747016))
+;; (order-message (retrieve-cart-data 750336))
 
 (defn submit-order-message []
   (let [

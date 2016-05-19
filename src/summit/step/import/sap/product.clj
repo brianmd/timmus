@@ -182,9 +182,10 @@
          ;; (filter (comp *matched-products* as-integer first))
 ;;   (filter #(= mfr-milwaukee (nth % 13)))  ;; arlington. who we pay
          ;; (filter (comp matched-products first))
-         ;; (take 200)
+         ;; (take 5)
          ;; logit-plain
          (map sap-product)
+         (remove #(= "ZZZZZZ-DELETED" (:mfr-part-num %)))
          ;; (remove nil?)
          (map transform-sap-product)
          (map sap-product-xml)
@@ -203,7 +204,7 @@
   (process-verticalbar-file-with (str sap-input-path filename) fn))
 
 (defn write-sap-file []
-  (with-open [w (clojure.java.io/writer (str sap-output-path "product.xml"))]
+  (with-open [w (clojure.java.io/writer (str sap-output-path "product.xml") :encoding "UTF-8")]
     (binding [*out* w]
       (println (opening))
       (process-sap-file-with "STEP_MATERIAL.txt" process-sap-product)
