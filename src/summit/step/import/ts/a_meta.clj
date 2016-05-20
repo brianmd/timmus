@@ -26,7 +26,7 @@
 (def a-spec-filename (str ts-input-path "a_attribute.txt"))
 
 (defn ts-spec-definitions! []
-  (let [attrs (atom #{})]
+  (let [specs (atom #{})]
     (into {}
           (transduce-tabbed-file-with
            a-meta-filename
@@ -43,54 +43,70 @@
            conj))))
 
 (defn ts-spec-values! []
-  (let [attrs (atom {})]
+  (let [specs (atom {})]
     (transduce-tabbed-file-with
      a-value-filename
      (comp
       (drop 1)
       ;; (take 5)
       ;; (map #(swap! names conj (nth % 2)))
-      (map (fn [x] (swap! attrs assoc (->int (nth x 0)) (nth x 2))))
+      (map (fn [x] (swap! specs assoc (->int (nth x 0)) (nth x 2))))
       )
      (fn [& args]))
     (println "done")
-    @attrs
+    @specs
     ))
 
-(def ts-spec-definitions (delay (ts-spec-definitions!)))
-(def ts-spec-values (delay (ts-spec-values!)))
+(defonce ts-spec-definitions (delay (ts-spec-definitions!)))
+(defonce ts-spec-definitions-by-source-id (delay (into {} (map! #(vector (->int (:source-id %)) (:id %)) (vals @ts-spec-definitions)))))
+(defonce ts-spec-values (delay (ts-spec-values!)))
 
 ;; (pp (first @ts-spec-definitions))
+;; (pp (first @ts-spec-definitions-by-source-id))
+;; (pp (first @ts-spec-values))
 ;; (count @ts-spec-definitions)
 ;; (count @ts-spec-values)
 
-(defn- ts-spec-hiccup [id val]
-  [:Value {:SpecID id} val])
+(defn- ts-spec-hiccup [[id val]]
+  [:Value
+   {:AttributeID (@ts-spec-definitions-by-source-id (->int id))}
+   (@ts-spec-values (->int val))])
 
 (defn- ts-product-hiccup [item]
-  (let [parent-id (let [p (:unspsc item)]
-                    (if (or (nil? p) (= p ""))
-                      "TS_Member_Records"
-                      (str "TS_" p)))]
+  ;; (let [parent-id (let [p (:unspsc item)]
+  ;;                   (if (or (nil? p) (= p ""))
+  ;;                     "TS_Member_Records"
+  ;;                     (str "TS_" p)))]
     [:Product
-     {:ID (str "MEM_TS_" (:item-pik item))
+     {:ID (str "MEM_TS_" (:id item))
       ;; :UserTypeID "TS_Member_Record"
       ;; :ParentID parent-id
       }
      [:Values
       (map! ts-spec-hiccup (:specs item))
       ]
-     ]))
+     ])
 
-(defn- ts-product-xml [item]
-  (println
-   (hiccup/html (ts-product-hiccup item)))
-  item)
+(defn- ts-print-product-specs-xml [item]
+  (if (and (:id item) (not-empty (:specs item)))
+    (println
+     (hiccup/html (ts-product-hiccup item))
+     )))
 
-(defn- ts-product-xml [item]
-  (println
-   (hiccup/html (ts-product-hiccup item)))
-  item)
+(defn- ts-product-xml
+  ([] (atom {:id nil :specs []}))
+  ([accum]
+   (ts-print-product-specs-xml @accum)
+   accum)
+  ([accum item]
+   (if (= (:id @accum) (first item))
+     (swap! accum update-in [:specs] conj [(second item) (third item)])
+     (do
+       (ts-print-product-specs-xml @accum)
+       (swap! accum assoc :id (first item) :specs [[(second item) (third item)]]))
+     )
+   accum)
+   )
 
 
 
@@ -107,15 +123,15 @@
          a-spec-filename
          (comp
           (drop 1)
-          (take 5)
+          (take 25)
           (map #(vector (nth % 6) (nth % 2) (nth % 3)))
 
           )
-         ;; ts-product-xml
-         (sans-accumulator println)
+         ts-product-xml
+         ;; (sans-accumulator pp)
          )
         ;; (process-ts-file-with a-spec-filename process-ts-product)
         (println (closing))
         ))))
 
-(write-ts-spec-values)
+;; (write-ts-spec-values)
