@@ -186,14 +186,13 @@
           ]
       (when-not punchout-request
         (throw (Exception. (str "No corresponding punchout request for cart #" cart-id))))
-      (println "\n\ncart:" cart)
       {:cart cart
        :customer customer
        :items items
        :punchout-request punchout-request}
       )
     (catch Exception e (throw (Exception. (str "Cart #" cart-id " had invalid data."))))))
-;; (retrieve-cart-data 747016)
+;; (retrieve-cart-data 750337)
 
 (defn order-message-xml [order-message-data]
   (let [head (order-header order-message-data)
@@ -219,12 +218,24 @@
 
 
 (defn order-message [order-message-data]
+  (println "in order-message")
   (let [str (order-message-xml order-message-data)
+        _ (ppn str)
         url (:browser_form_post (:punchout-request order-message-data))]
     {:method :post
      :url url
      :cxml str}))
-;; (order-message (retrieve-cart-data 750336))
+
+
+
+
+
+
+;; (ppn (order-message (retrieve-cart-data 750337)))
+
+
+
+
 
 (defn submit-order-message []
   (let [

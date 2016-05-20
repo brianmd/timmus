@@ -110,7 +110,7 @@
 
 ;(apply ->TsProduct (range num-product-cols))
 
-(defn vec->rec [rec-def cols]
+(defn- vec->rec [rec-def cols]
   (let [errors (validate-with* cols [[#(= (count %) num-product-cols) #(str "Wrong number of columns: " (count %) " instead of " num-product-cols)]])]
     (if (not-empty errors)
                                         ;(do (logit errors (interleave (range 200) cols) "----") (println (interleave (range 200) cols) errors) nil)
@@ -123,7 +123,7 @@
         )
       )))
 
-(defn ts-product [cols]
+(defn- ts-product [cols]
   (let [errors (validate-with* cols [[#(= (count %) num-product-cols) #(str "Wrong number of columns: " (count %) " instead of " num-product-cols)]])]
     (if (not-empty errors)
       ;(do (logit errors (interleave (range 200) cols) "----") (println (interleave (range 200) cols) errors) nil)
@@ -160,7 +160,7 @@
 ;                           {:tag :child :attrs {:id "56"}}
 ;                           {:tag :child :attrs {:id "57"}}]})
 
-(defn ts-product-hiccup [item]
+(defn- ts-product-hiccup [item]
   (let [parent-id (let [p (:unspsc item)]
                     (if (or (nil? p) (= p ""))
                       "TS_Member_Records"
@@ -172,7 +172,7 @@
      (product-attributes product-col-info item)
      ]))
 
-(defn ts-product-xml [item]
+(defn- ts-product-xml [item]
   (println
     (hiccup/html (ts-product-hiccup item)))
   item)
@@ -194,16 +194,16 @@
   ;;        )
   )
 
-(def ts-mfr-arlington "1009")
-(def ts-mfr-hubbell "762")
-(def ts-mfr-milwaukee "112")
+(def ^:private ts-mfr-arlington "1009")
+(def ^:private ts-mfr-hubbell "762")
+(def ^:private ts-mfr-milwaukee "112")
 
-(defn keep-good [v]
+(defn- keep-good [v]
   (if (= (count v) 40)
     v
     (ppn "bad record:" v (str "count " (count v)))))
 
-(defn process-ts-product [lines]
+(defn- process-ts-product [lines]
   (let [categories (atom #{})
         ;; matched-products (set (:ts (slurp-source-ids "current")))
         ]
@@ -212,7 +212,8 @@
          (remove nil?)
          ;; (filter #(contains? matched-products (first %)))
          ;; (filter (comp *matched-products* as-integer first))
-         (take 5)
+         ;; (take 5)
+         (take 100000)
          (filter keep-good)
          ;; pp
  ;;   (filter #(= ts-mfr-milwaukee (nth % 2)))  ;; mfr-pik
@@ -253,7 +254,9 @@
           (println (closing))
           result)))))
 
-;; (time (write-ts-file))
+(examples
+ (time (write-ts-file))
+ )
 ;(process-ts-file-with "STEP_MATERIAL.txt" process-ts-product)
 ;(def x (process-ts-file-with "STEP_MATERIAL.txt" process-ts-product))
 

@@ -193,6 +193,7 @@
 (defn process-punchout-request-str [xml-string]
   (create-cxml (process-punchout-request xml-string)))
 
+(def coupa-test-str "asdf")
 
 (defn test-punchout [s]
   ;; (clj-http.client/post "http://localhost:3449/api/punchout" {:debug true :debug-body true :body s}))

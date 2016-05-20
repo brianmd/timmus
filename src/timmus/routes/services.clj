@@ -42,7 +42,7 @@
             [summit.health-check.blue-harvest :as bh]
             [summit.step.manufacturer-lookup :refer [create-manufacturer-lookup-tables]]
 
-            [summit.sap.projects :refer [projects]]
+            [summit.sap.project :refer [projects]]
             ))
 ;(-> @((-> customer :rel) "cart") :fk-key)
 

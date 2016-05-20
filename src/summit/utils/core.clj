@@ -69,12 +69,16 @@
  (assert= 9 (detect #(> % 5) [2 9 4 7]) ((detect #(> % 5)) [2 9 4 7]))
  (assert= 6 (detect #(> % 5) (range)) ((detect #(> % 5)) (range))))
 
-(defn ppn [& args]
+(defn ppn
+  "pprint, returning nil"
+  [& args]
   (binding [clojure.pprint/*print-miser-width* 120
             clojure.pprint/*print-right-margin* 120]
     (doseq [arg args] (pprint arg))))
 
-(defn pp [& args]
+(defn pp
+  "pprint, returning last arg"
+  [& args]
   (apply ppn args)
   (last args))
 ;; (ppn 3 {:a 3 :q "rew"})
@@ -84,13 +88,17 @@
   (def rppout *out*))
 ;; (reset-rpp)
 
-(defn rppn [& args]
+(defn rppn
+  "repl pprint, returning nil"
+  [& args]
   (binding [*out* rppout]
     (println "\n-------------------")
     (apply ppn args)))
     ;; (doseq [arg args] (pprint arg))))
 
-(defn rpp [& args]
+(defn rpp
+  "repl pprint, returning last arg"
+  [& args]
   (apply rppn args)
   (last args))
 
@@ -110,6 +118,22 @@
   )
 ;; (spitln "junky" [1 3 5 7 11])
 ;; (spitln "junky" {:a [1 2 3 4] :b "hey"})
+
+(defn sans-accumulator
+  "reducer helper for functions that don't care about the accumulator"
+  ([f] (fn reducefn
+         ([])   ;; called at start when no initial value provided
+         ([_])  ;; called when finished with collection
+         ([_ val] (f val))))
+  ([f finish-fn] (fn reducefn
+                   ([])
+                   ([_] (finish-fn))
+                   ([_ val] (f val))))
+  ([f finish-fn start-fn] (fn reducefn
+                            ([] (start-fn))
+                            ([_] (finish-fn))
+                            ([_ val] (f val))))
+  )
 
 (defn uuid [] (java.util.UUID/randomUUID))
 ;; (uuid)
