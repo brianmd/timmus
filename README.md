@@ -11,6 +11,9 @@ To install this project:
 
   also will need [dev|qas|prd].jcoDestination and a profiles.clj
 
+You will need to download the oracle jdbc driver as well. Change the directory as appropriate in the following command:
+
+    $ mvn install:install-file -X -DgroupId=local -DartifactId=ojdbc6 -Dversion=11.2.0.4 -Dpackaging=jar -Dfile=/Users/bmd/code/instantclient_11_2/ojdbc6.jar -DgeneratePom=true
 
 ## Prerequisites
 
