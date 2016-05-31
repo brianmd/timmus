@@ -4,11 +4,10 @@
             [clojure.string :as str]
             ;; [mount.core :as mount]
 
-            [incanter.charts :as c]
             [incanter.core :as i]
             [incanter.distributions :as d]
             [incanter.stats :as stats]
-            [incanter.svg :as svg]
+            ;; [incanter.charts :as c]
 
             [com.rpl.specter :as s]
 
@@ -53,33 +52,6 @@ order by c.created_at
   (map (comp #(/ % 100.0) :total_price)
        (dselect contact-email (database (find-db :bh-prod)) (where {:type "Order"}) (fields [:total_price]))))
 
-(defn qqplot-order-dollars []
-  (let [os (order-dollars)]
-    (-> (c/qq-plot os)
-        (i/view))))
-;; (qqplot-order-dollars)
-
-(defn boxplot-order-dollars []
-  (let [os (order-dollars)]
-    (-> (c/box-plot os
-                   :series-label "Dollars per Order"
-                   :legend true
-                   :y-label "$")
-        (i/view)
-        )))
-;; (boxplot-order-dollars)
-
-(defn plot-order-dollars []
-  (let [os (order-dollars)]
-    (-> (c/xy-plot (range 1000) os
-                   :series-label "Dollars per Order"
-                   :legend true
-                   :x-label "Order #"
-                   :y-label "$")
-        (c/add-points (range 1000) os)
-        (i/view)
-        )))
-
 (defn last-order []
   (first
    (dselect contact-email (database (find-db :bh-prod)) (where {:type "Order"}) (order :id :DESC) (limit 1))))
@@ -104,13 +76,50 @@ order by c.created_at
            :created (localtime (:created_at o)))))
 
 
+
+
+
+
+;; these require incanter.charts, which only works with xwindows.
+;; currently have this disabled because I'm using mosh
+
+;; (defn qqplot-order-dollars []
+;;   (let [os (order-dollars)]
+;;     (-> (c/qq-plot os)
+;;         (i/view))))
+;; ;; (qqplot-order-dollars)
+
+;; (defn boxplot-order-dollars []
+;;   (let [os (order-dollars)]
+;;     (-> (c/box-plot os
+;;                     :series-label "Dollars per Order"
+;;                     :legend true
+;;                     :y-label "$")
+;;         (i/view)
+;;         )))
+;; ;; (boxplot-order-dollars)
+
+;; (defn plot-order-dollars []
+;;   (let [os (order-dollars)]
+;;     (-> (c/xy-plot (range 1000) os
+;;                    :series-label "Dollars per Order"
+;;                    :legend true
+;;                    :x-label "Order #"
+;;                    :y-label "$")
+;;         (c/add-points (range 1000) os)
+;;         (i/view)
+;;         )))
+
+
+
+
 ;; (def ooo (last-order))
 ;; (order-vitals ooo)
 ;; (pp (mapv order-vitals (last-orders 5)))
 ;; (pp (order-vitals (last-order)))
-;; (pp (last-order-sans-json))
 
 (examples
+ (last-order-sans-json)
  (pp (mapv order-vitals (last-orders 5)))
  (qqplot-order-dollars)
  (boxplot-order-dollars)

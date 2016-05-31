@@ -1,3 +1,5 @@
+(println "loading summit.sap.project")
+
 (ns summit.sap.project
   (:require [summit.utils.core :refer :all]
             ;; [summit.sap.types :refer :all]
@@ -211,3 +213,5 @@
 
  (pull-map projects-fn :et-status-lines :et-vak-atts)
  )
+
+(println "done loading summit.sap.project")

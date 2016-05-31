@@ -15,6 +15,11 @@ You will need to download the oracle jdbc driver as well. Change the directory a
 
     $ mvn install:install-file -X -DgroupId=local -DartifactId=ojdbc6 -Dversion=11.2.0.4 -Dpackaging=jar -Dfile=/Users/bmd/code/instantclient_11_2/ojdbc6.jar -DgeneratePom=true
 
+To get maven on Macs:
+
+    $ brew update
+    $ brew install maven
+    
 ## Prerequisites
 
 You will need [Leiningen][1] 2.0 or above installed.
