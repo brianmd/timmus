@@ -8,6 +8,8 @@ To install this project:
     $ git clone git@github.com:brianmd/timmus.git
     $ cd timmus
     $ git clone git@bitbucket.org:summitelectricsupply/jars.git
+    $ cd jars
+    $ cp -r [mac|linux-64bit] .
 
   also will need [dev|qas|prd].jcoDestination and a profiles.clj
 
@@ -19,7 +21,13 @@ To get maven on Macs:
 
     $ brew update
     $ brew install maven
-    
+
+or linux:
+
+    $ sudo apt-get update
+    $ sudo apt-get install -y maven
+
+
 ## Prerequisites
 
 You will need [Leiningen][1] 2.0 or above installed.
