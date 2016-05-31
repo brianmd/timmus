@@ -143,11 +143,12 @@
 (defn order-spec-component []
   [:div.container.well
    ;; [throbber :color "ff0000" :size :large]
-   [title :level :level2 :label "Order Spec Sheet Request"]
-   [input-text :model summit-email-address :on-change change-it :status :error :placeholder "placeholder text" :status-tooltip "Hey\nbro" :status-icon? true]
-   [input-textarea :model (atom "") :on-change change-it :status :error :placeholder "placeholder text" :status-tooltip "This is a long<br>tip" :rows 10]
-   [button :disabled? true :class "btn btn-primary" :label "test" :tooltip "press me" :tooltip-position :left-center]
-   ;[:a {:href "https://www.google.com"} "google"]
+   ;; [title :level :level2 :label "Order Spec Sheet Request"]
+   ;; [input-text :model summit-email-address :on-change change-it :status :error :placeholder "placeholder text" :status-tooltip "Hey\nbro" :status-icon? true]
+   ;; [input-textarea :model (atom "") :on-change change-it :status :error :placeholder "placeholder text" :status-tooltip "This is a long<br>tip" :rows 10]
+   ;; [button :disabled? true :class "btn btn-primary" :label "test" :tooltip "press me" :tooltip-position :left-center]
+   ;; ;[:a {:href "https://www.google.com"} "google"]
+   [:br]
    [:div.form-group.row
     [:label.col-sm-4.form-control-label
      {:for "summit-email-address" :style {:text-align "right" :font-weight "bold"}}

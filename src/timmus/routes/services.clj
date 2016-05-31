@@ -42,7 +42,7 @@
             [summit.health-check.blue-harvest :as bh]
             [summit.step.manufacturer-lookup :refer [create-manufacturer-lookup-tables]]
 
-            [summit.sap.project :refer [projects]]
+            [summit.sap.project :refer [projects project]]
             ))
 ;(-> @((-> customer :rel) "cart") :fk-key)
 
@@ -279,10 +279,17 @@ bb
                 {:status 200,
                  :body {:bh-ok (bh/all-okay?)}})
 
-            (GET "/projects/:id" req
+            (GET "/project/:id" req
               :path-params [id :- Long]
               {:status 200,
                :headers {"Content-Type" "text/json; charset=utf-8"},
+               :body (project id)}
+              )
+
+            (GET "/projects/:id" req
+              :path-params [id :- Long]
+              {:status 200,
+               ;; :headers {"Content-Type" "application/edn; charset=utf-8"},
                :body (projects id)}
               )
 

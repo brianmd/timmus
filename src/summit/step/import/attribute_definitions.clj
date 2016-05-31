@@ -20,12 +20,12 @@
             ;; [summit.step.import.product-selectors :refer [slurp-source-ids]]
             [summit.step.import.product-selectors :refer :all]
 
-            [summit.step.import.ts.a-meta :refer [ts-attributes]]
+            [summit.step.import.ts.a-meta :refer [ts-spec-definitions]]
             [summit.step.import.idw.xls-spec-reader :refer [idea-attributes]]
             ))
 
 (defn merged-specification-attributes []
-  (merge @ts-attributes @idea-attributes))
+  (merge @ts-spec-definitions @idea-attributes))
 
 (defn good-specs []
   (remove #(re-matches #"[_(].*" (:id %)) (vals (merged-specification-attributes))))
@@ -91,7 +91,7 @@
   (clear-clojurized-keywords)
   (def qrs (merged-specification-attributes))
 
-  (take 2 @ts-attributes)
+  (take 2 @ts-spec-definitions)
   (take 2 @idea-attributes)
   (take 3 (merged-specification-attributes))
   (take 3 (vals (merged-specification-attributes)))

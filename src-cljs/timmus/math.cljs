@@ -9,6 +9,8 @@
             [siren.core :refer [siren! sticky-siren! base-style]]
 
             [reagent-table.core :as rt]
+
+            [murphydye.window :as win]
             )
   (:require-macros [timmus.macros :refer [sleep]])
   )
@@ -122,14 +124,6 @@
    (when @entities
      [:ul
       (map #(vector :li (str %)) (keys @entities))])])
-
-(defn show-table [tbl]
-  (if tbl
-    (let [table (if (:headers tbl)
-                  tbl
-                  {:headers (tbl "headers") :rows (tbl "rows")})]
-      [rt/reagent-table table]
-      )))
 
 (def table-element-id (atom 0))
 (defn next-table-element-id [] (swap! table-element-id inc))
@@ -290,7 +284,7 @@
   [:div
    [:h2 (first (:query ele))]
    (let [e @(:entity ele)]
-     (show-table e))])
+     (win/show-table e))])
 
 (defn show-entity [tbl-ele entity es]
   (let [entity @(:entity tbl-ele)

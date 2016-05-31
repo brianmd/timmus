@@ -229,12 +229,15 @@
 (defn pull-map [f name & args]
   (let [fld (find-field f name)
         names (map first (last (field-definition fld)))
+        _ (ppn "names" names)
         vals (apply get-data fld args)
         ]
-    (if (seq? (first vals))
-      (map #(apply assoc {} (interleave names %)) vals)
-      (apply assoc {} (interleave names vals))
-      )
+    (if (empty? (first vals))
+      []
+      (if (seq? (first vals))
+        (map #(apply assoc {} (interleave names %)) vals)
+        (apply assoc {} (interleave names vals))
+        ))
     ))
 
 ;; (defn get-values [f fldname]

@@ -69,8 +69,8 @@
 
 (defn- ts-spec-hiccup [[id val]]
   [:Value
-   {:AttributeID (@ts-spec-definitions-by-source-id (->int id))}
-   (@ts-spec-values (->int val))])
+   {:AttributeID (str "SP_" (@ts-spec-definitions-by-source-id (->int id)))}
+   (escape-html (@ts-spec-values (->int val)))])
 
 (defn- ts-product-hiccup [item]
   ;; (let [parent-id (let [p (:unspsc item)]

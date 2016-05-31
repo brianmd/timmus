@@ -77,14 +77,15 @@
 ;(create-order-query-url "3333")
 
 (defn get-sap-order [order-num]
-  (let [creds (-> env :papichulo vals)]
+  ;; (let [creds (select-keys (first (-> env :papichulo vals)) [:username :password])]
+  (let [creds ((juxt :username :password) (first (-> env :papichulo vals)))]
     ;(println "summit.papichulo credentials" creds)
     (client/get
       (create-order-query-url order-num)
       {:basic-auth creds}
       ))
     )
-;(get-sap-order "2991654")
+;; (get-sap-order "2991654")
 
 (defn get-sap-line-items [sap-order]
   (->>
@@ -173,7 +174,8 @@
   (println (-> env :paths :local))
   (println (-> env :paths :local :download-path))
   (println)
-  (let [dir-name (str (-> env :paths :local :download-path) order-num)
+  (let [order-num (->int order-num)
+        dir-name (str (-> env :paths :local :download-path) order-num)
         line-item-rows (->>
                          (get-sap-order order-num)
                          get-sap-line-items
@@ -214,6 +216,7 @@
     )
   )
 
+;; (send-spec-email "bmurphydye@summit.com" "0002991654")
 
 ;send-spec-email
 ;(send-spec-email "jarred.killgore@summit.com" "0002991654")

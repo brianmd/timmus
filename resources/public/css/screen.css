@@ -89,3 +89,53 @@ body {
     }
 }
 
+h1,h2 {
+    font-weight: bold;
+}
+
+table,td {
+    border: 1px solid black;
+    margin: 2px;
+    vertical-align: middle;
+    /* padding: 4px; */
+    font-family: Segoe UI, Roboto, sans-serif;
+}
+
+th {
+    text-align: center;
+    /* padding: 4px; */
+}
+
+thead,tfoot td {
+    background-color: black;
+    color: white;
+    /* text-align: center; */
+}
+
+.well {
+    border: 1px solid; box-shadow: 10px 10px 5px #888888;
+}
+
+.center {
+    text-align: center;
+}
+
+.right {
+    text-align: right;
+    vertical-align: middle;
+}
+
+.smaller {
+    font-size: 85%;
+}
+
+.blackthemee {
+    background-color: #227;
+    color: white;
+}
+
+.window_framee {
+    background-color: #227;
+    color: white;
+}
+

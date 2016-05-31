@@ -52,7 +52,7 @@
 (defn wrap-formats [handler]
   (let [wrapped (wrap-restful-format
                   handler
-                  {:formats [:json-kw :transit-json :transit-msgpack]})]
+                  {:formats [:json-kw :edn :transit-json :transit-msgpack]})]
     (fn [request]
       ;; disable wrap-formats for websockets
       ;; since they're not compatible with this middleware

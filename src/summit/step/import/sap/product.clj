@@ -182,7 +182,7 @@
          ;; (filter (comp *matched-products* as-integer first))
 ;;   (filter #(= mfr-milwaukee (nth % 13)))  ;; arlington. who we pay
          ;; (filter (comp matched-products first))
-         ;; (take 5)
+         (take 50)
          ;; logit-plain
          (map sap-product)
          (remove #(= "ZZZZZZ-DELETED" (:mfr-part-num %)))

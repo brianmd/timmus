@@ -52,6 +52,51 @@
 (defmacro defn-memo [name & body]
   `(def ~name (memoize (fn ~body))))
 
+(defn ->str [a-name]
+  (if (string? a-name)
+    a-name
+    (if (number? a-name)
+      a-name
+      (str/replace
+       (str/upper-case
+        (if (keyword? a-name)
+          (name a-name)
+          (str a-name)))
+       "-" "_"))))
+
+(defn ->keyword [a-string]
+  (if (keyword? a-string)
+    a-string
+    (keyword
+     (str/lower-case (str/replace (str a-string) "_" "-")))))
+
+(defn ->int [v]
+  (if (nil? v)
+    nil
+    (if (string? v)
+      (let [v (str/trim v)]
+        (if (empty? v)
+          nil
+          (-> v Double/parseDouble int)))
+      (int v))))
+
+(defn ->float [v]
+  (if (nil? v)
+    nil
+    (if (string? v)
+      (let [v (str/trim v)]
+        (if (empty? v)
+          nil
+          (Double/parseDouble v)))
+      (double v))))
+
+(defn as-integer [string]
+  (->int string))
+;; (if (= (type string) String)
+;;   (read-string (as-short-document-num string))
+;;   string))
+
+
 (def map! (comp doall map))
 (def maprun (comp dorun map))
 
@@ -306,7 +351,7 @@
 (defn humanize
   "memoized. can override this function's output with your own via set-humanized."
   [word]
-  (let [word (str/trim word)
+  (let [word (str/trim (->str word))
         low-word (str/lower-case word)]
     (if-let [w (@humanized-words low-word)]
       w
@@ -382,50 +427,6 @@
   "remove leading zeros"
   (if string (str/replace string #"^0*" "")))
 ;; (as-short-document-num (as-document-num "00001"))
-
-(defn ->str [a-name]
-  (if (string? a-name)
-    a-name
-    (if (number? a-name)
-      a-name
-      (str/replace
-       (str/upper-case
-        (if (keyword? a-name)
-          (name a-name)
-          (str a-name)))
-       "-" "_"))))
-
-(defn ->keyword [a-string]
-  (if (keyword? a-string)
-    a-string
-    (keyword
-     (str/lower-case (str/replace (str a-string) "_" "-")))))
-
-(defn ->int [v]
-  (if (nil? v)
-    nil
-    (if (string? v)
-      (let [v (str/trim v)]
-        (if (empty? v)
-          nil
-          (-> v Double/parseDouble int)))
-      (int v))))
-
-(defn ->float [v]
-  (if (nil? v)
-    nil
-    (if (string? v)
-      (let [v (str/trim v)]
-        (if (empty? v)
-          nil
-          (Double/parseDouble v)))
-      (double v))))
-
-(defn as-integer [string]
-  (->int string))
-  ;; (if (= (type string) String)
-  ;;   (read-string (as-short-document-num string))
-  ;;   string))
 
 (defn bh_login [email pw]
   (let [cred
@@ -823,6 +824,19 @@
 
 (defn object-id [o]
   (System/identityHashCode o))
+
+(defn select-keys3 [m keys]
+  (let [keys (set keys)]
+    (into {} (filter (fn [[k v]] (if (contains? keys k) [k v])) m))))
+
+;; (select-keys3 {:a 3 "b" 4 "c" 7} [:a "c"])
+
+(defn get-unique [maps key]
+  (map #(% key) maps))
+
+(examples
+ (get-unique [{:a 4 :b 5 "d" 12} {:a 6 :c 7}] :a)
+ (get-unique [{:a 4 :b 5 "d" 12} {:a 6 :c 7}] "d"))
 
 (examples
  (reset-rpp)

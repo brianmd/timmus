@@ -16,7 +16,7 @@
             ;[timmus.sales-associate.core :refer [csr-page]]
 
 
-            ;; [murphydye.window :as win]
+            [murphydye.window :as win]
             [murphydye.components :as md-components]
             ;; [timmus.punchout-demo :as punchout]
             [timmus.entity :refer [entities-editor]]
@@ -86,7 +86,7 @@
 
 (defn show-platt-prices []
   [:div
-   (timmus.math/show-table @platt-prices)
+   (win/show-table @platt-prices)
    ;(show-table platt-prices)
    ])
  

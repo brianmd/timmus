@@ -1,7 +1,7 @@
 (ns murphydye.window
   (:require [reagent.core :as r]
             [reagent.session :as session]
-            [re-com.core           :refer [h-box v-box box selection-list label title checkbox p line hyperlink-href]]
+            [re-com.core :refer [h-box v-box box selection-list label title checkbox p line hyperlink-href]]
             [re-com.selection-list :refer [selection-list-args-desc]]
 
             [secretary.core :as secretary :include-macros true]
@@ -10,7 +10,10 @@
             [markdown.core :refer [md->html]]
             [ajax.core :refer [GET POST]]
 
+            [reagent-table.core :as rt]
             [siren.core :refer [siren! sticky-siren! base-style]]
+
+            [murphydye.utils.core :as utils :refer [ppc]]
 
                                         ;[timmus.sales-associate.core]
             ;; [timmus.csr.core :refer [csr-page platt-prices]]
@@ -19,6 +22,60 @@
             )
   (:import goog.History))
 
+(defn show-reagent-table
+  "tbl should be a map with :headers and :rows"
+  [tbl]
+  (if tbl
+    (let [table (if (:headers tbl)
+                  tbl
+                  {:headers (tbl "headers") :rows (tbl "rows")})]
+      [rt/reagent-table table]
+      )))
+
+(defn show-table
+  "tbl should be a map with :headers and :rows"
+  ([tbl] (show-table tbl {}))
+  ([tbl options]
+   (if tbl
+     (let [table (if (:headers tbl)
+                   tbl
+                   {:headers (tbl "headers") :rows (tbl "rows")})
+           headers (map utils/humanize (:headers tbl))
+           rows (:rows tbl)
+           counter (atom 0)
+           row-options (atom {})
+           onclick-fn (:on-row-click options)]
+       (if-let [f (:on-row-click options)]
+         (swap! row-options assoc :on-click #(f)))
+       (println "row options:" @row-options)
+       [:table.well.smaller.table.table-striped.table-bordered
+        [:thead>tr
+          (for [h headers]
+            ^{:key h} [:th h])]
+        [:tfoot]
+        ;; [:tfoot
+        ;;  [:tr
+        ;;   (for [h headers]
+        ;;     ^{:key h} [:td h])]]
+        [:tbody
+         (doall
+          (for [row rows]
+            (let [clicker (if onclick-fn {:on-click #(onclick-fn row)} {})]
+              ^{:key (swap! counter inc)}
+              [:tr (merge options clicker)
+               (doall
+                (map (fn [x] ^{:key (swap! counter inc)} [:td (str x)])
+                     row))
+               ])))]
+        ]
+       ))))
+
+(defn show-maps
+  ([maps] (show-maps maps (keys (first maps))))
+  ([maps keys] (show-maps maps keys {}))
+  ([maps keys options]
+   (let [data (doall (map #(utils/select-keys2 % keys) maps))]
+     [show-table {:headers keys :rows data} options])))
 
 (defn growl [m]
   (.log js/console m)
@@ -58,7 +115,9 @@
 ;; (growl {:status :success :message "sticky" :delay :sticky})
 
 (defn qgrowl [msg] (growl {:message msg :delay 2000}))
+(defn alert [msg] (growl {:message msg :delay 2000}))
 ;; (qgrowl "quick")
+(defn static-alert [msg] (growl {:message msg :delay :sticky}))
 
 (def ^:private window-number (atom 0))
 
@@ -77,11 +136,11 @@
          :icon "http://www.fstoke.me/favicon.ico"
          :title (str "Window #" (swap! window-number inc))
          :content "lots and lots of content"
-         :footerContent "footer content"
+         :footerContent ""
          :width 200
          :height 160
-         ;; :maxWidth 400
-         ;; :maxHeight 300
+         :maxWidth 4800
+         :maxHeight 4800
          :x (+ 80 (rand-int 500))
          :y (+ 80 (rand-int 500))
 
@@ -144,7 +203,7 @@
         selections (r/atom #{})
         ]
     (process-url query-keys "/api/admin/queries" {})
-    (fn []
+    (fn query-win-fn []
       [:div
        "queries: "
        [selection-list
@@ -158,6 +217,7 @@
   (fn []
     [:span
      [:input {:type "button" :value "Make Windows"
+              :style {:background-color :blue :color :white}
               :on-click #(windows-test 10)}]
      ;; [:input {:type "button" :value "Chatr"
      ;;          :on-click #(new-window chatr-component {:title "Chatr" :x 50 :y 100 :width 400 :height 400})}]

@@ -43,6 +43,12 @@ order by c.created_at
 ;; (-> (k/select* :service_centers)
 ;;     (k/as-sql))
 
+
+(defn open-last-order []
+  (let [orders (last-orders 1)]
+    (:sap_document_number (first orders))))
+;; (open-last-order)
+
 (defn order-dollars []
   (map (comp #(/ % 100.0) :total_price)
        (dselect contact-email (database (find-db :bh-prod)) (where {:type "Order"}) (fields [:total_price]))))
@@ -92,7 +98,7 @@ order by c.created_at
 ;; (:created_at (ddetect customer (where {:email (:email (last-order))})))
 
 (defn order-vitals [o]
-  (let [o (into {} (s/select [s/ALL #(contains? #{:id :total_price :email :name :created_at :sap_document_number} (first %))] o))]
+  (let [o (into {} (s/select [s/ALL #(contains? #{:id :total_price :email :name :created_at :sap_document_number :delivery_method :message} (first %))] o))]
     (assoc o
            :total_price (/ (:total_price o) 100.0)
            :created (localtime (:created_at o)))))

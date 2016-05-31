@@ -77,7 +77,16 @@
                  [org.webjars/jquery-window "5.03"]
                  [siren "0.2.0"]
                  [org.clojars.frozenlock/reagent-table "0.1.3"]
+                 ;; [org.webjars/react-data-grid "0.14.16"]
+                 ;; [org.webjars.bower/react-data-grid "0.13.21"]
+                 [cljsjs/fixed-data-table "0.6.0-1"]
+
+                 ;; [cljsjs/react-grid-layout "0.12.4-0"] ; for dashboard
                  ;; [org.webjars/codemirror "5.12"]
+
+                 ;; [jayq "2.5.4"] ; for jquery
+                 ;; [org.webjars/datatables "1.10.11"]
+
                  ;; [com.taoensso/tower "3.1.0-beta4"] ; i18n
                  ;; [ring "1.4.0" :exclusions [ring/ring-jetty-adapter]]
                  ;; [ch.qos.logback/logback-classic "1.1.3"] ; for easier log setup
@@ -176,7 +185,7 @@
                                  [ring/ring-devel "1.4.0"]
                                  [pjstadig/humane-test-output "0.7.1"]
                                  [com.cemerick/piggieback "0.2.1"]
-                                 [lein-figwheel "0.5.2" :exclusions [org.clojure/core.memoize]]
+                                 [lein-figwheel "0.5.3-2" :exclusions [org.clojure/core.memoize]]
                                  [org.clojure/tools.namespace "0.2.11"]
                                  [org.clojure/java.classpath "0.2.0"]
                                  [mvxcvi/puget "1.0.0"]

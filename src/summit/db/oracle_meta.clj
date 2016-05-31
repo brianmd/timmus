@@ -13,6 +13,8 @@
             [summit.utils.core :as utils :refer :all]
             ;; [summit.db.relationships :as rel :refer :all]
 
+            [config.core :refer [env]]
+
             [korma.core :as k]
             [korma.db :refer [defdb oracle]]
             ))
@@ -21,8 +23,8 @@
   ;; (oracle {:subname "@//stibo-prd-db.insummit.com:1521/STEPSYS"
   ;; (oracle {:subname "@//stibo-db.insummit.com:1521/step"
   (oracle {:subname "@//stibo-prd-db.insummit.com:1521/step"
-           :user "STEPVIEW"
-           :password "stepview"
+           :user (-> env :db :step-prd :user)
+           :password (-> env :db :step-prd :password)
            :naming {:keys str/lower-case :fields str/lower-case}
            ;; :host "stibo-prd-db.insummit.com"
            ;; :port 1521
@@ -60,25 +62,25 @@
 
 (examples
 
-(maprun #(swap! oracle-info assoc % (get-oracle %))
-        [:all-tables :all-views :all-synonyms
-         :all-dependencies :all-constraints
-         :all-cons-columns :all-objects :database-properties
-         :all-nested-table-cols :all_source :all-tab-cols
-         :all-indexes :all-ind-columns :all-ind-expressions
-         ])
-(spit "oracle-meta" @oracle-info)
+ (maprun #(swap! oracle-info assoc % (get-oracle %))
+         [:all-tables :all-views :all-synonyms
+          :all-dependencies :all-constraints
+          :all-cons-columns :all-objects :database-properties
+          :all-nested-table-cols :all_source :all-tab-cols
+          :all-indexes :all-ind-columns :all-ind-expressions
+          ])
+ (spit "oracle-meta" @oracle-info)
 
-(exec-sql step-db "select * from all_views where view_name='VT_NODE'")
-({:oid_text_length nil, :view_type_owner nil, :superview_name nil, :view_name "VT_NODE", :type_text_length nil, :oid_text nil, :type_text nil, :read_only "N", :text_length 69M, :editioning_view "N", :owner "STEPSYS", :view_type nil, :text "select nodeid id, nodetype, usertypeid subtypeid, name\n    from node\n"})
+ (exec-sql step-db "select * from all_views where view_name='VT_NODE'")
+ ({:oid_text_length nil, :view_type_owner nil, :superview_name nil, :view_name "VT_NODE", :type_text_length nil, :oid_text nil, :type_text nil, :read_only "N", :text_length 69M, :editioning_view "N", :owner "STEPSYS", :view_type nil, :text "select nodeid id, nodetype, usertypeid subtypeid, name\n    from node\n"})
 
-(->>
- (synonym-descriptions "STEPVIEW")
- (map :object_name)
- (take 20))
-(->>
- (table-descriptions "STEPSYS")
- (map :object_name)
- (take 20))
+ (->>
+  (synonym-descriptions "STEPVIEW")
+  (map :object_name)
+  (take 20))
+ (->>
+  (table-descriptions "STEPSYS")
+  (map :object_name)
+  (take 20))
 
-)
+ )

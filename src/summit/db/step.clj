@@ -13,6 +13,8 @@
             [summit.utils.core :as utils :refer :all]
             ;; [summit.db.relationships :as rel :refer :all]
 
+            [config.core :refer [env]]
+
             [korma.core :as k]
             [korma.db :refer [defdb oracle]]))
 
@@ -20,8 +22,8 @@
   ;; (oracle {:subname "@//stibo-prd-db.insummit.com:1521/STEPSYS"
   ;; (oracle {:subname "@//stibo-db.insummit.com:1521/step"
   (oracle {:subname "@//stibo-prd-db.insummit.com:1521/step"
-           :user "STEPVIEW"
-           :password "stepview"
+           :user (-> env :db :step-prd :user)
+           :password (-> env :db :step-prd :password)
            :naming {:keys str/lower-case :fields str/lower-case}
            ;; :host "stibo-prd-db.insummit.com"
            ;; :port 1521
