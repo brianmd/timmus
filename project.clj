@@ -125,6 +125,8 @@
 
                  ;; https://github.com/binaryage/cljs-devtools-sample/blob/master/project.clj
                  ;; [binaryage/devtools "0.5.4"]
+
+                 ;; [com.murphydye/utils "0.1.0-SNAPSHOT"]
                  ]
 
   :min-lein-version "2.0.0"

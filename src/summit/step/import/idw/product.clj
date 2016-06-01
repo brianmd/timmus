@@ -20,7 +20,8 @@
             [summit.step.import.idw.core :refer :all]
             ;; [summit.step.import.product-selectors :refer [slurp-source-ids]]
             [summit.step.import.product-selectors :refer :all]
-            ))
+
+            [summit.utils.core :as utils]))
 
 ;; Create sap product record and constructor
 
@@ -157,6 +158,8 @@
          )
     ))
 
+
+
 (defn process-idw-file-with [filename fn]
   (process-verticalbar-file-with (str idw-input-path filename) fn))
 
@@ -168,12 +171,24 @@
       (println (closing))
       )))
 
+(defn write-idw-files [& filenames]
+  ;; (with-open [w (clojure.java.io/writer (str idw-output-path "product.xml"))]
+  (with-open [w (clojure.java.io/writer (str idw-output-path "product.xml"))]
+    (binding [*out* w]
+      (println (opening))
+      (map! #(process-idw-file-with % process-idw-product) filenames)
+      (println (closing))
+      )))
+
 (examples
  (time (write-idw-file "Panduit14374598.csv"))
  (time (write-idw-file "Arlington14798724.csv"))
  (time (write-idw-file "HubbellWiringDevice-Kellems14490913.csv"))
  (time (write-idw-file "MilwaukeeElectricTool14870760.csv"))
+
+ (time (write-idw-files "Panduit14374598.csv" "Arlington14798724.csv"))
  )
 
 
-(println "finished loading summit.step.import.idw.product")
+
+ (println "finished loading summit.step.import.idw.product"))
