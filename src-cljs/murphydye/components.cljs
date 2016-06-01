@@ -100,7 +100,11 @@
 
 (defn components []
   (win/qgrowl "starting components")
-  (let [v (r/atom nil)]
+  (let [v (r/atom nil)
+        proj-map
+        {:title "Projects Prototype"
+         :x 25 :y 105 :width 900 :height 600}
+        ]
     (fn []
       [:div
        [:span
@@ -112,9 +116,7 @@
 
         [:input {:type "button" :value "Projects Prototype"
                  :style {:background-color :red :color :white}
-                 :on-click #(win/new-window project/projects-component-win
-                                            {:title "Projects Prototype"
-                                             :x 25 :y 105 :width 900 :height 600})}]
+                 :on-click #(win/new-window project/projects-component-win proj-map)}]
 
         ;; [:input {:type "button" :value "Project"
         ;;          :style {:background-color :red :color :white}
@@ -126,7 +128,9 @@
         ]
 
        [test-links]
-       [project/home-page]
+       ;; [project/home-page]
+       ;; [project/projects-component-win proj-map]
+       [project/main-component]
        ]
       )))
 

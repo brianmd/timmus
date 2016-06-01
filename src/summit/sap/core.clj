@@ -7,6 +7,7 @@
             [summit.sap.types :refer :all]
             )
   (:import  [com.sap.conn.jco
+             JCo
              AbapException JCoContext JCoDestination
              JCoDestinationManager JCoException JCoField
              JCoFunction JCoFunctionTemplate JCoStructure
@@ -61,6 +62,8 @@
         ]
     {:server server-name :function-name (->keyword function-name) :destination dest :repository repo :function func})
   )
+(find-destination :qas)
+;; (def dev-bapi-avail (find-function :dev :bapi-material-availability))
 
 
 

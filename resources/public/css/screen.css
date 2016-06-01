@@ -93,7 +93,7 @@ h1,h2 {
     font-weight: bold;
 }
 
-table,td {
+.centered table,.centered td {
     border: 1px solid black;
     margin: 2px;
     vertical-align: middle;
@@ -137,5 +137,12 @@ thead,tfoot td {
 .window_framee {
     background-color: #227;
     color: white;
+}
+
+tbody tr:hover {
+    background-color: #ccc;
+}
+.row-hover tbody tr:hover {
+    background-color: #ccc;
 }
 

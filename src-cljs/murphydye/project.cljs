@@ -31,8 +31,10 @@
 (utils/set-humanized "order_num" "Order #")
 
 (defn get-project [proj]
+  (ppc "getting project: " proj)
+  (ppc (str "/api/project" (:id @proj)))
   (let [url (str "/api/project/" (:id @proj))
-        handler #(let [
+        handler #(let [_ (do (win/qgrowl "got data!!!!"))
                        filter-keys [:drawing-num :circuit-id]   ;; TODO add expected date as a filter
                        p (:data %)
                        filter-values (into {}
@@ -58,8 +60,10 @@
     (GET url options)))
 
 (defn get-projects [db]
+  (win/qgrowl "getting projects")
   (let [url (str "/api/projects/" (:account-number @db))
         handler #(do
+                   (win/qgrowl "got projects data")
                    (println "got projects ------------------------------------------------------")
                    (println %)
                    ;; (win/static-alert %)
@@ -77,12 +81,10 @@
                  :handler handler
                  :response-format :transit
                  :error-handler error-handler}]
-    (win/qgrowl "getting projects")
-    (println "getting projects for " (:account-number @db))
-    (println "clojurize" (utils/humanize "abc def"))
-    (if (empty? (:projects @db))
-      (GET url options))
-    (println "off request went ...")))
+    (println "getting projects for " (:account-number @db) @db)
+    (when (empty? (:projects @db))
+      (GET url options)
+      (println "off request went ..."))))
 
 
 (declare project-component-win)
@@ -98,33 +100,26 @@
     ;; (win/show-maps projects keys {:on-row-click #(ppc (str "clicked" %))})))
     (win/show-maps projects keys {:on-row-click #(open-project {:id (last %) :title (first %)})})))
 
-;; (defn select-project-keys [m keys]
-;;   (println m keys)
-;;   (map #(m %) keys))
+(defn select-project-keys [m keys]
+  (map #(m %) keys))
 
-;; (defn projects-table-component2 [projects]
-;;   (println "**************************************************************")
-;;   (let [keys (map name [:title :account-customer-id :service-center-code :start-date :end-date :status :id])
-;;         ;; rows (seq (into [] (map #(select-project-keys % keys) projects)))]
-;;         rs (doall (map #(select-project-keys % keys) projects))
-;;         ;; rows (list (first rs) keys (second rs) keys)
-;;         frow (first rs)
-;;         q ["Jarred" "defg"]
-;;         ;; rows [(range 1 8) (range 11 18) (range 21 28) '(a b c d e f ghi) ["m" "n" "o" "p" "q" "r" "s"]]
-;;         ;; rows [(range 1 8) (range 11 18) (range 21 28) '(a b c d e f ghi) ["m" "n" "o" "p" "q" "r" "s"] [:a :b (first frow) (second frow) :e "f" (first q)]]
-;;         ;; rows (cons rows (first rs))
-;;         ;; rows (list (first rows))
-;;         rows rs
-;;         ]
-;;     (utils/ppc "rows" (type rows) rows)
-;;     (utils/ppc "tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt" frow "ffirst" (first frow) (type (first frow)) (type "abc") (= (first q) (first frow)) (type frow) (type q))
-;;     (let [x (vec (map + [1 1] [3 4]))]
-;;       (utils/ppc "vec" (type x) x))
-;;     (utils/ppc (identity (list keys keys)))
-;;     (println (count keys) (count (first rows)))
-;;     [win/show-table {:headers keys :rows rows}]
-;;      ;; [win/show-table {:headers keys :rows (list keys keys)}]))
-;;     ))
+(defn ppppprojects-table-component [projects]
+  (println "**************************************************************")
+  (let [keys (map identity [:title :account-customer-id :service-center-code :start-date :end-date :status :id])
+        ;; rows (seq (into [] (map #(select-project-keys % keys) projects)))]
+        rs (doall (map #(select-project-keys % keys) projects))
+        ;; rows (list (first rs) keys (second rs) keys)
+        frow (first rs)
+        q ["Jarred" "defg"]
+        rows rs
+        ]
+    ;; (let [x (vec (map + [1 1] [3 4]))]
+    ;;   (utils/ppc "vec" (type x) x))
+    ;; (utils/ppc (identity (list keys keys)))
+    ;; (println (count keys) (count (first rows)))
+    [win/show-table {:headers keys :rows rows}]
+     ;; [win/show-table {:headers keys :rows (list keys keys)}]))
+    ))
 
 
 (defn show-row-maps [maps keys]
@@ -132,6 +127,7 @@
     [:div.row
      [:div.col-md-12
       (win/show-maps maps keys)]]))
+
 
 (defn attribute-names [m]
   (if m (keys (:attributes m))))
@@ -189,9 +185,7 @@
 ;;    (clj->js {:bDestroy true})))
 
 (defn project-component [proj]
-  (let [filters (r/atom {:drawing-num "(all)" :circuit-id "(all)"})]
-    (.log js/console "hello")
-    (.dir js/console "ReactDataGrid")
+  (let [filters (r/atom {:drawing-num "(all)" :circuit-id "(all)" :order-num nil :item-seq nil})]
     (r/create-class
      {
       :display-name "project-component"
@@ -221,7 +215,6 @@
       ;; :component-did-update #(do (win/qgrowl "updated") ("table" js/jQuery. .DataTables))
       :reagent-render
       (fn proj-comp-fn [proj]
-        (ppc @proj)
         (let [p (:project @proj)
               p (if-not (= "(all)" (:drawing-num @filters))
                   (let [v (:drawing-num @filters)]
@@ -231,19 +224,13 @@
                   (let [v (:circuit-id @filters)]
                     (filter #(= v (:circuit-id %)) p))
                   p)
-              ;; data (:data p)
               order-keys (:order-header (:ordering @proj))
               item-keys (:order-item (:ordering @proj))
               delivery-keys (:delivery (:ordering @proj))
               orders (map #(utils/select-keys3 % order-keys) p)
-              items (map #(utils/select-keys3 % item-keys) p)
-              deliveries (map #(utils/select-keys3 % delivery-keys) p)
+              ;; items (map #(utils/select-keys3 % item-keys) p)
+              ;; deliveries (map #(utils/select-keys3 % delivery-keys) p)
               ]
-          (ppc "" "--------------" "first project" (first p))
-          (ppc "" "--------------" "order keys" order-keys)
-          (ppc "" "--------------" "first orders" (first orders))
-          (ppc "filters:" (:filter-values @proj))
-          ;; [:div.container
           [:div.container
            [:div.row [:div.col-md-12 [:h1.center (str "Project Prototype: " (:title (:project-header @proj)))]]]
            [filters-component filters (:filter-values @proj)]
@@ -251,23 +238,37 @@
            [:div.order-table
             [win/show-maps
              (sort-by :schedule-date (set orders))
-             ;; (sort-by :schedule-date (set (order-header-table p)))
-             ;; (concat [:drawing-num :order-num :schedule-date :expected-date :document-date] (attribute-names (:order-header (first p))))
              (rest (:order-header (:ordering @proj)))
+             {:on-row-click #(swap! filters assoc :order-num (second %) :item-seq nil)}
              ]]
-           [:div.row [:br] [:div.col-md-12 [:h2 (str "Line Items")]]]
-           [:div.item-table
-            [win/show-maps
-             (sort-by :order-num p)
-             ;; (sort-by :order-num (set (map #(:order-item %) p)))
-             (identity (:order-item (:ordering @proj)))
-             ]]
-           [:div.row [:br] [:div.col-md-12 [:h2 (str "Deliveries")]]]
-           [win/show-maps
-            (sort-by :delivery (set deliveries))
-            ;; (sort-by :delivery (set (map #(:delivery %) p)))
-            (identity (:delivery (:ordering @proj)))
-            ]
+           (when (:order-num @filters)
+             (let [line-items (sort-by :item-seq (filter #(= (:order-num @filters) (:order-num %)) p))]
+               [:div
+                [:div.row [:br] [:div.col-md-12 [:h2 (str "Line Items for Order " (:order-num @filters))]]]
+                [:div.item-table
+                 [win/show-maps
+                  line-items
+                  item-keys
+                  {:on-row-click #(swap! filters assoc :item-seq (first %))}
+                  ]]
+                (when (:item-seq @filters)
+                  (let [seq (:item-seq @filters)
+                        deliveries (filter #(and
+                                             (= seq (:item-seq %))
+                                             (not (= "" (:delivery %))))
+                                           line-items)
+                        keys (:delivery (:ordering @proj))
+                        deliveries (utils/map! #(utils/select-keys3 % keys) deliveries)
+                        ]
+                    (if (not-empty deliveries)
+                      [:div
+                       [:div.row [:br] [:div.col-md-12 [:h2 (str "Deliveries for Item Seq " seq)]]]
+                       [win/show-maps
+                        deliveries
+                        keys
+                        ;; (:delivery (:ordering @proj))
+                        ]]
+                      [:h2 "No Deliveries for Item Seq " seq])))]))
            ;; ]
            ]))})))
 
@@ -338,7 +339,7 @@
 ;; cell={<Cell>Column 1 static content</Cell>}
 ;; width={2000}
 
-(defn projects-component [db]
+(defn projects-componentttt [db]
   [:div
    [home-page]])
 
@@ -367,7 +368,7 @@
   (.dir js/console js/FixedDataTable.Table)
   [:b "hello"])
 
-(defn projects-componentttt [db]
+(defn projects-component [db]
   (let [value (r/atom (:account-number @db))]
     (fn projs-comp-fn [db]
       (win/qgrowl "rendering projects-component")
@@ -405,10 +406,20 @@
          (projects-table-component (:projects @db))]]
        ])))
 
-(defn projects-component-win []
-  (let [db (r/atom {:account-number 1000092
+(defn project-for-account [account-num]
+  (let [db (r/atom {:account-number account-num
                     :projects []})]
-    ;; (get-projects db)
+    (get-projects db)
+    db
+    ))
+
+(defn projects-component-win []
+  (let [db (project-for-account 1000092)]
+  ;; (let [db (r/atom {:account-number 1000092
+  ;;                   :projects []})]
+    (println "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+    (println "in project-component-win")
+    (get-projects db)
     (fn projs-comp-win-fn []
       [projects-component db])))
 
@@ -423,3 +434,15 @@
     (fn proj-comp-win-fn []
       [project-component project])))
 
+(defn main-component []
+  (case :projects
+    :projects-win (let [proj-map
+                        {:title "Projects Prototype"
+                         :x 25 :y 105 :width 900 :height 600}
+                        ]
+                    (win/new-window projects-component-win proj-map))
+    :projects (projects-component-win)
+    :project-win (open-project {:id 18 :title "Jarred"})
+    :project (project-component-win {:id 18 :title "Jarred"})
+    )
+  )

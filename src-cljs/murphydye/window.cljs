@@ -47,8 +47,9 @@
            onclick-fn (:on-row-click options)]
        (if-let [f (:on-row-click options)]
          (swap! row-options assoc :on-click #(f)))
-       (println "row options:" @row-options)
-       [:table.well.smaller.table.table-striped.table-bordered
+       ;; (println "row options:" @row-options)
+       ;; [:table.well.smaller.table.table-striped.table-bordered
+       [:table.well.smaller.table.table-bordered.centered
         [:thead>tr
           (for [h headers]
             ^{:key h} [:th h])]
@@ -62,7 +63,7 @@
           (for [row rows]
             (let [clicker (if onclick-fn {:on-click #(onclick-fn row)} {})]
               ^{:key (swap! counter inc)}
-              [:tr (merge options clicker)
+              [:tr.row-hover (merge options clicker)
                (doall
                 (map (fn [x] ^{:key (swap! counter inc)} [:td (str x)])
                      row))
@@ -106,7 +107,7 @@
                )
         msg (:message local)
         style (dissoc local :message)]
-    (println "local:" local delay msg style)
+    ;; (println "local:" local delay msg style)
      (if (= delay :sticky)
        (sticky-siren! {:style style :content (str "<div>" msg "</div>")})
        (siren! {:style style :content (str "<div>" msg "</div>") :delay delay}))))
