@@ -67,6 +67,19 @@
            ))
        (range (count attr-defs))))
 
+(defn process-message-lists [messages]
+  (let [msgs
+        (for [msg messages]
+          {
+           :order-num (->int (:vbeln msg))
+           :item-seq (->int (:posnr msg))
+           :message-type (:msgtyp msg)
+           :text (:message msg)
+           }
+          )
+        ])
+  )
+
 (do
   (defn project [project-id]
     (let [project-fn (find-function :dev :Z_O_ZVSEMM_PROJECT_CUBE)
@@ -83,6 +96,7 @@
             order-line-item-attributes (transform-attribute-defintions
                                         (pull-map project-fn :et-vbap-atts))
             status-lines (pull-map project-fn :et-status-lines)
+            messages (pull-map project-fn :et-message-list)
             ]
 
         (println "floating type: " (type (:kwmeng (first status-lines))))
@@ -112,9 +126,10 @@
                   (map (fn [[k v]] (:title v)) delivery-attributes))
           }
          :data
-        (for [s status-lines]
-          ;; (into {}
-           ;; {
+         {:status-lines
+          (for [s status-lines]
+            ;; (into {}
+            ;; {
             ;; :id (swap! id-seq-num inc)
             ;; :order-header
             (merge
@@ -128,10 +143,10 @@
               :document-date (:audat s)
               }
              (into {} (pair-key-vals s "zz-zvsemm-vbak-" order-header-attributes))
-              ;; )
+             ;; )
 
-            ;; :order-item
-            ;; (merge
+             ;; :order-item
+             ;; (merge
              {
               :item-seq (->int (:posnr-va s))
               :matnr (->int (:matnr s))
@@ -152,18 +167,29 @@
               :trailer-atp (double (:cust-loc-atp s))
               :service-center-atp (double (:main-loc-atp s))
               }
-            (into {} (pair-key-vals s "zz-zvsemm-vbap-" order-line-item-attributes))
-            ;; )
+             (into {} (pair-key-vals s "zz-zvsemm-vbap-" order-line-item-attributes))
+             ;; )
 
-            ;; :delivery
-            ;; (merge
+             ;; :delivery
+             ;; (merge
              {
               :delivery (:vbeln-vl s)
               }
              (into {} (pair-key-vals s "zz-zvsemm-likp-" delivery-attributes))
              )
             ;; }
-           )}
+            )
+
+          :messages
+          (for [msg messages]
+            {
+             :order-num (->int (:vbeln msg))
+             :item-seq (->int (:posnr msg))
+             :message-type (:msgtyp msg)
+             :text (:message msg)
+             }
+            )
+          }}
  
        ;; )
         )
@@ -199,17 +225,26 @@
 
  (def projects-fn (find-function :dev :Z_O_ZVSEMM_PROJECT_CUBE))
  ;; note: :attr-conv will tell us the attribute type
- (ppn (function-interface projects-fn))
+ (def cube (function-interface projects-fn))
+ (ppn cube)
+ (keys cube)
+ (map first (:imports cube))
+ (map first (:exports cube))
+ (map first (:tables cube))
+ (ppn cube)
+ 
  (push projects-fn {:i-proj-id (as-document-num 18)})
  (execute projects-fn)
  (pull projects-fn :et-likp-atts)
  :delivery-attributes
  (pull-map projects-fn :et-likp-atts)
- (pull-map projects-fn :et-status-lines)
+ :status-lines
+ (ppn (pull-map projects-fn :et-status-lines))
  :order-header-attributes
  (pull-map projects-fn :et-vbak-atts)
  :order-line-item-attributes
  (pull-map projects-fn :et-vbap-atts)
+ (ppn (pull-map projects-fn :et-message-list))
 
  (pull-map projects-fn :et-status-lines :et-vak-atts)
  )

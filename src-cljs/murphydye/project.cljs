@@ -36,11 +36,12 @@
   (let [url (str "/api/project/" (:id @proj))
         handler #(let [_ (do (win/qgrowl "got data!!!!"))
                        filter-keys [:drawing-num :circuit-id]   ;; TODO add expected date as a filter
-                       p (:data %)
+                       data (:data %)
+                       status-lines (:status-lines data)
                        filter-values (into {}
                                            (utils/map!
                                             (fn [k] (vector k (->
-                                                               (utils/get-unique p k)
+                                                               (utils/get-unique status-lines k)
                                                                (disj "")
                                                                (conj "(all)")
                                                                sort)))
@@ -48,7 +49,7 @@
                        ]
                    ;; (ppc (first %))
                    (swap! proj assoc
-                          :project (:data %)
+                          :project status-lines
                           :ordering (:ordering %)
                           :filter-values filter-values)
                    )
@@ -415,10 +416,6 @@
 
 (defn projects-component-win []
   (let [db (project-for-account 1000092)]
-  ;; (let [db (r/atom {:account-number 1000092
-  ;;                   :projects []})]
-    (println "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
-    (println "in project-component-win")
     (get-projects db)
     (fn projs-comp-win-fn []
       [projects-component db])))
@@ -435,7 +432,7 @@
       [project-component project])))
 
 (defn main-component []
-  (case :projects
+  (case :project
     :projects-win (let [proj-map
                         {:title "Projects Prototype"
                          :x 25 :y 105 :width 900 :height 600}
