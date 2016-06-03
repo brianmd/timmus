@@ -30,6 +30,8 @@
 (utils/set-humanized "drawing_num" "Drawing #")
 (utils/set-humanized "order_num" "Order #")
 (utils/set-humanized "has_messages?" "Alert?")
+(utils/set-humanized "matnr" "SAP Material #")
+(utils/set-humanized "customer_matnr" "Customer Material #")
 
 (defn get-project [proj]
   (ppc "getting project: " proj)
@@ -100,7 +102,8 @@
                    :x 25 :y 125 :width 1000 :height 600}))
 
 (defn projects-table-component [projects]
-  (let [keys (map identity [:title :account-customer-id :service-center-code :start-date :end-date :status :id])]
+  ;; (let [keys (map identity [:title :project-name :service-center-code :start-date :end-date :status :id])]
+  (let [keys (map identity [:project-name :id])]
     ;; (win/show-maps projects keys {:on-row-click #(ppc (str "clicked" %))})))
     (win/show-maps projects keys {:on-row-click #(open-project {:id (last %) :title (first %)})})))
 
@@ -109,7 +112,7 @@
 
 (defn ppppprojects-table-component [projects]
   (println "**************************************************************")
-  (let [keys (map identity [:title :account-customer-id :service-center-code :start-date :end-date :status :id])
+  (let [keys (map identity [:title :project-name :service-center-code :start-date :end-date :status :id])
         ;; rows (seq (into [] (map #(select-project-keys % keys) projects)))]
         rs (doall (map #(select-project-keys % keys) projects))
         ;; rows (list (first rs) keys (second rs) keys)

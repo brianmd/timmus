@@ -6,7 +6,7 @@
             [summit.sap.core :refer :all]
             [clojure.string :as str]))
 
-(def ^:private et-project-fields [:client :id :sold-to :account-customer-id :title :start-date :end-date :service-center-code :status :last-modifier :modified-on])
+(def ^:private et-project-fields [:client :id :sold-to :project-name :title :start-date :end-date :service-center-code :status :last-modifier :modified-on])
 
 (defn- transform-project [v]
   (let [m (into {} (map vector et-project-fields v))
@@ -72,7 +72,7 @@
         (for [msg sap-messages]
           {
            :order-num (->int (:vbeln msg))
-           :item-seq (->int (:posnr msg))
+           :item-num (->int (:posnr msg))
            :message-type (:msgtyp msg)
            :text (:message msg)
            }
@@ -108,10 +108,10 @@
          :display-ordering
          {
           :order-header
-          (concat [:has-messages? :drawing-num :order-num :schedule-date :expected-date :document-date]
+          (concat [:has-messages? :drawing-num :order-num :expected-date :entered-date]
                   (map (fn [[k v]] (:title v)) order-header-attributes))
           :order-item
-          (concat [:item-seq :matnr :customer-matnr :delivery-item :descript :circuit-id :qty :delivered-qty :picked-qty :total-goods-issue-qty :remaining-qty :reserved-qty :uom :inventory-loc :storage-loc :service-center :trailer-atp :service-center-atp]
+          (concat [:item-num :matnr :customer-matnr :descript :circuit-id :qty :delivered-qty :picked-qty :total-goods-issue-qty :remaining-qty :uom :schedule-date :trailer-atp :service-center-atp]
                   (map (fn [[k v]] (:title v)) order-line-item-attributes))
           :delivery
           (concat [:delivery]
@@ -120,10 +120,10 @@
          :ordering
          {
           :order-header
-          (concat [:has-messages? :project-id :drawing-num :order-num :schedule-date :expected-date :document-date]
+          (concat [:has-messages? :project-id :drawing-num :order-num :schedule-date :expected-date :entered-date]
                   (map (fn [[k v]] (:title v)) order-header-attributes))
           :order-item
-          (concat [:item-seq :matnr :customer-matnr :delivery-item :descript :circuit-id :qty :delivered-qty :picked-qty :total-goods-issue-qty :remaining-qty :reserved-qty :uom :inventory-loc :storage-loc :service-center :trailer-atp :service-center-atp]
+          (concat [:item-num :matnr :customer-matnr :delivery-item :descript :circuit-id :qty :delivered-qty :picked-qty :total-goods-issue-qty :remaining-qty :reserved-qty :uom :inventory-loc :storage-loc :service-center :trailer-atp :service-center-atp]
                   (map (fn [[k v]] (:title v)) order-line-item-attributes))
           :delivery
           (concat [:delivery]
@@ -148,7 +148,7 @@
                 :drawing-num (:bstkd s)
                 :schedule-date (:edatu s)
                 :expected-date (:bstdk s)
-                :document-date (:audat s)
+                :entered-date (:audat s)
                 }
                (into {} (pair-key-vals s "zz-zvsemm-vbak-" order-header-attributes))
                ;; )
@@ -156,7 +156,7 @@
                ;; :order-item
                ;; (merge
                {
-                :item-seq (->int (:posnr-va s))
+                :item-num (->int (:posnr-va s))
                 :matnr (->int (:matnr s))
                 :customer-matnr (:kdmat s)
                 :delivery-item (->int (:posnr-vl s))
