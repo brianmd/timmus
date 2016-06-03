@@ -32,6 +32,12 @@
       [rt/reagent-table table]
       )))
 
+(defn cellize [value]
+  (case value
+    "TRUE" [:div.red "X" [:span.glyphicon.glyphicon-alert ""]]
+    "FALSE" ""
+    (str value)))
+
 (defn show-table
   "tbl should be a map with :headers and :rows"
   ([tbl] (show-table tbl {}))
@@ -65,7 +71,7 @@
               ^{:key (swap! counter inc)}
               [:tr.row-hover (merge options clicker)
                (doall
-                (map (fn [x] ^{:key (swap! counter inc)} [:td (str x)])
+                (map (fn [x] ^{:key (swap! counter inc)} [:td (cellize x)])
                      row))
                ])))]
         ]

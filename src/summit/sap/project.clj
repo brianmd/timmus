@@ -67,18 +67,21 @@
            ))
        (range (count attr-defs))))
 
-(defn process-message-lists [messages]
+(defn process-message-lists [sap-messages]
   (let [msgs
-        (for [msg messages]
+        (for [msg sap-messages]
           {
            :order-num (->int (:vbeln msg))
            :item-seq (->int (:posnr msg))
            :message-type (:msgtyp msg)
            :text (:message msg)
            }
-          )
-        ])
+          )]
+    (group-by :order-num msgs)
+    )
   )
+;; (ppn (process-message-lists (pull-map projects-fn :et-message-list)))
+;; ((process-message-lists (pull-map projects-fn :et-message-list)) 16811)
 
 (do
   (defn project [project-id]
@@ -96,7 +99,8 @@
             order-line-item-attributes (transform-attribute-defintions
                                         (pull-map project-fn :et-vbap-atts))
             status-lines (pull-map project-fn :et-status-lines)
-            messages (pull-map project-fn :et-message-list)
+            sap-messages (pull-map project-fn :et-message-list)
+            messages (process-message-lists sap-messages)
             ]
 
         (println "floating type: " (type (:kwmeng (first status-lines))))
@@ -104,7 +108,7 @@
          :display-ordering
          {
           :order-header
-          (concat [:drawing-num :order-num :schedule-date :expected-date :document-date]
+          (concat [:has-messages? :drawing-num :order-num :schedule-date :expected-date :document-date]
                   (map (fn [[k v]] (:title v)) order-header-attributes))
           :order-item
           (concat [:item-seq :matnr :customer-matnr :delivery-item :descript :circuit-id :qty :delivered-qty :picked-qty :total-goods-issue-qty :remaining-qty :reserved-qty :uom :inventory-loc :storage-loc :service-center :trailer-atp :service-center-atp]
@@ -116,7 +120,7 @@
          :ordering
          {
           :order-header
-          (concat [:project-id :drawing-num :order-num :schedule-date :expected-date :document-date]
+          (concat [:has-messages? :project-id :drawing-num :order-num :schedule-date :expected-date :document-date]
                   (map (fn [[k v]] (:title v)) order-header-attributes))
           :order-item
           (concat [:item-seq :matnr :customer-matnr :delivery-item :descript :circuit-id :qty :delivered-qty :picked-qty :total-goods-issue-qty :remaining-qty :reserved-qty :uom :inventory-loc :storage-loc :service-center :trailer-atp :service-center-atp]
@@ -126,68 +130,62 @@
                   (map (fn [[k v]] (:title v)) delivery-attributes))
           }
          :data
-         {:status-lines
+         {:messages messages
+
+          :status-lines
           (for [s status-lines]
             ;; (into {}
             ;; {
             ;; :id (swap! id-seq-num inc)
             ;; :order-header
-            (merge
-             {
-              :id (swap! id-seq-num inc)
-              :project-id (->int (:projid s))
-              :order-num (->int (:vbeln-va s))
-              :drawing-num (:bstkd s)
-              :schedule-date (:edatu s)
-              :expected-date (:bstdk s)
-              :document-date (:audat s)
-              }
-             (into {} (pair-key-vals s "zz-zvsemm-vbak-" order-header-attributes))
-             ;; )
+            (let [order-num (->int (:vbeln-va s))]
+              (merge
+               {
+                :id (swap! id-seq-num inc)
+                :project-id (->int (:projid s))
+                :order-num order-num
+                :has-messages? (contains? messages order-num)
+                :drawing-num (:bstkd s)
+                :schedule-date (:edatu s)
+                :expected-date (:bstdk s)
+                :document-date (:audat s)
+                }
+               (into {} (pair-key-vals s "zz-zvsemm-vbak-" order-header-attributes))
+               ;; )
 
-             ;; :order-item
-             ;; (merge
-             {
-              :item-seq (->int (:posnr-va s))
-              :matnr (->int (:matnr s))
-              :customer-matnr (:kdmat s)
-              :delivery-item (->int (:posnr-vl s))
-              :descript (:arktx s)
-              :circuit-id (:circ-id s)
-              :qty (double (:kwmeng s))
-              :delivered-qty (double (:lfimg s))
-              :picked-qty (double (:picked s))
-              :total-goods-issue-qty (double (:tot-gi-qty s))
-              :remaining-qty (double (:remaining s))  ;; still to be delivered
-              :reserved-qty (double (:resv-qty s))
-              :uom (:vrkme s)
-              :inventory-loc (:inv-loc s)
-              :storage-loc (:lgort s)
-              :service-center (:werks s)
-              :trailer-atp (double (:cust-loc-atp s))
-              :service-center-atp (double (:main-loc-atp s))
-              }
-             (into {} (pair-key-vals s "zz-zvsemm-vbap-" order-line-item-attributes))
-             ;; )
+               ;; :order-item
+               ;; (merge
+               {
+                :item-seq (->int (:posnr-va s))
+                :matnr (->int (:matnr s))
+                :customer-matnr (:kdmat s)
+                :delivery-item (->int (:posnr-vl s))
+                :descript (:arktx s)
+                :circuit-id (:circ-id s)
+                :qty (double (:kwmeng s))
+                :delivered-qty (double (:lfimg s))
+                :picked-qty (double (:picked s))
+                :total-goods-issue-qty (double (:tot-gi-qty s))
+                :remaining-qty (double (:remaining s))  ;; still to be delivered
+                :reserved-qty (double (:resv-qty s))
+                :uom (:vrkme s)
+                :inventory-loc (:inv-loc s)
+                :storage-loc (:lgort s)
+                :service-center (:werks s)
+                :trailer-atp (double (:cust-loc-atp s))
+                :service-center-atp (double (:main-loc-atp s))
+                }
+               (into {} (pair-key-vals s "zz-zvsemm-vbap-" order-line-item-attributes))
+               ;; )
 
-             ;; :delivery
-             ;; (merge
-             {
-              :delivery (:vbeln-vl s)
-              }
-             (into {} (pair-key-vals s "zz-zvsemm-likp-" delivery-attributes))
-             )
+               ;; :delivery
+               ;; (merge
+               {
+                :delivery (:vbeln-vl s)
+                }
+               (into {} (pair-key-vals s "zz-zvsemm-likp-" delivery-attributes))
+               ))
             ;; }
-            )
-
-          :messages
-          (for [msg messages]
-            {
-             :order-num (->int (:vbeln msg))
-             :item-seq (->int (:posnr msg))
-             :message-type (:msgtyp msg)
-             :text (:message msg)
-             }
             )
           }}
  
@@ -202,7 +200,8 @@
 (examples
  (ppn
   "-----"
-  (project 18)
+  (def proj18 (project 18))
+  proj18
   )
  (project 19)
  (ppn (map :delivery (project 18)))
@@ -244,6 +243,7 @@
  (pull-map projects-fn :et-vbak-atts)
  :order-line-item-attributes
  (pull-map projects-fn :et-vbap-atts)
+ :message-list
  (ppn (pull-map projects-fn :et-message-list))
 
  (pull-map projects-fn :et-status-lines :et-vak-atts)

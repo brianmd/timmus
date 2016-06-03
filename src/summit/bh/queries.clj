@@ -120,6 +120,7 @@ order by c.created_at
 
 (examples
  (last-order-sans-json)
+ (pp (last-order-sans-json))
  (pp (mapv order-vitals (last-orders 5)))
  (qqplot-order-dollars)
  (boxplot-order-dollars)
