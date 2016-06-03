@@ -53,6 +53,7 @@
            rows (:rows tbl)
            counter (atom 0)
            row-options (atom {})
+           sort-info (atom {:col-name nil :direction :down})
            onclick-fn (:on-row-click options)]
        (if-let [f (:on-row-click options)]
          (swap! row-options assoc :on-click #(f)))

@@ -451,7 +451,7 @@
       [project-component project])))
 
 (defn main-component []
-  (case :project
+  (case :projects
     :projects-win (let [proj-map
                         {:title "Projects Prototype"
                          :x 25 :y 105 :width 900 :height 600}
