@@ -35,7 +35,7 @@
 
 (defn get-project [proj]
   (ppc "getting project: " proj)
-  (ppc (str "/api/project" (:id @proj)))
+  (ppc (str "/api/project/" (:id @proj)))
   (let [url (str "/api/project/" (:id @proj))
         handler #(let [_ (do (win/qgrowl "got data!!!!"))
                        filter-keys [:drawing-num :circuit-id]   ;; TODO add expected date as a filter
@@ -101,11 +101,17 @@
                    ;; :x 25 :y 125 :width 1300 :height 600}))
                    :x 25 :y 125 :width 1000 :height 600}))
 
-(defn projects-table-component [projects]
+(defn projects-table-component [projects filters]
   ;; (let [keys (map identity [:title :project-name :service-center-code :start-date :end-date :status :id])]
   (let [keys (map identity [:project-name :id])]
     ;; (win/show-maps projects keys {:on-row-click #(ppc (str "clicked" %))})))
-    (win/show-maps projects keys {:on-row-click #(open-project {:id (last %) :title (first %)})})))
+    (win/show-maps projects keys {:on-row-click
+                                  #(do
+                                     (ppc "changing project-id" %)
+                                     (swap! filters assoc :project-id (last %))
+                                     (ppc "new filters" filters))
+                                  ;; #(open-project {:id (last %) :title (first %)})
+                                  })))
 
 (defn select-project-keys [m keys]
   (map #(m %) keys))
@@ -391,8 +397,16 @@
   (.dir js/console js/FixedDataTable.Table)
   [:b "hello"])
 
+(defn project-component-win [project-header]
+  (let [project (r/atom {:id (:id project-header)
+                         :project-header project-header
+                         :project nil})]
+    (get-project project)
+    (fn proj-comp-win-fn []
+      [project-component project])))
+
 (defn projects-component [db]
-  (let [value (r/atom (:account-number @db))]
+  (let [filters (r/atom {:account-number (:account-number @db)})]
     (fn projs-comp-fn [db]
       (win/qgrowl "rendering projects-component")
       [:div.container
@@ -407,13 +421,14 @@
           {:type :text
            :style {:margin "4px" :width "150px"}
            :placeholder "Type an account number and press [Enter]"
-           :value @value
+           :value (:account-number @filters)
            :on-change #(do
-                         (println "prev temp account num:" @value)
-                         (reset! value (-> % .-target .-value)))
+                         (println "prev temp account num:" @filters)
+                         (swap! filters assoc :account-number (-> % .-target .-value)))
            :on-key-down
            #(when (= (.-keyCode %) 13)
-              (swap! db assoc :account-number @value :projects [] :project)
+              ;; (swap! db assoc :account-number (:account-number @filters) :projects [] :project)
+              (swap! db assoc :account-number (:account-number @filters) :projects [])
               (.log js/console (str "requesting projects for: " (:account-number @db)))
               (get-projects db)
               )
@@ -426,7 +441,14 @@
 
        [:div.row
         [:div.col-md-12
-         (projects-table-component (:projects @db))]]
+         ;; (projects-table-component (:projects @db))]]
+         (projects-table-component (:projects @db) filters)]]
+       [:div.row
+        [:div.col-md-12
+         (if-let [project-id (:project-id @filters)]
+           [project-component-win {:id project-id :title "Jarred"}]
+           ;; (str "filters: " @filters)
+           )]]
        ])))
 
 (defn project-for-account [account-num]
@@ -444,14 +466,6 @@
 
 
 
-
-(defn project-component-win [project-header]
-  (let [project (r/atom {:id (:id project-header)
-                         :project-header project-header
-                         :project nil})]
-    (get-project project)
-    (fn proj-comp-win-fn []
-      [project-component project])))
 
 (defn main-component []
   (case :projects
