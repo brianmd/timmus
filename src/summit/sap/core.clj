@@ -62,7 +62,7 @@
         ]
     {:server server-name :function-name (->keyword function-name) :destination dest :repository repo :function func})
   )
-(find-destination :qas)
+;; (find-destination :qas)
 ;; (def dev-bapi-avail (find-function :dev :bapi-material-availability))
 
 
