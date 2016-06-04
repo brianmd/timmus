@@ -405,6 +405,13 @@
     (fn proj-comp-win-fn []
       [project-component project])))
 
+(defn target--of [event]
+  (-> event .-target ))
+(defn value--of [event]
+  (-> event .-target .-value))
+(defn content--of [event]
+  (-> event .-target .-value))
+
 (defn projects-component [db]
   (let [filters (r/atom {:account-number (:account-number @db)})]
     (fn projs-comp-fn [db]
@@ -415,8 +422,8 @@
         [:div.row
          [:div.col-md-12 [:h1.center "Projects Prototype"]]]]
        [:div.row.well
-        [:div.col-md-6.right [:b "Account #:"]]
-        [:div.col-md-6
+        [:div.col-md-3.right [:b "Account #:"]]
+        [:div.col-md-3
          [:input.form-control
           {:type :text
            :style {:margin "4px" :width "150px"}
@@ -434,6 +441,14 @@
               )
            }]
          ]
+        [:div.col-md-3 [:b "Project Name:"]]
+        [:div.col-md-3
+         [:select
+          {:default-value (:project-id @filters)
+           :on-click #(ppc "clicked:" % (value--of %) (target--of %) (content--of %))}
+          [:option "<Select Project>"]
+          (for [p (ppc "porjects:" (:projects @db))]
+            [:option {:value (:id p)} (:project-name p)])]]
         ]
        [:div.row
         [:div.col-md-12
