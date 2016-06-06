@@ -420,65 +420,74 @@
 (defn project-from-id [db id]
   (first (filter #(= id (:id %)) (:projects @db))))
 
+(defn header-component [db filters]
+  [:div.row.well
+   [:div.col-md-3.right [:b "Account #:"]]
+   [:div.col-md-3
+    [:input.form-control
+     {:type        :text
+      :style       {:margin "4px" :width "150px"}
+      :placeholder "Type an account number and press [Enter]"
+      :value       (:account-number @filters)
+      :on-change   #(do
+                      (println "prev temp account num:" @filters)
+                      (swap! filters assoc :account-number (-> % .-target .-value)))
+      :on-key-down
+      #(when (= (.-keyCode %) 13)
+         ;; (swap! db assoc :account-number (:account-number @filters) :projects [] :project)
+         (swap! db assoc
+                :account-number (:account-number @filters)
+                :projects [])
+         (swap! filters
+                :drawing-num nil
+                :circuit-id nil)
+         (.log js/console (str "requesting projects for: " (:account-number @db)))
+         (get-projects db)
+         )
+      }]]
+     [:div.col-md-3.right [:b "Project Name:"]]
+     [:div.col-md-3
+      [:select
+       {:default-value (:project-id @filters)
+        :on-change #(let [id (js/parseInt (value--of %))
+                          proj (project-from-id db id)]
+                      (ppc "id:" id)
+                      (ppc "project:" (project-from-id db id))
+                      (ppc "clicked:" % id (value--of %) (target--of %) (content--of %))
+                      (swap! filters assoc :project-id id :project-name (:title proj))
+                      )}
+       [:option "<Select Project>"]
+       (for [p (ppc "porjects:" (:projects @db))]
+         [:option {:value (:id p)} (:project-name p)])]]
+     ])
+
+(defn blank-row []
+  [:div.row
+   [:div.col-md-12
+    [:br]]])
+
 (defn projects-component [db]
+  (win/qgrowl "rendering projects-component")
   (let [filters (r/atom {:account-number (:account-number @db)})]
     (fn projs-comp-fn [db]
-      (win/qgrowl "rendering projects-component")
-      [:div.container
-       ;; [simple-tablee]
-       [:div
-        [:div.row
-         [:div.col-md-12 [:h1.center "Projects Prototype"]]]]
-       [:div.row.well
-        [:div.col-md-3.right [:b "Account #:"]]
-        [:div.col-md-3
-         [:input.form-control
-          {:type :text
-           :style {:margin "4px" :width "150px"}
-           :placeholder "Type an account number and press [Enter]"
-           :value (:account-number @filters)
-           :on-change #(do
-                         (println "prev temp account num:" @filters)
-                         (swap! filters assoc :account-number (-> % .-target .-value)))
-           :on-key-down
-           #(when (= (.-keyCode %) 13)
-              ;; (swap! db assoc :account-number (:account-number @filters) :projects [] :project)
-              (swap! db assoc :account-number (:account-number @filters) :projects [])
-              (.log js/console (str "requesting projects for: " (:account-number @db)))
-              (get-projects db)
-              )
-           }]
-         ]
-        [:div.col-md-3.right [:b "Project Name:"]]
-        [:div.col-md-3
-         [:select
-          {:default-value (:project-id @filters)
-           :on-change #(let [id (js/parseInt (value--of %))
-                             proj (project-from-id db id)]
-                          (ppc "id:" id)
-                          (ppc "project:" (project-from-id db id))
-                          (ppc "clicked:" % id (value--of %) (target--of %) (content--of %))
-                          (swap! filters assoc :project-id id :project-name (:title proj))
-                          )}
-          [:option "<Select Project>"]
-          (for [p (ppc "porjects:" (:projects @db))]
-            [:option {:value (:id p)} (:project-name p)])]]
-        ]
-       [:div.row
-        [:div.col-md-12
-         [:br]]]
+  [:div.container
+   ;; [simple-tablee]
+    [:div.row
+     [:div.col-md-12 [:h1.center "Projects Prototype"]]]
+   [header-component db filters]
+   [blank-row]
 
-       ;; [:div.row
-       ;;  [:div.col-md-12
-       ;;   ;; (projects-table-component (:projects @db))]]
-       ;;   (projects-table-component (:projects @db) filters)]]
-       [:div.row
-        [:div.col-md-12
-         (if-let [project-id (:project-id @filters)]
-           [project-component-win {:id project-id :title (:project-name @filters)}]
-           ;; (str "filters: " @filters)
-           )]]
-       ])))
+   ;; [:div.row
+   ;;  [:div.col-md-12
+   ;;   ;; (projects-table-component (:projects @db))]]
+   ;;   (projects-table-component (:projects @db) filters)]]
+   [:div.row
+    [:div.col-md-12
+     (if-let [project-id (:project-id @filters)]
+       [project-component-win {:id project-id :title (:project-name @filters)}]
+       ;; (str "filters: " @filters)
+       )]]
+   ])))
 
 (defn project-for-account [account-num]
   (let [db (r/atom {:account-number account-num
