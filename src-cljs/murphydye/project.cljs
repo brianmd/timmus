@@ -33,10 +33,11 @@
 (utils/set-humanized "matnr" "SAP Material #")
 (utils/set-humanized "customer_matnr" "Customer Material #")
 
-(defn get-project [proj]
-  (ppc "getting project: " proj)
-  (ppc (str "/api/project/" (:id @proj)))
-  (let [url (str "/api/project/" (:id @proj))
+(defn get-project [db]
+  (ppc "getting project: " @db)
+  (ppc (str "/api/project/" (:project-id @db)))
+  (let [url (str "/api/project/" (:project-id @db))
+        id (:project-id @db)
         handler #(let [_ (do (win/qgrowl "got data!!!!"))
                        filter-keys [:drawing-num :circuit-id]   ;; TODO add expected date as a filter
                        data (:data %)
@@ -50,15 +51,23 @@
                                                                (conj "(all)")
                                                                sort)))
                                             filter-keys))
+                       proj {:project status-lines
+                             :project-id id
+                             :messages messages
+                             :ordering (:display-ordering %)
+                             :filter-values filter-values
+                             :project-header data
+                             }
                        ]
                    ;; (ppc (first %))
-                   (swap! proj assoc
-                          :project status-lines
-                          :messages messages
-                          :ordering (:display-ordering %)
-                          :filter-values filter-values)
+                   ;; (swap! db assoc-in 
+                   ;;        :project status-lines
+                   ;;        :messages messages
+                   ;;        :ordering (:display-ordering %)
+                   ;;        :filter-values filter-values)
+                   (swap! db assoc :project proj)
                    )
-        error-handler #(win/qgrowl (str "Unable to get project id " (:id @proj)))
+        error-handler #(win/qgrowl (str "Unable to get project id " id))
         options {:timeout 240000  ;; 2 minutes
                  :handler handler
                  :response-format :transit
@@ -155,7 +164,7 @@
    [:div.row
     [:br]
     [:div.col-md-12
-     [:h2 (str "Filters")]]]
+     [:h2 (str "Project Filters")]]]
    [:div.row
     [:div.col-md-3
      [:b "Drawing #"] [:br]
@@ -222,96 +231,99 @@
       ;; :component-did-update #(do (win/qgrowl "updated") (-> (jquery "table") (.DataTables)))
       ;; :component-did-update #(do (win/qgrowl "updated") ("table" js/jQuery. .DataTables))
 
-(defn project-component [proj]
+(defn project-component [db]
   (let [filters (r/atom {:drawing-num "(all)" :circuit-id "(all)" :order-num nil :item-seq nil})]
     (r/create-class
      {
       :display-name "project-component"
       :reagent-render
-      (fn proj-comp-fn [proj]
-        (let [p (:project @proj)
-              drawing-num (:drawing-num @filters)
-              circuit-id (:circuit-id @filters)
-              order-num (:order-num @filters)
-              p (if-not (= "(all)" drawing-num)
-                  (let [v drawing-num]
-                    (filter #(= v (:drawing-num %)) p))
-                  p)
-              p (if-not (= "(all)" circuit-id)
-                  (let [v (:circuit-id @filters)]
-                    (filter #(= v (:circuit-id %)) p))
-                  p)
-              order-keys (:order-header (:ordering @proj))
-              item-keys (:order-item (:ordering @proj))
-              delivery-keys (:delivery (:ordering @proj))
-              orders (map #(utils/select-keys3 % order-keys) p)
-              ;; items (map #(utils/select-keys3 % item-keys) p)
-              ;; deliveries (map #(utils/select-keys3 % delivery-keys) p)
-              ]
-          (ppc "order-keys" order-keys)
-          [:div.container
-           [:div.row [:div.col-md-12 [:h1.center (str "Project: " (:title (:project-header @proj)))]]]
-           [filters-component filters (:filter-values @proj)]
-           [:div.row [:br] [:div.col-md-12 [:h2 (str "Orders")]]]
-           [:div.order-table
-            [win/show-maps
-             (sort-by :schedule-date (set orders))
-             order-keys
-             {:on-row-click #(swap! filters assoc :order-num (nth (ppc %) 2) :item-seq nil)}
-             ]]
-           (when order-num
-             (let [line-items (sort-by :item-seq (filter #(= order-num (:order-num %)) p))
-                   message-keys [:item-seq :message-type :text]
-                   messages (utils/map! #(utils/select-keys3 % message-keys) ((:messages @proj) order-num))
-                   ]
-               [:div
-                (if (not-empty messages)
-                  [:div
-                   [:div.row [:br] [:div.col-md-12 [:h2 (str "Messages for Order " order-num)]]]
-                   [win/show-maps
-                    messages
-                    (rest message-keys)
-                    ;; (:delivery (:ordering @proj))
-                    ]])
+      (fn proj-comp-fn [db]
+        (if (:project @db)
+          (let [
+                proj (:project @db)
+                p (:project proj)
+                drawing-num (:drawing-num @filters)
+                circuit-id (:circuit-id @filters)
+                order-num (:order-num @filters)
+                p (if-not (= "(all)" drawing-num)
+                    (let [v drawing-num]
+                      (filter #(= v (:drawing-num %)) p))
+                    p)
+                p (if-not (= "(all)" circuit-id)
+                    (let [v (:circuit-id @filters)]
+                      (filter #(= v (:circuit-id %)) p))
+                    p)
+                order-keys (:order-header (:ordering proj))
+                item-keys (:order-item (:ordering proj))
+                delivery-keys (:delivery (:ordering proj))
+                orders (map #(utils/select-keys3 % order-keys) p)
+                ;; items (map #(utils/select-keys3 % item-keys) p)
+                ;; deliveries (map #(utils/select-keys3 % delivery-keys) p)
+                ]
+            (ppc "order-keys" order-keys)
+            [:div.container
+             [:div.row [:div.col-md-12 [:h1.center (str "Project: " (:title (:project-header proj)))]]]
+             [filters-component filters (:filter-values proj)]
+             [:div.row [:br] [:div.col-md-12 [:h2 (str "Orders")]]]
+             [:div.order-table
+              [win/show-maps
+               (sort-by :schedule-date (set orders))
+               order-keys
+               {:on-row-click #(swap! filters assoc :order-num (nth (ppc %) 2) :item-seq nil)}
+               ]]
+             (when order-num
+               (let [line-items (sort-by :item-seq (filter #(= order-num (:order-num %)) p))
+                     message-keys [:item-seq :message-type :text]
+                     messages (utils/map! #(utils/select-keys3 % message-keys) ((:messages proj) order-num))
+                     ]
+                 [:div
+                  (if (not-empty messages)
+                    [:div
+                     [:div.row [:br] [:div.col-md-12 [:h2 (str "Messages for Order " order-num)]]]
+                     [win/show-maps
+                      messages
+                      (rest message-keys)
+                      ;; (:delivery (:ordering proj))
+                      ]])
 
-                [:div.row [:br] [:div.col-md-12 [:h2 (str "Line Items for Order " (:order-num @filters))]]]
-                [:div.item-table
-                 [win/show-maps
-                  line-items
-                  item-keys
-                  {:on-row-click #(swap! filters assoc :item-seq (first (ppc %)))}
-                  ]]
-                (when (:item-seq @filters)
-                  (ppc "filters:" @filters)
-                  (ppc "item-seq" (:item-seq @filters))
-                  (ppc "line-items" line-items)
-                  (let [seq-num (:item-seq @filters)
-                        _ (ppc "seq-num" seq-num)
-                        deliveries (filter #(and
-                                             (= seq-num (:item-num %))
-                                             ;; (not (= "" (:delivery %)))
-                                             )
-                                           line-items)
-                        keys (:delivery (:ordering @proj))
-                        deliveries (utils/map! #(utils/select-keys3 % keys) deliveries)
-                        ]
-                     (if (not-empty deliveries)
-                       [:div
-                        [:div.row [:br] [:div.col-md-12 [:h2 (str "Deliveries for Item Seq " seq-num)]]]
-                        [win/show-maps
-                         deliveries
-                         keys
-                         ;; (:delivery (:ordering @proj))
-                         ]]
-                       [:h2 "No Deliveries for Item Seq " seq])))]))
-           ;; ]
-           ]))})))
+                  [:div.row [:br] [:div.col-md-12 [:h2 (str "Line Items for Order " (:order-num @filters))]]]
+                  [:div.item-table
+                   [win/show-maps
+                    line-items
+                    item-keys
+                    {:on-row-click #(swap! filters assoc :item-seq (first (ppc %)))}
+                    ]]
+                  (when (:item-seq @filters)
+                    (ppc "filters:" @filters)
+                    (ppc "item-seq" (:item-seq @filters))
+                    (ppc "line-items" line-items)
+                    (let [seq-num (:item-seq @filters)
+                          _ (ppc "seq-num" seq-num)
+                          deliveries (filter #(and
+                                               (= seq-num (:item-num %))
+                                               ;; (not (= "" (:delivery %)))
+                                               )
+                                             line-items)
+                          keys (:delivery (:ordering proj))
+                          deliveries (utils/map! #(utils/select-keys3 % keys) deliveries)
+                          ]
+                      (if (not-empty deliveries)
+                        [:div
+                         [:div.row [:br] [:div.col-md-12 [:h2 (str "Deliveries for Item Seq " seq-num)]]]
+                         [win/show-maps
+                          deliveries
+                          keys
+                          ;; (:delivery (:ordering proj))
+                          ]]
+                        [:h2 "No Deliveries for Item Seq " seq])))]))
+             ;; ]
+             ])))})))
 
 (defn project-component-win [project-header]
   (let [project (r/atom {:id (:id project-header)
                          :project-header project-header
                          :project nil})]
-    (get-project project)
+    ;; (get-project project)
     (fn proj-comp-win-fn []
       [project-component project])))
 
@@ -456,8 +468,9 @@
                       (ppc "id:" id)
                       (ppc "project:" (project-from-id db id))
                       (ppc "clicked:" % id (value--of %) (target--of %) (content--of %))
+                      (swap! db assoc :project-id id :project-name (:title proj))
                       (swap! filters assoc :project-id id :project-name (:title proj))
-                      ;; (get-project project)
+                      (get-project db)
                       )}
        [:option "<Select Project>"]
        (for [p (ppc "porjects:" (:projects @db))]
@@ -487,7 +500,8 @@
        [:div.row
         [:div.col-md-12
          (if-let [project-id (:project-id @filters)]
-           [project-component-win {:id project-id :title (:project-name @filters)}]
+           [project-component db]
+           ;; [project-component-win {:id project-id :title (:project-name @filters)}]
            ;; (str "filters: " @filters)
            )]]
        ])))
