@@ -197,11 +197,6 @@
 ;;    (js/$ (r/dom-node this))
 ;;    (clj->js {:bDestroy true})))
 
-(defn project-component [proj]
-  (let [filters (r/atom {:drawing-num "(all)" :circuit-id "(all)" :order-num nil :item-seq nil})]
-    (r/create-class
-     {
-      :display-name "project-component"
       ;; :component-did-mount table-mounter
       ;; :component-did-update table-mounter
       ;; #(let [self (js* "this")]
@@ -226,6 +221,12 @@
 ;; $("table").DataTable({"paging": false, "aaSorting": []})
       ;; :component-did-update #(do (win/qgrowl "updated") (-> (jquery "table") (.DataTables)))
       ;; :component-did-update #(do (win/qgrowl "updated") ("table" js/jQuery. .DataTables))
+
+(defn project-component [proj]
+  (let [filters (r/atom {:drawing-num "(all)" :circuit-id "(all)" :order-num nil :item-seq nil})]
+    (r/create-class
+     {
+      :display-name "project-component"
       :reagent-render
       (fn proj-comp-fn [proj]
         (let [p (:project @proj)
@@ -305,6 +306,15 @@
                        [:h2 "No Deliveries for Item Seq " seq])))]))
            ;; ]
            ]))})))
+
+(defn project-component-win [project-header]
+  (let [project (r/atom {:id (:id project-header)
+                         :project-header project-header
+                         :project nil})]
+    (get-project project)
+    (fn proj-comp-win-fn []
+      [project-component project])))
+
 
 ;; https://gist.github.com/ducky427/10551a3346695db6a5f0
 
@@ -402,14 +412,6 @@
   (.dir js/console js/FixedDataTable.Table)
   [:b "hello"])
 
-(defn project-component-win [project-header]
-  (let [project (r/atom {:id (:id project-header)
-                         :project-header project-header
-                         :project nil})]
-    (get-project project)
-    (fn proj-comp-win-fn []
-      [project-component project])))
-
 (defn target--of [event]
   (-> event .-target ))
 (defn value--of [event]
@@ -455,6 +457,7 @@
                       (ppc "project:" (project-from-id db id))
                       (ppc "clicked:" % id (value--of %) (target--of %) (content--of %))
                       (swap! filters assoc :project-id id :project-name (:title proj))
+                      ;; (get-project project)
                       )}
        [:option "<Select Project>"]
        (for [p (ppc "porjects:" (:projects @db))]
@@ -470,33 +473,37 @@
   (win/qgrowl "rendering projects-component")
   (let [filters (r/atom {:account-number (:account-number @db)})]
     (fn projs-comp-fn [db]
-  [:div.container
-   ;; [simple-tablee]
-    [:div.row
-     [:div.col-md-12 [:h1.center "Projects Prototype"]]]
-   [header-component db filters]
-   [blank-row]
+      [:div.container
+       ;; [simple-tablee]
+       [:div.row
+        [:div.col-md-12 [:h1.center "Project Portal Prototype"]]]
+       [header-component db filters]
+       [blank-row]
 
-   ;; [:div.row
-   ;;  [:div.col-md-12
-   ;;   ;; (projects-table-component (:projects @db))]]
-   ;;   (projects-table-component (:projects @db) filters)]]
-   [:div.row
-    [:div.col-md-12
-     (if-let [project-id (:project-id @filters)]
-       [project-component-win {:id project-id :title (:project-name @filters)}]
-       ;; (str "filters: " @filters)
-       )]]
-   ])))
+       ;; [:div.row
+       ;;  [:div.col-md-12
+       ;;   ;; (projects-table-component (:projects @db))]]
+       ;;   (projects-table-component (:projects @db) filters)]]
+       [:div.row
+        [:div.col-md-12
+         (if-let [project-id (:project-id @filters)]
+           [project-component-win {:id project-id :title (:project-name @filters)}]
+           ;; (str "filters: " @filters)
+           )]]
+       ])))
 
 (defn project-for-account [account-num]
   (let [db (r/atom {:account-number account-num
-                    :projects []})]
+                    :project-id nil
+                    :projects []
+                    :filters {}
+                    :project nil
+                    })]
     (get-projects db)
     db
     ))
 
-(defn projects-component-win []
+(defn new-projects-component []
   (let [db (project-for-account 1000092)]
     (get-projects db)
     (fn projs-comp-win-fn []
@@ -508,11 +515,11 @@
 (defn main-component []
   (case :projects
     :projects-win (let [proj-map
-                        {:title "Projects Prototype"
+                        {:title "Project Portal Prototype"
                          :x 25 :y 105 :width 900 :height 600}
                         ]
-                    (win/new-window projects-component-win proj-map))
-    :projects (projects-component-win)
+                    (win/new-window new-projects-component proj-map))
+    :projects (new-projects-component)
     :project-win (open-project {:id 18 :title "Jarred"})
     :project (project-component-win {:id 18 :title "Jarred"})
     )

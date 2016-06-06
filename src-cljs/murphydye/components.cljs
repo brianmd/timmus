@@ -116,7 +116,7 @@
 
         [:input {:type "button" :value "Projects Prototype"
                  :style {:background-color :red :color :white}
-                 :on-click #(win/new-window project/projects-component-win proj-map)}]
+                 :on-click #(win/new-window project/new-projects-component proj-map)}]
 
         ;; [:input {:type "button" :value "Project"
         ;;          :style {:background-color :red :color :white}
