@@ -127,7 +127,7 @@
 
         ]
 
-       [test-links]
+       ;; [test-links]
        ;; [project/home-page]
        ;; [project/projects-component-win proj-map]
        [project/main-component]

@@ -249,7 +249,7 @@
               ]
           (ppc "order-keys" order-keys)
           [:div.container
-           [:div.row [:div.col-md-12 [:h1.center (str "Project Prototype: " (:title (:project-header @proj)))]]]
+           [:div.row [:div.col-md-12 [:h1.center (str "Project: " (:title (:project-header @proj)))]]]
            [filters-component filters (:filter-values @proj)]
            [:div.row [:br] [:div.col-md-12 [:h2 (str "Orders")]]]
            [:div.order-table
@@ -281,17 +281,22 @@
                   {:on-row-click #(swap! filters assoc :item-seq (first (ppc %)))}
                   ]]
                 (when (:item-seq @filters)
-                  (let [seq (:item-seq @filters)
+                  (ppc "filters:" @filters)
+                  (ppc "item-seq" (:item-seq @filters))
+                  (ppc "line-items" line-items)
+                  (let [seq-num (:item-seq @filters)
+                        _ (ppc "seq-num" seq-num)
                         deliveries (filter #(and
-                                             (= seq (:item-seq %))
-                                             (not (= "" (:delivery %))))
+                                             (= seq-num (:item-num %))
+                                             ;; (not (= "" (:delivery %)))
+                                             )
                                            line-items)
                         keys (:delivery (:ordering @proj))
                         deliveries (utils/map! #(utils/select-keys3 % keys) deliveries)
                         ]
                      (if (not-empty deliveries)
                        [:div
-                        [:div.row [:br] [:div.col-md-12 [:h2 (str "Deliveries for Item Seq " seq)]]]
+                        [:div.row [:br] [:div.col-md-12 [:h2 (str "Deliveries for Item Seq " seq-num)]]]
                         [win/show-maps
                          deliveries
                          keys
@@ -412,6 +417,9 @@
 (defn content--of [event]
   (-> event .-target .-value))
 
+(defn project-from-id [db id]
+  (first (filter #(= id (:id %)) (:projects @db))))
+
 (defn projects-component [db]
   (let [filters (r/atom {:account-number (:account-number @db)})]
     (fn projs-comp-fn [db]
@@ -441,11 +449,17 @@
               )
            }]
          ]
-        [:div.col-md-3 [:b "Project Name:"]]
+        [:div.col-md-3.right [:b "Project Name:"]]
         [:div.col-md-3
          [:select
           {:default-value (:project-id @filters)
-           :on-click #(ppc "clicked:" % (value--of %) (target--of %) (content--of %))}
+           :on-change #(let [id (js/parseInt (value--of %))
+                             proj (project-from-id db id)]
+                          (ppc "id:" id)
+                          (ppc "project:" (project-from-id db id))
+                          (ppc "clicked:" % id (value--of %) (target--of %) (content--of %))
+                          (swap! filters assoc :project-id id :project-name (:title proj))
+                          )}
           [:option "<Select Project>"]
           (for [p (ppc "porjects:" (:projects @db))]
             [:option {:value (:id p)} (:project-name p)])]]
@@ -454,14 +468,14 @@
         [:div.col-md-12
          [:br]]]
 
-       [:div.row
-        [:div.col-md-12
-         ;; (projects-table-component (:projects @db))]]
-         (projects-table-component (:projects @db) filters)]]
+       ;; [:div.row
+       ;;  [:div.col-md-12
+       ;;   ;; (projects-table-component (:projects @db))]]
+       ;;   (projects-table-component (:projects @db) filters)]]
        [:div.row
         [:div.col-md-12
          (if-let [project-id (:project-id @filters)]
-           [project-component-win {:id project-id :title "Jarred"}]
+           [project-component-win {:id project-id :title (:project-name @filters)}]
            ;; (str "filters: " @filters)
            )]]
        ])))
