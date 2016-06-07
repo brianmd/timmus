@@ -27,6 +27,27 @@
             [murphydye.window :as win]
             ))
 
+
+;; var objDiv = docment.getElementById("body");
+;; objDiv.scrollTop = objDiv.scrollHeight;
+;; (r/render [#'navbar] (.getElementById js/document "navbar"))
+
+(defn scroll-to-bottom
+  ([] (scroll-to-bottom "body"))
+  ([selector]
+   (let [obj (.item (.getElementsByTagName js/document selector) 0)]
+     (set! (.-scrollTop obj) (.-scrollHeight obj)))))
+
+(defn delay-scroll-to-bottom
+  ([] (delay-scroll-to-bottom "body"))
+  ([selector] (delay-scroll-to-bottom selector 100))
+  ([selector delay]
+   (.setTimeout js/window
+                (fn [] (scroll-to-bottom selector))
+                delay)
+   ))
+
+
 (utils/set-humanized "drawing_num" "Drawing #")
 (utils/set-humanized "order_num" "Order #")
 (utils/set-humanized "has_messages?" "Alert?")
@@ -271,7 +292,13 @@
               [win/show-maps
                (sort-by :schedule-date (set orders))
                order-keys
-               {:on-row-click #(swap! filters assoc :order-num (nth % 2) :item-seq nil)}
+               {:on-row-click #(do
+                                 (swap! filters assoc :order-num (nth % 2) :item-seq nil)
+                                 (delay-scroll-to-bottom)
+                                 ;; (.setTimeout js/window
+                                 ;;              (fn [] (scroll-to-bottom))
+                                 ;;              200)
+                                 )}
                ]]
              (when order-num
                (let [line-items (sort-by :item-seq (filter #(= order-num (:order-num %)) p))
@@ -293,7 +320,9 @@
                    [win/show-maps
                     line-items
                     item-keys
-                    {:on-row-click #(swap! filters assoc :item-seq (first %))}
+                    {:on-row-click #(do
+                                      (swap! filters assoc :item-seq (first %))
+                                      (delay-scroll-to-bottom))}
                     ]]
                   (when (:item-seq @filters)
                     (let [seq-num (:item-seq @filters)

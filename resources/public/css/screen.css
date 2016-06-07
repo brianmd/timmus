@@ -155,7 +155,7 @@ tbody tr:hover {
 }
 
 .item-table table.table, .item-table .table {
-    table-layout: fixed;
+    /* table-layout: fixed; */
     width: 1900px;
     /* max-width: 3000px; */
 }
@@ -163,7 +163,6 @@ tbody tr:hover {
 .descript {
     width: 350px;
     overflow: hidden;
-    color: red;
 }
 
 .message-type {
