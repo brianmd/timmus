@@ -108,15 +108,15 @@
     (fn []
       [:div
        [:span
-        [win/dialog-test]
+        ;; [win/dialog-test]
+        ;; [:input {:type "button" :value "Projects Prototype"
+        ;;          :style {:background-color :red :color :white}
+        ;;          :on-click #(win/new-window project/new-projects-component proj-map)}]
 
         ;; [:input {:type "button" :value "Create Mfr Lookup"
         ;;          :style {:background-color :black :color :white}
         ;;          :on-click #(win/new-window-url {:url "http://10.9.0.105:3449/api/manufacturerlookup":title "Create Manufacturer Lookup" :x 50 :y 100 :width 400 :height 400})}]
 
-        [:input {:type "button" :value "Projects Prototype"
-                 :style {:background-color :red :color :white}
-                 :on-click #(win/new-window project/new-projects-component proj-map)}]
 
         ;; [:input {:type "button" :value "Project"
         ;;          :style {:background-color :red :color :white}

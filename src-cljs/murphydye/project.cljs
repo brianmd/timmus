@@ -34,7 +34,7 @@
 (utils/set-humanized "customer_matnr" "Customer Material #")
 
 (defn get-project [db]
-  ;; (ppc "getting project: " @db)
+  (ppc "getting project: " @db)
   ;; (ppc (str "/api/project/" (:project-id @db)))
   (let [url (str "/api/project/" (:project-id @db))
         id (:project-id @db)
@@ -445,13 +445,17 @@
                       (swap! filters assoc :account-number (-> % .-target .-value)))
       :on-key-down
       #(when (= (.-keyCode %) 13)
+         (ppc "hit return")
          ;; (swap! db assoc :account-number (:account-number @filters) :projects [] :project)
          (swap! db assoc
                 :account-number (:account-number @filters)
                 :projects [])
-         (swap! filters
+         (ppc "swapped 1")
+         (swap! filters assoc
                 :drawing-num nil
-                :circuit-id nil)
+                :circuit-id nil
+                :project-id nil)
+         (ppc "swapped 2")
          (.log js/console (str "requesting projects for: " (:account-number @db)))
          (get-projects db)
          )
