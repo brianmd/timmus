@@ -55,7 +55,7 @@
 (utils/set-humanized "customer_matnr" "Customer Material #")
 
 (defn get-project [db]
-  (ppc "getting project: " @db)
+  ;; (ppc "getting project: " @db)
   ;; (ppc (str "/api/project/" (:project-id @db)))
   (let [url (str "/api/project/" (:project-id @db))
         id (:project-id @db)
@@ -328,13 +328,13 @@
                     (let [seq-num (:item-seq @filters)
                           deliveries (filter #(and
                                                (= seq-num (:item-num %))
-                                               ;; (not (= "" (:delivery %)))
+                                               (not (= "" (:delivery %)))
                                                )
                                              line-items)
                           keys (:delivery (:ordering proj))
                           deliveries (utils/map! #(utils/select-keys3 % keys) deliveries)
                           ]
-                      (if (not-empty deliveries)
+                      (if (not-empty (ppc "deliveries" deliveries))
                         [:div
                          [:div.row [:br] [:div.col-md-12 [:h2 (str "Deliveries for Item Seq " seq-num)]]]
                          [win/show-maps
@@ -495,7 +495,7 @@
        {:default-value (:project-id @filters)
         :on-change #(let [id (js/parseInt (value--of %))
                           proj (project-from-id db id)]
-                      (swap! db assoc :project-id id :project-name (:project-name proj))
+                      (swap! db assoc :project nil :project-id id :project-name (:project-name proj))
                       (swap! filters assoc :project-id id :project-name (:project-name proj) :drawing-num "(all)" :circuit-id "(all)" :order-num nil :item-num nil)
                       (get-project db)
                       )}
