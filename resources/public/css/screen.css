@@ -24,7 +24,7 @@
 html,
 body {
 	font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    height: 100%;
+  height: 100%;
 }
 .navbar {
   margin-bottom: 10px;
@@ -148,4 +148,24 @@ tbody tr:hover {
 
 .red {
     color: red;
+}
+
+.drawing-num, .approved-by, .mto-author {
+    width: 170px;
+}
+
+.item-table table.table, .item-table .table {
+    table-layout: fixed;
+    width: 1900px;
+    /* max-width: 3000px; */
+}
+
+.descript {
+    width: 350px;
+    overflow: hidden;
+    color: red;
+}
+
+.message-type {
+    width: 40px;
 }

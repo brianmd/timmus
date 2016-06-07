@@ -34,16 +34,17 @@
 (utils/set-humanized "customer_matnr" "Customer Material #")
 
 (defn get-project [db]
-  (ppc "getting project: " @db)
-  (ppc (str "/api/project/" (:project-id @db)))
+  ;; (ppc "getting project: " @db)
+  ;; (ppc (str "/api/project/" (:project-id @db)))
   (let [url (str "/api/project/" (:project-id @db))
         id (:project-id @db)
-        handler #(let [_ (do (win/qgrowl "got data!!!!"))
+        handler #(let [
+                       ;; _ (do (win/qgrowl "got data!!!!"))
                        filter-keys [:drawing-num :circuit-id]   ;; TODO add expected date as a filter
                        data (:data %)
                        status-lines (:status-lines data)
                        messages (:messages data)
-                       filter-values (into {}
+                       filter-lookups (into {}
                                            (utils/map!
                                             (fn [k] (vector k (->
                                                                (utils/get-unique status-lines k)
@@ -55,7 +56,7 @@
                              :project-id id
                              :messages messages
                              :ordering (:display-ordering %)
-                             :filter-values filter-values
+                             :filter-lookups filter-lookups
                              :project-header data
                              }
                        ]
@@ -64,7 +65,7 @@
                    ;;        :project status-lines
                    ;;        :messages messages
                    ;;        :ordering (:display-ordering %)
-                   ;;        :filter-values filter-values)
+                   ;;        :filter-lookups filter-lookups)
                    (swap! db assoc :project proj)
                    )
         error-handler #(win/qgrowl (str "Unable to get project id " id))
@@ -75,10 +76,9 @@
     (GET url options)))
 
 (defn get-projects [db]
-  (win/qgrowl "getting projects")
   (let [url (str "/api/projects/" (:account-number @db))
         handler #(do
-                   (win/qgrowl "got projects data")
+                   ;; (win/qgrowl "got projects data")
                    (println "got projects ------------------------------------------------------")
                    (println %)
                    ;; (win/static-alert %)
@@ -159,7 +159,9 @@
     ;; (map #(dissoc (:order-header %) :attributes) proj)))
     (map #(:order-header %) proj)))
 
-(defn filters-component [filters filter-values]
+(defn filters-component
+  "filter-lookups: the allowable values for the filters"
+  [filters filter-lookups]
   [:div.well
    [:div.row
     [:br]
@@ -171,9 +173,9 @@
      [:select {
                :value (:drawing-num @filters)
                :on-change #(let [v (-> % .-target .-value)]
-                             (win/qgrowl v)
-                             (swap! filters assoc :drawing-num v))}
-      (for [c (:drawing-num filter-values)]
+                             ;; (win/qgrowl v)
+                             (swap! filters assoc :drawing-num v :order-num nil :item-num nil))}
+      (for [c (:drawing-num filter-lookups)]
         ^{:key c} [:option c])
       ]]
     [:div.col-md-3
@@ -181,9 +183,9 @@
      [:select {
                :value (:circuit-id @filters)
                :on-change #(let [v (-> % .-target .-value)]
-                             (win/qgrowl v)
-                             (swap! filters assoc :circuit-id v))}
-      (for [c (:circuit-id filter-values)]
+                             ;; (win/qgrowl v)
+                             (swap! filters assoc :circuit-id v :order-num nil :item-num nil))}
+      (for [c (:circuit-id filter-lookups)]
         ^{:key c} [:option c])
       ]]
     ]
@@ -231,13 +233,13 @@
       ;; :component-did-update #(do (win/qgrowl "updated") (-> (jquery "table") (.DataTables)))
       ;; :component-did-update #(do (win/qgrowl "updated") ("table" js/jQuery. .DataTables))
 
-(defn project-component [db]
-  (let [filters (r/atom {:drawing-num "(all)" :circuit-id "(all)" :order-num nil :item-seq nil})]
+(defn project-component [db filters]
+  ;; (let [filters (r/atom {:drawing-num "(all)" :circuit-id "(all)" :order-num nil :item-seq nil})]
     (r/create-class
      {
       :display-name "project-component"
       :reagent-render
-      (fn proj-comp-fn [db]
+      (fn proj-comp-fn [db filters]
         (if (:project @db)
           (let [
                 proj (:project @db)
@@ -260,16 +262,16 @@
                 ;; items (map #(utils/select-keys3 % item-keys) p)
                 ;; deliveries (map #(utils/select-keys3 % delivery-keys) p)
                 ]
-            (ppc "order-keys" order-keys)
             [:div.container
-             [:div.row [:div.col-md-12 [:h1.center (str "Project: " (:title (:project-header proj)))]]]
-             [filters-component filters (:filter-values proj)]
+             ;; [:div.row [:div.col-md-12 [:h1.center (str "Project: " (:project-name (:project-header proj)))]]]
+             [:div.row [:div.col-md-12 [:h1.center (str "Project: " (:project-name @db))]]]
+             [filters-component filters (:filter-lookups proj)]
              [:div.row [:br] [:div.col-md-12 [:h2 (str "Orders")]]]
              [:div.order-table
               [win/show-maps
                (sort-by :schedule-date (set orders))
                order-keys
-               {:on-row-click #(swap! filters assoc :order-num (nth (ppc %) 2) :item-seq nil)}
+               {:on-row-click #(swap! filters assoc :order-num (nth % 2) :item-seq nil)}
                ]]
              (when order-num
                (let [line-items (sort-by :item-seq (filter #(= order-num (:order-num %)) p))
@@ -291,14 +293,10 @@
                    [win/show-maps
                     line-items
                     item-keys
-                    {:on-row-click #(swap! filters assoc :item-seq (first (ppc %)))}
+                    {:on-row-click #(swap! filters assoc :item-seq (first %))}
                     ]]
                   (when (:item-seq @filters)
-                    (ppc "filters:" @filters)
-                    (ppc "item-seq" (:item-seq @filters))
-                    (ppc "line-items" line-items)
                     (let [seq-num (:item-seq @filters)
-                          _ (ppc "seq-num" seq-num)
                           deliveries (filter #(and
                                                (= seq-num (:item-num %))
                                                ;; (not (= "" (:delivery %)))
@@ -317,7 +315,7 @@
                           ]]
                         [:h2 "No Deliveries for Item Seq " seq])))]))
              ;; ]
-             ])))})))
+             ])))}))
 
 (defn project-component-win [project-header]
   (let [project (r/atom {:id (:id project-header)
@@ -350,7 +348,6 @@
 
 (defn home-page []
   (let [table  (gen-table 10)]
-    (ppc table)
     [:div
      [Table {:width        600
              :height       400
@@ -465,15 +462,12 @@
        {:default-value (:project-id @filters)
         :on-change #(let [id (js/parseInt (value--of %))
                           proj (project-from-id db id)]
-                      (ppc "id:" id)
-                      (ppc "project:" (project-from-id db id))
-                      (ppc "clicked:" % id (value--of %) (target--of %) (content--of %))
-                      (swap! db assoc :project-id id :project-name (:title proj))
-                      (swap! filters assoc :project-id id :project-name (:title proj))
+                      (swap! db assoc :project-id id :project-name (:project-name proj))
+                      (swap! filters assoc :project-id id :project-name (:project-name proj) :drawing-num "(all)" :circuit-id "(all)" :order-num nil :item-num nil)
                       (get-project db)
                       )}
        [:option "<Select Project>"]
-       (for [p (ppc "porjects:" (:projects @db))]
+       (for [p (:projects @db)]
          [:option {:value (:id p)} (:project-name p)])]]
      ])
 
@@ -483,7 +477,7 @@
     [:br]]])
 
 (defn projects-component [db]
-  (win/qgrowl "rendering projects-component")
+  ;; (win/qgrowl "rendering projects-component")
   (let [filters (r/atom {:account-number (:account-number @db)})]
     (fn projs-comp-fn [db]
       [:div.container
@@ -500,7 +494,7 @@
        [:div.row
         [:div.col-md-12
          (if-let [project-id (:project-id @filters)]
-           [project-component db]
+           [project-component db filters]
            ;; [project-component-win {:id project-id :title (:project-name @filters)}]
            ;; (str "filters: " @filters)
            )]]
@@ -534,7 +528,7 @@
                         ]
                     (win/new-window new-projects-component proj-map))
     :projects (new-projects-component)
-    :project-win (open-project {:id 18 :title "Jarred"})
-    :project (project-component-win {:id 18 :title "Jarred"})
+    ;; :project-win (open-project {:id 18 :title "Jarred"})
+    ;; :project (project-component-win {:id 18 :title "Jarred"})
     )
   )

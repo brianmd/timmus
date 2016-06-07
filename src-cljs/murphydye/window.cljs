@@ -1,5 +1,6 @@
 (ns murphydye.window
-  (:require [reagent.core :as r]
+  (:require [clojure.string :as str]
+            [reagent.core :as r]
             [reagent.session :as session]
             [re-com.core :refer [h-box v-box box selection-list label title checkbox p line hyperlink-href]]
             [re-com.selection-list :refer [selection-list-args-desc]]
@@ -19,7 +20,8 @@
             ;; [timmus.csr.core :refer [csr-page platt-prices]]
             ;; [timmus.math :refer [math-page]]
                                         ;[timmus.sales-associate.core :refer [csr-page]]
-            )
+
+            [clojure.string :as str])
   (:import goog.History))
 
 (defn show-reagent-table
@@ -41,6 +43,12 @@
     "FALSE" ""
     (str value)))
 
+;; (defn make-css-class [s]
+;;   (str/replace (str/replace s " " "")))
+  ;; (str/lower-case (str/replace s " " ""))
+  ;; (-> string str/lower-case #(str/replace % " " ""))))
+  ;; (name (utils/clojurize-keyword string)))
+
 (defn show-table
   "tbl should be a map with :headers and :rows"
   ([tbl] (show-table tbl {}))
@@ -50,6 +58,7 @@
                    tbl
                    {:headers (tbl "headers") :rows (tbl "rows")})
            headers (map utils/humanize (:headers tbl))
+           css-classes (map (comp name utils/clojurize-keyword) (:headers tbl))
            rows (:rows tbl)
            counter (atom 0)
            row-options (atom {})
@@ -75,8 +84,9 @@
               ^{:key (swap! counter inc)}
               [:tr.row-hover (merge options clicker)
                (doall
-                (map (fn [x] ^{:key (swap! counter inc)} [:td (cellize x)])
-                     row))
+                (map (fn [x css-class] ^{:key (swap! counter inc)} [:td {:className css-class} (cellize x)])
+                     row
+                     css-classes))
                ])))]
         ]
        ))))
