@@ -334,7 +334,7 @@
                           keys (:delivery (:ordering proj))
                           deliveries (utils/map! #(utils/select-keys3 % keys) deliveries)
                           ]
-                      (if (not-empty (ppc "deliveries" deliveries))
+                      (if (not-empty deliveries)
                         [:div
                          [:div.row [:br] [:div.col-md-12 [:h2 (str "Deliveries for Item Seq " seq-num)]]]
                          [win/show-maps

@@ -86,7 +86,7 @@
 
 (defn show-platt-prices []
   [:div
-   (win/show-table @platt-prices)
+   (win/show-table @platt-prices {})
    ;(show-table platt-prices)
    ])
  

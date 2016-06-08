@@ -49,9 +49,26 @@
   ;; (-> string str/lower-case #(str/replace % " " ""))))
   ;; (name (utils/clojurize-keyword string)))
 
+(defn click-header-cell [headers sort-map event]
+  ;; (ppc "click-header-cell" sort-map args (count args) (first args))
+  ;; (let [v (-> (first args) .-target .-value)]
+  ;; (.dir js/console event)
+  ;; (ppc "screenx" (.-screenX event) "clientX" (.-clientX event))
+  (let [col-name (-> event .-target .-innerHTML)
+        col-num (.indexOf headers col-name)
+        ascending? (if (= col-num (:col-num @sort-map))
+                     (case (:ascending? @sort-map)
+                       nil true
+                       true false
+                       false nil)
+                     true)]
+    ;; (ppc v col-num ascending?)
+    (swap! sort-map assoc :col-num (if-not (nil? ascending?) col-num) :ascending? ascending? :col-name col-name)
+    ))
+
 (defn show-table
   "tbl should be a map with :headers and :rows"
-  ([tbl] (show-table tbl {}))
+  ;; ([tbl] (show-table tbl {}))
   ([tbl options]
    (if tbl
      (let [table (if (:headers tbl)
@@ -62,34 +79,63 @@
            rows (:rows tbl)
            counter (atom 0)
            row-options (atom {})
-           sort-info (atom {:col-name nil :direction :down})
-           onclick-fn (:on-row-click options)]
-       (if-let [f (:on-row-click options)]
-         (swap! row-options assoc :on-click #(f)))
-       ;; (println "row options:" @row-options)
-       ;; [:table.well.smaller.table.table-striped.table-bordered
-       [:table.well.smaller.table.table-bordered.centered
-        [:thead>tr
-          (for [h headers]
-            ^{:key h} [:th h])]
-        [:tfoot]
-        ;; [:tfoot
-        ;;  [:tr
-        ;;   (for [h headers]
-        ;;     ^{:key h} [:td h])]]
-        [:tbody
-         (doall
-          (for [row rows]
-            (let [clicker (if onclick-fn {:on-click #(onclick-fn row)} {})]
-              ^{:key (swap! counter inc)}
-              [:tr.row-hover (merge options clicker)
-               (doall
-                (map (fn [x css-class] ^{:key (swap! counter inc)} [:td {:className css-class} (cellize x)])
-                     row
-                     css-classes))
-               ])))]
-        ]
-       ))))
+           sort-info (r/atom {:col-num nil :ascending? nil})
+           onclick-fn (:on-row-click options)
+           ]
+       (fn [tbl options]
+         (let [
+               ;; table (if (:headers tbl)
+               ;;         tbl
+               ;;         {:headers (tbl "headers") :rows (tbl "rows")})
+               ;; headers (map utils/humanize (:headers tbl))
+               ;; css-classes (map (comp name utils/clojurize-keyword) (:headers tbl))
+               rows (:rows tbl)
+               ;; counter (atom 0)
+               row-options (atom {})
+               ;; sort-info (atom {:col-num nil :direction :down})
+               sort-col (:col-num @sort-info)
+               sort-name (:col-name @sort-info)
+               ascending? (:ascending? @sort-info)
+               sorted-rows (if-let [col sort-col]
+                             (if ascending?
+                               (sort-by #(nth % col) rows)
+                               (sort-by #(nth % col) #(compare %2 %1) rows)
+                               )
+                             rows)
+               ;; onclick-fn (:on-row-click options)
+               ]
+           (if-let [f (:on-row-click options)]
+             (swap! row-options assoc :on-click #(f)))
+
+           ;; (ppc "sort-info" sort-info)
+           ;; (println "row options:" @row-options)
+           ;; [:table.well.smaller.table.table-striped.table-bordered
+           [:table.well.smaller.table.table-bordered.centered
+            [:thead>tr
+             (for [h headers]
+               (let [ascending-col? (if (= h sort-name) ascending?)]
+                 ^{:key h} [:th {:on-click (partial click-header-cell headers sort-info)} h (case ascending-col? true "\u25bc" false " \u25b2" nil)]))]
+            ;; ^{:key h} [:th {:on-click #(do (.dir js/console %) (.dir js/console (.-target %)) (.dir js/console (-> % .-target .-innerHTML)))} h])]
+            ;; ^{:key h} [:th {:on-click #(do (.dir js/console %) (.dir js/console (.-target %)) (set! (.-zzz js/window) (.-target %)))} h])]
+            [:tfoot]
+            ;; [:tfoot
+            ;;  [:tr
+            ;;   (for [h headers]
+            ;;     ^{:key h} [:td h])]]
+            [:tbody
+             (doall
+              (for [row sorted-rows]
+                (let [clicker (if onclick-fn {:on-click #(onclick-fn row)} {})]
+                  ;; (let [clicker (if onclick-fn {:on-click #(do (.dir js/console (-> % .-target))(.dir js/console (-> %))(.dir js/console (.type %)) (onclick-fn row))} {})]
+                  ^{:key (swap! counter inc)}
+                  [:tr.row-hover (merge options clicker)
+                   (doall
+                    (map (fn [x css-class] ^{:key (swap! counter inc)} [:td {:className css-class} (cellize x)])
+                         row
+                         css-classes))
+                   ])))]
+            ]
+           ))))))
 
 (defn show-maps
   ([maps] (show-maps maps (keys (first maps))))

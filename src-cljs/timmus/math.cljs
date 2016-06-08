@@ -284,7 +284,7 @@
   [:div
    [:h2 (first (:query ele))]
    (let [e @(:entity ele)]
-     (win/show-table e))])
+     (win/show-table e {}))])
 
 (defn show-entity [tbl-ele entity es]
   (let [entity @(:entity tbl-ele)
