@@ -111,8 +111,8 @@
                                @rows)
                sorted-rows (if-let [col sort-col]
                              (if ascending?
-                               (sort-by #(nth % col) rows)
-                               (sort-by #(nth % col) #(compare %2 %1) rows)
+                               (sort-by #(nth % col) filtered-rows)
+                               (sort-by #(nth % col) #(compare %2 %1) filtered-rows)
                                )
                              filtered-rows)
                ;; onclick-fn (:on-row-click options)
