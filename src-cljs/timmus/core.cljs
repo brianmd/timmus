@@ -68,12 +68,12 @@
         {:on-click #(swap! collapsed? not)} "☰"]
        [:div.collapse.navbar-toggleable-xs
         (when-not @collapsed? {:class "in"})
-        [:a.navbar-brand {:href "#/"} "timmus"]
+        [:a.navbar-brand {:href "#/"} "Summit"]
         [:ul.nav.navbar-nav
          [nav-link "#/" "Home" :home collapsed?]
-         [nav-link "#/about" "About" :about collapsed?]
+         [nav-link "#/projects" "Projects" :projects collapsed?]
          [nav-link "#/csr" "CSR" :csr collapsed?]
-         [nav-link "#/math" "Math" :math collapsed?]
+         ;; [nav-link "#/math" "Math" :math collapsed?]
          ]]])))
 
 ;(defn about-page []
@@ -90,7 +90,7 @@
    ;(show-table platt-prices)
    ])
  
-(defn about-page []
+(defn projects-page []
   [:div.container
    [md-components/components]
   ;; [dialog-test]
@@ -127,21 +127,24 @@
 (defn home-page []
   [:div.container
    [:div.jumbotron
-    [:h1 "Welcome to timmus"]
-    [:p "Time to start building your site!"]
-    [:p [:a.btn.btn-primary.btn-lg {:href "http://luminusweb.net"} "Learn more »"]]]
-   [:div.row
-    [:div.col-md-12
-     [:h2 "Welcome to ClojureScript"]]]
-   (when-let [docs (session/get :docs)]
-     [:div.row
-      [:div.col-md-12
-       [:div {:dangerouslySetInnerHTML
-              {:__html (md->html docs)}}]]])])
+    [:h1 "Welcome to Summit"]
+    [:p "This is an experimental site intended for quick prototypes."]
+    ;; [:p "Time to start building your site!"]
+    ;; [:p [:a.btn.btn-primary.btn-lg {:href "http://luminusweb.net"} "Learn more »"]]
+    ]
+   ;; [:div.row
+   ;;  [:div.col-md-12
+   ;;   [:h2 "Welcome to ClojureScript"]]]
+   ;; (when-let [docs (session/get :docs)]
+   ;;   [:div.row
+   ;;    [:div.col-md-12
+   ;;     [:div {:dangerouslySetInnerHTML
+   ;;            {:__html (md->html docs)}}]]])
+   ])
 
 (def pages
   {:home #'home-page
-   :about #'about-page
+   :projects #'projects-page
    :csr #'csr-page
    :math #'math-page
    })
@@ -156,8 +159,8 @@
 (secretary/defroute "/" []
   (session/put! :page :home))
 
-(secretary/defroute "/about" []
-  (session/put! :page :about))
+(secretary/defroute "/projects" []
+  (session/put! :page :projects))
 
 (secretary/defroute "/csr" []
   (session/put! :page :csr))

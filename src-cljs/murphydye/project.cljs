@@ -160,7 +160,7 @@
     ;;   (utils/ppc "vec" (type x) x))
     ;; (utils/ppc (identity (list keys keys)))
     ;; (println (count keys) (count (first rows)))
-    [win/show-table {:headers keys :rows rows}]
+    [win/show-table {:headers keys :rows rows} {}]
      ;; [win/show-table {:headers keys :rows (list keys keys)}]))
     ))
 
@@ -298,7 +298,8 @@
                                  ;; (.setTimeout js/window
                                  ;;              (fn [] (scroll-to-bottom))
                                  ;;              200)
-                                 )}
+                                 )
+                :filterable-cols order-keys}
                ]]
              (when order-num
                (let [line-items (sort-by :item-seq (filter #(= order-num (:order-num %)) p))
@@ -461,48 +462,53 @@
   (first (filter #(= id (:id %)) (:projects @db))))
 
 (defn header-component [db filters]
-  [:div.row.well
-   [:div.col-md-3.right [:b "Account #:"]]
-   [:div.col-md-3
-    [:input.form-control
-     {:type        :text
-      :style       {:margin "4px" :width "150px"}
-      :placeholder "Type an account number and press [Enter]"
-      :value       (:account-number @filters)
-      :on-change   #(do
-                      (println "prev temp account num:" @filters)
-                      (swap! filters assoc :account-number (-> % .-target .-value)))
-      :on-key-down
-      #(when (= (.-keyCode %) 13)
-         (ppc "hit return")
-         ;; (swap! db assoc :account-number (:account-number @filters) :projects [] :project)
-         (swap! db assoc
-                :account-number (:account-number @filters)
-                :projects [])
-         (ppc "swapped 1")
-         (swap! filters assoc
-                :drawing-num nil
-                :circuit-id nil
-                :project-id nil)
-         (ppc "swapped 2")
-         (.log js/console (str "requesting projects for: " (:account-number @db)))
-         (get-projects db)
-         )
-      }]]
-     [:div.col-md-3.right [:b "Project Name:"]]
-     [:div.col-md-3
-      [:select
-       {:default-value (:project-id @filters)
-        :on-change #(let [id (js/parseInt (value--of %))
-                          proj (project-from-id db id)]
-                      (swap! db assoc :project nil :project-id id :project-name (:project-name proj))
-                      (swap! filters assoc :project-id id :project-name (:project-name proj) :drawing-num "(all)" :circuit-id "(all)" :order-num nil :item-num nil)
-                      (get-project db)
-                      )}
-       [:option "<Select Project>"]
-       (for [p (:projects @db)]
-         [:option {:value (:id p)} (:project-name p)])]]
-     ])
+  [:div.well
+   [:div.row.center-vertically
+    [:div.col-md-3.right [:b "Account #:"]]
+    [:div.col-md-3
+     [:input.form-control
+      {:type        :text
+       :style       {:margin "4px" :width "150px"}
+       :placeholder "Type an account number and press [Enter]"
+       :value       (:account-number @filters)
+       :on-change   #(do
+                       (println "prev temp account num:" @filters)
+                       (swap! filters assoc :account-number (-> % .-target .-value)))
+       :on-key-down
+       #(when (= (.-keyCode %) 13)
+          (ppc "hit return")
+          ;; (swap! db assoc :account-number (:account-number @filters) :projects [] :project)
+          (swap! db assoc
+                 :account-number (:account-number @filters)
+                 :projects [])
+          (ppc "swapped 1")
+          (swap! filters assoc
+                 :drawing-num nil
+                 :circuit-id nil
+                 :project-id nil)
+          (ppc "swapped 2")
+          (.log js/console (str "requesting projects for: " (:account-number @db)))
+          (get-projects db)
+          )
+       }]]
+    [:div.col-md-3.right [:b "Project Name:"]]
+    [:div.col-md-3
+     [:select
+      {:default-value (:project-id @filters)
+       :on-change #(let [id (js/parseInt (value--of %))
+                         proj (project-from-id db id)]
+                     (swap! db assoc :project nil :project-id id :project-name (:project-name proj))
+                     (swap! filters assoc :project-id id :project-name (:project-name proj) :drawing-num "(all)" :circuit-id "(all)" :order-num nil :item-num nil)
+                     (get-project db)
+                     )}
+      [:option "<Select Project>"]
+      (for [p (:projects @db)]
+        [:option {:value (:id p)} (:project-name p)])]]
+    ]
+   (if (:project-id @filters)
+     [:div.row
+      [:div.col-md-9]
+      [:div.col-md-3 "Download"]])])
 
 (defn blank-row []
   [:div.row

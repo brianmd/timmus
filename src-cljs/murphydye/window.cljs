@@ -110,31 +110,51 @@
            ;; (ppc "sort-info" sort-info)
            ;; (println "row options:" @row-options)
            ;; [:table.well.smaller.table.table-striped.table-bordered
-           [:table.well.smaller.table.table-bordered.centered
-            [:thead>tr
-             (for [h headers]
-               (let [ascending-col? (if (= h sort-name) ascending?)]
-                 ^{:key h} [:th {:on-click (partial click-header-cell headers sort-info)} h (case ascending-col? true "\u25bc" false " \u25b2" nil)]))]
-            ;; ^{:key h} [:th {:on-click #(do (.dir js/console %) (.dir js/console (.-target %)) (.dir js/console (-> % .-target .-innerHTML)))} h])]
-            ;; ^{:key h} [:th {:on-click #(do (.dir js/console %) (.dir js/console (.-target %)) (set! (.-zzz js/window) (.-target %)))} h])]
-            [:tfoot]
-            ;; [:tfoot
-            ;;  [:tr
-            ;;   (for [h headers]
-            ;;     ^{:key h} [:td h])]]
-            [:tbody
-             (doall
-              (for [row sorted-rows]
-                (let [clicker (if onclick-fn {:on-click #(onclick-fn row)} {})]
-                  ;; (let [clicker (if onclick-fn {:on-click #(do (.dir js/console (-> % .-target))(.dir js/console (-> %))(.dir js/console (.type %)) (onclick-fn row))} {})]
-                  ^{:key (swap! counter inc)}
-                  [:tr.row-hover (merge options clicker)
-                   (doall
-                    (map (fn [x css-class] ^{:key (swap! counter inc)} [:td {:className css-class} (cellize x)])
-                         row
-                         css-classes))
-                   ])))]
-            ]
+           [:div
+            [:div.max-height
+             [:table.well.smaller.table.table-bordered.centered
+              [:thead>tr
+               (for [h headers]
+                 (let [ascending-col? (if (= h sort-name) ascending?)]
+                   ^{:key h} [:th {:on-click (partial click-header-cell headers sort-info)} h (case ascending-col? true "\u25bc" false " \u25b2" nil)]))]
+              ;; ^{:key h} [:th {:on-click #(do (.dir js/console %) (.dir js/console (.-target %)) (.dir js/console (-> % .-target .-innerHTML)))} h])]
+              ;; ^{:key h} [:th {:on-click #(do (.dir js/console %) (.dir js/console (.-target %)) (set! (.-zzz js/window) (.-target %)))} h])]
+              [:tfoot]
+              ;; [:tfoot
+              ;;  [:tr
+              ;;   (for [h headers]
+              ;;     ^{:key h} [:td h])]]
+              [:tbody
+               (if-let [filterable-cols (:filterable-cols options)]
+                 [:tr
+                  (doall
+                   (map (fn [x css-class]
+                          (if x
+                            ;; [:td [:input (name %)]]
+                            [:td [:input {:style {:width "100%"}
+                                          :className css-class
+                                          :type :text
+                                          :on-change (fn [event] (do
+                                                                   (ppc "filter val" (-> event .-target .-value) x)
+                                                                   ;; (swap! col-filters assoc x)
+                                                                   ))}]]
+                            [:td ""]))
+                        filterable-cols
+                        css-classes))])
+               (doall
+                (for [row sorted-rows]
+                  (let [clicker (if onclick-fn {:on-click #(onclick-fn row)} {})]
+                    ;; (let [clicker (if onclick-fn {:on-click #(do (.dir js/console (-> % .-target))(.dir js/console (-> %))(.dir js/console (.type %)) (onclick-fn row))} {})]
+                    ^{:key (swap! counter inc)}
+                    [:tr.row-hover (merge options clicker)
+                     (doall
+                      (map (fn [x css-class] ^{:key (swap! counter inc)} [:td {:className css-class} (cellize x)])
+                           row
+                           css-classes))
+                     ])))]
+              ]]
+             [:br]
+             [:br]]
            ))))))
 
 (defn show-maps
