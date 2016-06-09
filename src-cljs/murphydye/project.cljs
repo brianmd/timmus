@@ -189,6 +189,7 @@
     [:div.col-md-12
      [:h2 (str "Project Filters")]]]
    [:div.row
+    [:div.col-md-1]
     [:div.col-md-3
      [:b "Drawing #"] [:br]
      [:select {
@@ -323,7 +324,8 @@
                     item-keys
                     {:on-row-click #(do
                                       (swap! filters assoc :item-seq (first %))
-                                      (delay-scroll-to-bottom))}
+                                      (delay-scroll-to-bottom))
+                     :filterable-cols item-keys}
                     ]]
                   (when (:item-seq @filters)
                     (let [seq-num (:item-seq @filters)
@@ -465,7 +467,7 @@
   [:div.well
    [:div.row.center-vertically
     [:div.col-md-3.right [:b "Account #:"]]
-    [:div.col-md-3
+    [:div.col-md-2
      [:input.form-control
       {:type        :text
        :style       {:margin "4px" :width "150px"}
@@ -491,8 +493,8 @@
           (get-projects db)
           )
        }]]
-    [:div.col-md-3.right [:b "Project Name:"]]
-    [:div.col-md-3
+    [:div.col-md-2.right [:b "Project Name:"]]
+    [:div.col-md-4
      [:select
       {:default-value (:project-id @filters)
        :on-change #(let [id (js/parseInt (value--of %))
@@ -507,7 +509,7 @@
     ]
    (if (:project-id @filters)
      [:div.row
-      [:div.col-md-9]
+      [:div.col-md-7]
       [:div.col-md-3 "Download"]])])
 
 (defn blank-row []

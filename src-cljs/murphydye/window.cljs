@@ -81,6 +81,7 @@
            row-options (atom {})
            sort-info (r/atom {:col-num nil :ascending? nil})
            onclick-fn (:on-row-click options)
+           col-filters (r/atom {})
            ]
        (fn [tbl options]
          (let [
@@ -96,12 +97,24 @@
                sort-col (:col-num @sort-info)
                sort-name (:col-name @sort-info)
                ascending? (:ascending? @sort-info)
+               filtered-rows (let [filters @col-filters
+                                   rows (atom rows)]
+                               ;; (ppc "tbl" rows @col-filters)
+                               (ppc filters)
+                               ;; (utils/map! (fn [k v] (ppc "k,v" k v)) filters)
+                               (utils/map!
+                                (fn [[k v]]
+                                  (ppc "k,v" k v)
+                                  (reset! rows
+                                          (filter #(re-find (js/RegExp. v "i") (str (nth % k))) @rows)))
+                                filters)
+                               @rows)
                sorted-rows (if-let [col sort-col]
                              (if ascending?
                                (sort-by #(nth % col) rows)
                                (sort-by #(nth % col) #(compare %2 %1) rows)
                                )
-                             rows)
+                             filtered-rows)
                ;; onclick-fn (:on-row-click options)
                ]
            (if-let [f (:on-row-click options)]
@@ -128,16 +141,19 @@
                (if-let [filterable-cols (:filterable-cols options)]
                  [:tr
                   (doall
-                   (map (fn [x css-class]
-                          (if x
-                            ;; [:td [:input (name %)]]
-                            [:td [:input {:style {:width "100%"}
-                                          :className css-class
-                                          :type :text
-                                          :on-change (fn [event] (do
-                                                                   (ppc "filter val" (-> event .-target .-value) x)
-                                                                   ;; (swap! col-filters assoc x)
-                                                                   ))}]]
+                   (map (fn [col-name css-class]
+                          (if col-name
+                            ;; (let [n (.indexOf headers col-name)]
+                            (let [n (.indexOf (:headers tbl) col-name)]
+                              ;; [:td [:input (name %)]]
+                              [:td [:input {:style {:width "100%"}
+                                            :className css-class
+                                            :type :text
+                                            :on-change (fn [event] (let [value (-> event .-target .-value)]
+                                                                     (ppc "filter val" value col-name n headers)
+                                                                     (swap! col-filters assoc n value)
+                                                                     ;; (swap! col-filters assoc x)
+                                                                     ))}]])
                             [:td ""]))
                         filterable-cols
                         css-classes))])
