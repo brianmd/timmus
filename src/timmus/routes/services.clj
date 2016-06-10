@@ -26,6 +26,7 @@
             ;[compojure.core :refer [GET]]
             [cheshire.generate :refer [add-encoder encode-str remove-encoder]]
 
+            [dk.ative.docjure.spreadsheet :as xls]
 
             [summit.utils.core :refer :all]
             [summit.db.relationships :refer :all]
@@ -43,6 +44,7 @@
             [summit.step.manufacturer-lookup :refer [create-manufacturer-lookup-tables]]
 
             [summit.sap.project :refer [projects project]]
+            [summit.bh.queries :as bh-queries]
             ))
 ;(-> @((-> customer :rel) "cart") :fk-key)
 
@@ -58,6 +60,30 @@ bb
 (:body aa)
 (p/process-punchout-request-str (:body aa))
 )
+
+
+
+
+
+
+
+(defn create-fake-xls-stream []
+  (let [wb (xls/create-workbook "Price List"
+                            [["Name" "Price"]
+                             ["Foo Widget" 100]
+                             ["Bar Widget" 200]])
+        sheet (xls/select-sheet "Price List" wb)
+        header-row (first (xls/row-seq sheet))]
+    (do
+      (xls/set-row-style! header-row (xls/create-cell-style! wb {:background :yellow,
+                                                         :font {:bold true}}))
+      (with-open [w (clojure.java.io/output-stream "spread2.xlsx")]
+        (xls/save-workbook! w wb)))))
+;; (create-fake-xls-stream)
+
+
+
+
 
 
 (def inspector-vals (atom {:a 9}))
@@ -278,6 +304,11 @@ bb
             (GET "/all-okay" req
                 {:status 200,
                  :body {:bh-ok (bh/all-okay?)}})
+
+            (GET "/last-orders/:n" req
+                :path-params [n :- Long]
+                {:status 200,
+                 :body (mapv bh-queries/order-vitals (bh-queries/last-orders n))})
 
             (GET "/project/:id" req
               :path-params [id :- Long]
