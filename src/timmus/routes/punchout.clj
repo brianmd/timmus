@@ -34,7 +34,7 @@
             [brianmd.db.store-mysql :as mysql]
             [summit.punchout.core :as p]
             [summit.punchout.punchout :refer [process-punchout-request-str ]]
-            [summit.punchout.order-message :refer [cxml-order-message] :as order-message]
+            [summit.punchout.order-message :as order-message]
             [summit.punchout.order-request :as p3]
             [summit.papichulo.core :refer [papichulo-url papichulo-creds create-papi-url papichulo-url-with-creds]]
             ))

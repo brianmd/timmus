@@ -324,16 +324,23 @@ bb
                :body (projects id)}
               )
 
-            (GET "/punchout/order-messagej/:id" req
+            (GET "/punchout/order-message/:id" req
               :path-params [id :- Long]
-                (do-log-request req "punchout")
+              (ppn "/punchout/order-message/" id)
+              (do-log-request req "punchout-order-message-get")
                 (try
                   (do-log-request
-                   {:status 200,
-                    :headers {"Content-Type" "text/json; charset=utf-8"},
-                    :body (order-message/order-message (order-message/retrieve-cart-data id))
-                    }
-                   "punchout"
+                   (if false
+                     {:status 200,
+                      :headers {"Content-Type" "text/json; charset=utf-8"},
+                      ;; :body (order-message/order-message (order-message/retrieve-order-data id))
+                      :body (order-message/order-message-hiccup (order-message/retrieve-order-data id))
+                      }
+                     {:status 200,
+                      :headers {"Content-Type" "application/xml; charset=utf-8"},
+                      :body (order-message/order-message-xml (order-message/retrieve-order-data id))
+                      })
+                   "punchout-order-message-response"
                    )
                   (catch Exception e
                     {:status 404
@@ -341,8 +348,10 @@ bb
                      :body {:error (str "error: " (.getMessage e))}
                      })))
 
-            (GET "/punchout/order-message/:id" req
-              :path-params [id :- Long]
+            (POST "/punchout/order-message" req
+              ;; curl -H "Content-Type: application/json" -X POST -d '{"id":4667}' http://localhost:3449/api/punchout/order-message
+              :body-params [id :- Long]
+              (do-log-request req "punchout-order-message-post")
               (let [
                     ;; id (order-message/last-city-order-num)
                     ;; order-request (p/find-order-request id)
@@ -350,33 +359,40 @@ bb
                     ;; hiccup (cxml-order-message order-request punchout-request)
                     ]
                 ;; (do-log-request {:id id} "punchout")
-                (do-log-request req "punchout")
-                (try
-                  (do-log-request
-                   {:status 200,
-                    :headers {"Content-Type" "text/xml; charset=utf-8"},
-                    :body (order-message/order-message-xml (order-message/retrieve-cart-data id))
-                    ;; :body (p/create-cxml hiccup)
-                    }
-                   "punchout"
-                   )
-                  (catch Exception e
-                    {:status 404
-                     :headers {"Content-Type" "text/xml; charset=utf-8"},
-                     :body {:error (str "error: " (.getMessage e))}
-                     }))
-                ))
+                ;; (do-log-request req "punchout")
+                (order-message/submit-order-message id)
+                (do-log-request
+                 {:status 200,
+                  :headers {"Content-Type" "text/json"}
+                  :body {:id id}}
+                 "punchout-order-message-response")
+                ;; (try
+                ;;   (do-log-request
+                ;;    {:status 200,
+                ;;     :headers {"Content-Type" "text/xml; charset=utf-8"},
+                ;;     :body (order-message/order-message-xml (order-message/retrieve-order-data id))
+                ;;     ;; :body (p/create-cxml hiccup)
+                ;;     }
+                ;;    "punchout"
+                ;;    )
+                ;;   (catch Exception e
+                ;;     {:status 404
+                ;;      :headers {"Content-Type" "text/xml; charset=utf-8"},
+                ;;      :body {:error (str "error: " (.getMessage e))}
+                ;;      }))
+                )
 
-            (GET "/punchout" req
-                  (println "in get punchout")
-                  (do-log-request req "punchout")
-                  (do-log-request
-                   {:status 200
-                    :headers {"Content-Type" "text/xml; charset=utf-8"}
-                    :body (p/create-cxml (p/pong-response))
-                    }) "punchout")
+              (GET "/punchout" req
+                (println "in get punchout")
+                (do-log-request req "punchout-get")
+                (do-log-request
+                 {:status 200
+                  :headers {"Content-Type" "text/xml; charset=utf-8"}
+                  :body (p/create-cxml (p/pong-response))
+                  }) "punchout-response"))
 
             (POST "/punchout" req
+              (do-log-request req "punchout-post")
               (do-log-request {:punchout (localtime)})
                    (println "in post punchout")
                    (def qqq req)
@@ -384,12 +400,12 @@ bb
                      (println "in post punchout"))
                    (let [byte? (= (type (:body req)) org.httpkit.BytesInputStream)
                          req (if byte? (assoc req :body (slurp (:body req))) req)]
-                     (do-log-request req "punchout")
+                     ;; (do-log-request req "punchout")
                      (let [response (process-punchout-request-str (:body req))]
                        ;; text/xml; charset=utf-8
                        (do-log-request {:status 200
                                  :headers {"Content-Type" "text/xml; charset=utf-8"}
-                                 :body response} "punchout")
+                                 :body response} "punchout-response")
                        )))
 
             (GET "/manufacturerlookup" req
