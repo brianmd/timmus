@@ -81,7 +81,8 @@
            row-options (atom {})
            sort-info (r/atom {:col-num nil :ascending? nil})
            onclick-fn (:on-row-click options)
-           col-filters (r/atom {})
+           col-filters (if-let [f (:col-filters options)] f (r/atom {}))
+           rows (:rows tbl)
            ]
        (fn [tbl options]
          (let [
@@ -90,7 +91,7 @@
                ;;         {:headers (tbl "headers") :rows (tbl "rows")})
                ;; headers (map utils/humanize (:headers tbl))
                ;; css-classes (map (comp name utils/clojurize-keyword) (:headers tbl))
-               rows (:rows tbl)
+               _ (ppc "show-table col-filters" (:col-filters options))
                ;; counter (atom 0)
                row-options (atom {})
                ;; sort-info (atom {:col-num nil :direction :down})
@@ -149,6 +150,8 @@
                               [:td [:input {:style {:width "100%"}
                                             :className css-class
                                             :type :text
+                                            :value (@col-filters n)
+                                            ;; :value (print-str @col-filters)  ;(@col-filters n)
                                             :on-change (fn [event] (let [value (-> event .-target .-value)]
                                                                      (ppc "filter val" value col-name n headers)
                                                                      (swap! col-filters assoc n value)

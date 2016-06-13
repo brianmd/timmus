@@ -295,6 +295,7 @@
                order-keys
                {:on-row-click #(do
                                  (swap! filters assoc :order-num (nth % 2) :item-seq nil)
+                                 (reset! (:item-col-filters @filters) {})
                                  (delay-scroll-to-bottom)
                                  ;; (.setTimeout js/window
                                  ;;              (fn [] (scroll-to-bottom))
@@ -325,7 +326,8 @@
                     {:on-row-click #(do
                                       (swap! filters assoc :item-seq (first %))
                                       (delay-scroll-to-bottom))
-                     :filterable-cols item-keys}
+                     :filterable-cols item-keys
+                     :col-filters (:item-col-filters @filters)}
                     ]]
                   (when (:item-seq @filters)
                     (let [seq-num (:item-seq @filters)
@@ -352,7 +354,8 @@
 (defn project-component-win [project-header]
   (let [project (r/atom {:id (:id project-header)
                          :project-header project-header
-                         :project nil})]
+                         :project nil
+                         :item-col-filters (r/atom {})})]
     ;; (get-project project)
     (fn proj-comp-win-fn []
       [project-component project])))
@@ -519,7 +522,8 @@
 
 (defn projects-component [db]
   ;; (win/qgrowl "rendering projects-component")
-  (let [filters (r/atom {:account-number (:account-number @db)})]
+  (let [filters (r/atom {:account-number (:account-number @db)
+                         :item-col-filters (r/atom {})})]
     (fn projs-comp-fn [db]
       [:div.container
        ;; [simple-tablee]
