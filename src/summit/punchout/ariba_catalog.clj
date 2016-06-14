@@ -33,7 +33,42 @@
 
             [korma.core :as k]
             ;; [korma.db :refer [defdb oracle]]
+
+            [dk.ative.docjure.spreadsheet :as xls]
+
             ))
+
+;; (def x (xls/load-workbook "spreadsheet.xlsx"))
+;; (def s (xls/select-sheet "Price List" x))
+;; (xls/select-columns {:A :name :B :price} s)
+
+;; (def x (xls/load-workbook "dow.xls"))
+;; (def s (xls/select-sheet "Sheet1" x))
+;; (def matnrs (map! (comp int :matnr) (filter identity (drop 12 (xls/select-columns {:B :matnr} s)))))
+
+;; (xls/set-cell! (-> s (.getRow 13) (.getCell 3)) 17)
+;; (xls/set-cell! (-> s (.getRow 14) (.getCell 3)) 14)
+;; (xls/save-workbook! "dow2.xls" x)
+;; (xls/set-cell! x )
+;; (first matnrs)
+;; (find-entity :products 760)
+;; ;; d: descript, e: unspsc, r: image, s: thumbnail
+
+;; (defn create-fake-xls-stream []
+;;   (let [wb (xls/create-workbook "Price List"
+;;                                 [["Name" "Price"]
+;;                                  ["Foo Widget" 100]
+;;                                  ["Bar Widget" 200]])
+;;         sheet (xls/select-sheet "Price List" wb)
+;;         header-row (first (xls/row-seq sheet))]
+;;     (do
+;;       (xls/set-row-style! header-row (xls/create-cell-style! wb {:background :yellow,
+;;                                                                  :font {:bold true}}))
+;;       (with-open [w (clojure.java.io/output-stream "spread2.xlsx")]
+;;         (xls/save-workbook! w wb)))))
+
+
+;; (create-fake-xls-stream)
 
 (def dow-account-number 1007135)
 (def dow-service-center "CLU1")
