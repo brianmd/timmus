@@ -42,17 +42,76 @@
 ;; (def s (xls/select-sheet "Price List" x))
 ;; (xls/select-columns {:A :name :B :price} s)
 
+(defn get-product-info [matnr]
+  (let [prod (find-by-colname :products :matnr matnr)
+        descript (:name prod)
+        unspsc 39
+        files (if prod (select-by-colname :external_files :product_id (:id prod)))]
+    (if prod
+      {:descript descript
+       :unspsc unspsc
+       :image (:url (first (filter #(= "Image" (:type %)) files)))
+       :thumbnail (:url (first (filter #(= "Thumbnail" (:type %)) files)))
+       })))
+;; (get-product-info 760)
+;; (ppn (get-product-info 760))
+
+(defn update-ariba-product [spreadsheet row-num prod]
+  (ppn "-----" prod row-num)
+  (ppn "cell:" (xls/get (-> spreadsheet (.getRow row-num) (.getCell 3))))
+  (xls/set-cell! (-> spreadsheet (.getRow row-num) (.getCell 3)) (:descript prod))
+  (xls/set-cell! (-> spreadsheet (.getRow row-num) (.getCell 4)) (:unspsc prod))
+  (xls/set-cell! (-> spreadsheet (.getRow row-num) (.getCell 17)) (:image prod))
+  (xls/set-cell! (-> spreadsheet (.getRow row-num) (.getCell 18)) (:thumbnail prod))
+  ;; (.getRow spreadsheet row-num)
+  ;; (xls/set-cell! (.getCell spreadsheet 3) (:descript prod))
+  ;; (xls/set-cell! (.getCell spreadsheet 4) (:unspsc prod))
+  ;; (xls/set-cell! (.getCell spreadsheet 17) (:image prod))
+  ;; (xls/set-cell! (.getCell spreadsheet 18) (:thumbnail prod))
+  )
+
+(defn process-ariba-product [spreadsheet row-num matnr]
+  (ppn (str "matnr:" matnr))
+  (let [prod (get-product-info matnr)]
+    (if prod
+      (update-ariba-product spreadsheet row-num prod)
+      (ppn (str "no such matnr: " matnr))
+      )))
+
+(defn update-ariba-catalog [spreadsheet-basename]
+  (let [x (xls/load-workbook (str spreadsheet-basename ".xls"))
+        s (xls/select-sheet "Sheet1" x)
+        matnrs (map! (comp int :matnr) (filter identity (drop 12 (xls/select-columns {:B :matnr} s))))
+        ]
+    (ppn "________________" "______________" (take 40 (drop 12 (xls/select-columns {:D :descript} s))))
+    (doall
+     (map-indexed (fn [n matnr] (process-ariba-product s (+ n 12) matnr)) matnrs))
+    (xls/save-workbook! (str spreadsheet-basename "2" ".xls"))
+    ))
+;; empty cell is {:descript nil}. Non-existent cell is nil. Need to create cells when non-existent
+;; (update-ariba-catalog "dow")
+
 ;; (def x (xls/load-workbook "dow.xls"))
 ;; (def s (xls/select-sheet "Sheet1" x))
 ;; (def matnrs (map! (comp int :matnr) (filter identity (drop 12 (xls/select-columns {:B :matnr} s)))))
+;; (find-by-colname :products :matnr (first matnrs))
+;; (:id (find-by-colname :products :matnr (first matnrs)))
+;; 139562
+;; (select-by-colname :external_files :product_id 139562)
+;; (filter #(= "Thumbnail" (:type %)) (select-by-colname :external_files :product_id 139562))
+;; (:url (first (filter #(= "Image" (:type %)) (select-by-colname :external_files :product_id 139562))))
 
-;; (xls/set-cell! (-> s (.getRow 13) (.getCell 3)) 17)
-;; (xls/set-cell! (-> s (.getRow 14) (.getCell 3)) 14)
+;; name is the description
+;; 39 is the unspsc
+;; image
+;; thumbnail
+
+;; (xls/set-cell! (-> s (.getRow 12) (.getCell 3)) (first matnrs))
+;; (xls/set-cell! (-> s (.getRow 13) (.getCell 3)) 13)
 ;; (xls/save-workbook! "dow2.xls" x)
-;; (xls/set-cell! x )
-;; (first matnrs)
-;; (find-entity :products 760)
-;; ;; d: descript, e: unspsc, r: image, s: thumbnail
+;; (exec-sql "select count(*) from customers")
+
+;; d: descript, e: unspsc, r: image, s: thumbnail
 
 ;; (defn create-fake-xls-stream []
 ;;   (let [wb (xls/create-workbook "Price List"
