@@ -324,9 +324,18 @@ bb
                :body (projects id)}
               )
 
+            (GET "/punchout/accept-order-message/:id" req
+              :path-params [id :- Long]
+              (ppn "/punchout/accept/accept-order-message/" id)
+              (do-log-request req "punchout-accept-order-message")
+              {:status 200,
+               ;; :headers {"Content-Type" "application/xml; charset=utf-8"},
+               :headers {"Content-Type" "text/json; charset=utf-8"},
+               :body {:ok 200}
+               })
+
             (GET "/punchout/order-message/:id" req
               :path-params [id :- Long]
-              (ppn "in services.clj")
               (ppn "/punchout/order-message/" id)
               (do-log-request req "punchout-order-message-get")
                 (try
@@ -365,6 +374,7 @@ bb
                 (do-log-request
                  {:status 200,
                   :headers {"Content-Type" "text/json"}
+                  ;; :headers {"Content-Type" "application/xml; charset=utf-8"},
                   :body {:id id}}
                  "punchout-order-message-post-response")
                 ;; (try
