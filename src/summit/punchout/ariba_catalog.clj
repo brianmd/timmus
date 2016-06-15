@@ -53,12 +53,13 @@
        :image (:url (first (filter #(= "Image" (:type %)) files)))
        :thumbnail (:url (first (filter #(= "Thumbnail" (:type %)) files)))
        })))
+;; (find-by-colname :products :matnr 760)
 ;; (get-product-info 760)
 ;; (ppn (get-product-info 760))
 
 (defn update-ariba-product [spreadsheet row-num prod]
   (ppn "-----" prod row-num)
-  (ppn "cell:" (xls/get (-> spreadsheet (.getRow row-num) (.getCell 3))))
+  ;; (ppn "cell:" (xls/get (-> spreadsheet (.getRow row-num) (.getCell 3))))
   (xls/set-cell! (-> spreadsheet (.getRow row-num) (.getCell 3)) (:descript prod))
   (xls/set-cell! (-> spreadsheet (.getRow row-num) (.getCell 4)) (:unspsc prod))
   (xls/set-cell! (-> spreadsheet (.getRow row-num) (.getCell 17)) (:image prod))
@@ -69,6 +70,7 @@
   ;; (xls/set-cell! (.getCell spreadsheet 17) (:image prod))
   ;; (xls/set-cell! (.getCell spreadsheet 18) (:thumbnail prod))
   )
+
 
 (defn process-ariba-product [spreadsheet row-num matnr]
   (ppn (str "matnr:" matnr))

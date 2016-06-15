@@ -25,7 +25,12 @@
     [clojure.data.codec.base64 :as b64]
 
     [net.cgrand.enlive-html :as html]
+
+    ;; [devtools.core :as devtools]
     ))
+
+;; (devtools/install!)
+;; (.log js/console (range 20))
 
 ;; (with-programs [ls] (ls {:seq true}))
 ;; (with-programs [ssh] (ssh "neo" "ls -l" {:seq true}))

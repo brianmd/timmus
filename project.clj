@@ -124,7 +124,7 @@
                  [local/ojdbc6 "11.2.0.4"]
 
                  ;; https://github.com/binaryage/cljs-devtools-sample/blob/master/project.clj
-                 ;; [binaryage/devtools "0.5.4"]
+                 ;; [binaryage/devtools "0.7.0"]
 
                  ;; [com.murphydye/utils "0.1.0-SNAPSHOT"]
                  ]
