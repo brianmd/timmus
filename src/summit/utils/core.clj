@@ -22,6 +22,7 @@
     ;; [me.raynes.conch :refer [programs with-programs let-programs] :as sh]
     [com.rpl.specter :as s]
 
+    [clojure.data.codec.base64 :as b64]
 
     [net.cgrand.enlive-html :as html]
     ))
@@ -219,6 +220,28 @@
 ;; (exec-sql :bh-neo "select count(*) from customers")
 ;; (exec-sql :bh-dev "select count(*) from customers")
 ;; (exec-sql :mdm-local "select count(*) from idw_manufacturer")
+
+(defn ->column-name [tbl-name]
+  (str/lower-case (->str tbl-name)))
+(defn ->table-name [tbl-name]
+  (str/lower-case (->str tbl-name)))
+
+(defn select-by-colname
+  ([tbl-name colname id] (exec-sql (str "select * from " (->table-name tbl-name) " where " (->column-name colname) "=" id)))
+  ([conn tbl-name colname id] (exec-sql conn (str "select * from " (->table-name tbl-name) " where " (->column-name colname) "=" id)))
+  )
+(defn find-by-colname
+  ;; ([tbl-name colname id] (first (exec-sql (str "select * from " (->table-name tbl-name) " where " (->column-name colname) "=" id))))
+  ;; ([conn tbl-name colname id] (first (exec-sql conn (str "select * from " (->table-name tbl-name) " where " (->column-name colname) "=" id))))
+  ([tbl-name colname id] (first (select-by-colname tbl-name colname id)))
+  ([conn tbl-name colname id] (first (select-by-colname conn tbl-name colname id)))
+  )
+(defn find-by-id
+  ([tbl-name id] (find-by-colname tbl-name "id" id))
+  ([conn tbl-name id] (find-by-colname tbl-name "id" id))
+  )
+;; (find-by-colname :customers :id 28)
+;; (find-by-id :customers 28)
 
 (def protected-write-dbs (atom #{:bh-prod}))
 
@@ -814,6 +837,9 @@
         (let [x (- (int (first s)) zero)]
           (println even-digit? x)
           (recur (+ accum (if even-digit? x (* 3 x))) (rest s) (not even-digit?)))))))
+
+(defn base64-encode [s]
+  (String. (b64/encode (.getBytes s)) "UTF-8"))
 
 (defn add-checksum [string]
   (let [s (zero-pad 11 string)]
