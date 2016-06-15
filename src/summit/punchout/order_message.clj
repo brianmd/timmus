@@ -31,7 +31,8 @@
             [summit.db.relationships :refer :all]
             ;; [summit.step.import.core :refer :all]
             ;; [summit.step.import.ts.core :refer :all]
-            ))
+
+            [dk.ative.docjure.spreadsheet :as xls]))
 
 
 (defn order-header [order]
@@ -39,8 +40,8 @@
         _ (ppn "punch-req" punchout-request "params" (:params punchout-request))
         punchout (parse-string (:params punchout-request))
         _ (ppn "punchout" punchout)
-        from ((punchout "broker") "id")
-        to ((punchout "company") "id")
+        from ((punchout "sender") "id") ;; broker
+        to ((punchout "from") "id")  ;; company
         ]
     [:Header
      [:From
@@ -55,6 +56,11 @@
       [:UserAgent "Summit cXML Application"]]
      ]))
 ;; (order-header (p/find-punchout-request 4))
+;; (order-header (retrieve-order-data 4668))
+;; (:punchout-request (retrieve-order-data 4668))
+;; (:params (:punchout-request (retrieve-order-data 4668)))
+;; (parse-string (:params (:punchout-request (retrieve-order-data 4668))))
+;; ((parse-string (:params (:punchout-request (retrieve-order-data 4668)))) "company")
 
 (defn item->hiccup [item]
   (let [prod (find-entity :products (:product_id item))
@@ -273,7 +279,12 @@
 ;; (order-header (retrieve-order-data 4667))
 ;; (create-order-message-from (retrieve-order-data 4667))
 
+;; (retrieve-order-data 4668)
+;; (:punchout-request (retrieve-order-data 4668))
+;; (xls/set-cell! (-> s (.getRow 13) (.getCell 3)) 17)
 
+;; (:browser_form_post (:punchout-request (retrieve-order-data 4668)))
+;; (order-message-xml (retrieve-order-data 4668))
 (defn submit-order-message [order-id]
   (let [order-data (retrieve-order-data order-id)
         url (:browser_form_post (:punchout-request order-data))
@@ -293,10 +304,18 @@
     (do-log-request
      (client/post
       url
-      {:headers {:content-type :xml}
-       :body xml})
-     "punchout")
+      (do-log-request
+       {:headers {:content-type :xml}
+        :body xml}
+       "punchout-send-order-message")
+      )
+     "punchout-send-order-message-response")
     ))
+
+;; (order-message-xml (retrieve-order-data 4668))
+;; (submit-order-message 4668)
+;; {:status 501, :headers {"Date" "Tue, 14 Jun 2016 14:41:54 GMT", "Content-Type" "text/html", "Content-Length" "174", "Connection" "close"}, :body "<html>\r\n<head><title>501 Not Implemented</title></head>\r\n<body bgcolor=\"white\">\r\n<center><h1>501 Not Implemented</h1></center>\r\n<hr><center>nginx</center>\r\n</body>\r\n</html>\r\n", :request-time 856, :trace-redirects ["https://axiall-test.coupahost.com/punchout/checkout?id=19"], :orig-content-encoding nil}
+
 
 ;; (p/find-order-request 4193)
 ;; (timmus.routes.services/do-log-request {:b "fd"} "punchout")

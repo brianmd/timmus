@@ -326,6 +326,7 @@ bb
 
             (GET "/punchout/order-message/:id" req
               :path-params [id :- Long]
+              (ppn "in services.clj")
               (ppn "/punchout/order-message/" id)
               (do-log-request req "punchout-order-message-get")
                 (try
@@ -340,7 +341,7 @@ bb
                       :headers {"Content-Type" "application/xml; charset=utf-8"},
                       :body (order-message/order-message-xml (order-message/retrieve-order-data id))
                       })
-                   "punchout-order-message-response"
+                   "punchout-order-message-get-response"
                    )
                   (catch Exception e
                     {:status 404
@@ -380,16 +381,16 @@ bb
                 ;;      :headers {"Content-Type" "text/xml; charset=utf-8"},
                 ;;      :body {:error (str "error: " (.getMessage e))}
                 ;;      }))
-                )
+                ))
 
-              (GET "/punchout" req
-                (println "in get punchout")
-                (do-log-request req "punchout-get")
-                (do-log-request
-                 {:status 200
-                  :headers {"Content-Type" "text/xml; charset=utf-8"}
-                  :body (p/create-cxml (p/pong-response))
-                  }) "punchout-response"))
+            (GET "/punchout" req
+              (println "in get punchout")
+              (do-log-request req "punchout-get")
+              (do-log-request
+               {:status 200
+                :headers {"Content-Type" "text/xml; charset=utf-8"}
+                :body (p/create-cxml (p/pong-response))
+                } "punchout-response"))
 
             (POST "/punchout" req
               (do-log-request req "punchout-post")
