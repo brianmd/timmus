@@ -2,6 +2,7 @@
 
 (ns timmus.routes.services
   (:require [ring.util.http-response :refer :all]
+            [ring.util.response :refer [redirect]]
             [compojure.api.sweet :refer :all]
             [ring.util.http-response :refer :all]
             [schema.core :as s]
@@ -323,6 +324,10 @@ bb
                ;; :headers {"Content-Type" "application/edn; charset=utf-8"},
                :body (projects id)}
               )
+
+            (GET "/axiall" req
+              (process-fake-axiall-punchout)
+              (redirect "http://ubkkb140d981.brianmd.koding.io:22223/" 302))
 
             (GET "/punchout/accept-order-message/:id" req
               :path-params [id :- Long]
