@@ -46,6 +46,8 @@
 
             [summit.sap.project :refer [projects project]]
             [summit.bh.queries :as bh-queries]
+
+            [timmus.routes.fake-axiall :refer [fake-axiall]]
             ))
 ;(-> @((-> customer :rel) "cart") :fk-key)
 
@@ -62,6 +64,10 @@ bb
 (p/process-punchout-request-str (:body aa))
 )
 
+(defn process-fake-axiall-punchout []
+  ;; submit fake punchout
+  ;; add product to cart if it is empty
+  )
 
 
 
@@ -326,8 +332,10 @@ bb
               )
 
             (GET "/axiall" req
-              (process-fake-axiall-punchout)
-              (redirect "http://ubkkb140d981.brianmd.koding.io:22223/" 302))
+              (let [url (process-fake-axiall-punchout)
+                    url "http://ubkkb140d981.brianmd.koding.io:22223/"
+                    ]
+                (redirect url 302)))
 
             (GET "/punchout/accept-order-message/:id" req
               :path-params [id :- Long]
