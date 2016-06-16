@@ -38,9 +38,21 @@
 
             ))
 
-;; (def x (xls/load-workbook "spreadsheet.xlsx"))
-;; (def s (xls/select-sheet "Price List" x))
-;; (xls/select-columns {:A :name :B :price} s)
+
+
+(defn- get-cell [sheet rownum colnum]
+  (.getCell (.getRow sheet rownum) colnum))
+
+(defn get-val [sheet rownum colnum]
+  (let [cell (get-cell sheet rownum colnum)]
+    (if (nil? cell) nil (xls/read-cell cell))))
+
+(defn set-val [sheet rownum colnum value]
+  (let [row (.getRow sheet rownum)
+        cell (or (.getCell row colnum) (.createCell row colnum))]
+    (xls/set-cell! cell value)))
+
+
 
 (defn get-product-info [matnr]
   (let [prod (find-by-colname :products :matnr matnr)
@@ -53,24 +65,15 @@
        :image (:url (first (filter #(= "Image" (:type %)) files)))
        :thumbnail (:url (first (filter #(= "Thumbnail" (:type %)) files)))
        })))
-;; (find-by-colname :products :matnr 760)
-;; (get-product-info 760)
-;; (ppn (get-product-info 760))
+;; (get-product-info 35377)
 
-(defn update-ariba-product [spreadsheet row-num prod]
-  (ppn "-----" prod row-num)
-  ;; (ppn "cell:" (xls/get (-> spreadsheet (.getRow row-num) (.getCell 3))))
-  (xls/set-cell! (-> spreadsheet (.getRow row-num) (.getCell 3)) (:descript prod))
-  (xls/set-cell! (-> spreadsheet (.getRow row-num) (.getCell 4)) (:unspsc prod))
-  (xls/set-cell! (-> spreadsheet (.getRow row-num) (.getCell 17)) (:image prod))
-  (xls/set-cell! (-> spreadsheet (.getRow row-num) (.getCell 18)) (:thumbnail prod))
-  ;; (.getRow spreadsheet row-num)
-  ;; (xls/set-cell! (.getCell spreadsheet 3) (:descript prod))
-  ;; (xls/set-cell! (.getCell spreadsheet 4) (:unspsc prod))
-  ;; (xls/set-cell! (.getCell spreadsheet 17) (:image prod))
-  ;; (xls/set-cell! (.getCell spreadsheet 18) (:thumbnail prod))
+(defn update-ariba-product [sheet rownum prod]
+  (ppn "-----" prod rownum)
+  (set-val sheet rownum 3  (:descript prod))
+  (set-val sheet rownum 4  (:unspsc prod))
+  (set-val sheet rownum 17 (:image prod))
+  (set-val sheet rownum 18 (:thumbnail prod))
   )
-
 
 (defn process-ariba-product [spreadsheet row-num matnr]
   (ppn (str "matnr:" matnr))
@@ -84,36 +87,23 @@
   (let [x (xls/load-workbook (str spreadsheet-basename ".xls"))
         s (xls/select-sheet "Sheet1" x)
         matnrs (map! (comp int :matnr) (filter identity (drop 12 (xls/select-columns {:B :matnr} s))))
+        ;; prods (map! #(get-product-info %) matnrs)
+        ;; prods (take 10 ps)
+        prods ps
         ]
+    ;; (def ps prods)
     (ppn "________________" "______________" (take 40 (drop 12 (xls/select-columns {:D :descript} s))))
     (doall
-     (map-indexed (fn [n matnr] (process-ariba-product s (+ n 12) matnr)) matnrs))
-    (xls/save-workbook! (str spreadsheet-basename "2" ".xls"))
+     ;; (map-indexed (fn [n matnr] (process-ariba-product s (+ n 12) matnr)) matnrs))
+     ;; (map-indexed (fn [n matnr] (update-ariba-product s (+ n 12) matnr)) matnrs))
+     (map-indexed (fn [n matnr] (update-ariba-product s (+ n 12) matnr)) prods))
+    (xls/save-workbook! (str spreadsheet-basename "2" ".xls") x)
     ))
-;; empty cell is {:descript nil}. Non-existent cell is nil. Need to create cells when non-existent
-;; (update-ariba-catalog "dow")
+;; (time
+;;  (update-ariba-catalog "dow"))
 
-;; (def x (xls/load-workbook "dow.xls"))
-;; (def s (xls/select-sheet "Sheet1" x))
-;; (def matnrs (map! (comp int :matnr) (filter identity (drop 12 (xls/select-columns {:B :matnr} s)))))
-;; (find-by-colname :products :matnr (first matnrs))
-;; (:id (find-by-colname :products :matnr (first matnrs)))
-;; 139562
-;; (select-by-colname :external_files :product_id 139562)
-;; (filter #(= "Thumbnail" (:type %)) (select-by-colname :external_files :product_id 139562))
-;; (:url (first (filter #(= "Image" (:type %)) (select-by-colname :external_files :product_id 139562))))
+;; (get-product-info 30716)
 
-;; name is the description
-;; 39 is the unspsc
-;; image
-;; thumbnail
-
-;; (xls/set-cell! (-> s (.getRow 12) (.getCell 3)) (first matnrs))
-;; (xls/set-cell! (-> s (.getRow 13) (.getCell 3)) 13)
-;; (xls/save-workbook! "dow2.xls" x)
-;; (exec-sql "select count(*) from customers")
-
-;; d: descript, e: unspsc, r: image, s: thumbnail
 
 ;; (defn create-fake-xls-stream []
 ;;   (let [wb (xls/create-workbook "Price List"
@@ -128,8 +118,8 @@
 ;;       (with-open [w (clojure.java.io/output-stream "spread2.xlsx")]
 ;;         (xls/save-workbook! w wb)))))
 
-
 ;; (create-fake-xls-stream)
+
 
 (def dow-account-number 1007135)
 (def dow-service-center "CLU1")
