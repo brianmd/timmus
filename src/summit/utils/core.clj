@@ -850,6 +850,13 @@
  (do-log-request (/ 1 0) "reque")
  )
 
+(defn nil-or-empty? [obj]
+  (or (nil? obj) (and (or (string? obj) (coll? obj)) (empty? obj))))
+(examples
+ (assert (nil-or-empty? nil))
+ (assert (nil-or-empty? ""))
+ (assert (nil-or-empty? []))
+ (assert (nil-or-empty? {})))
 
 (defn fempty
   "returns function that replaces nil or empty strings with new values"
