@@ -39,6 +39,7 @@
             ))
 
 
+;; spreadsheet helper functions
 
 (defn- get-cell [sheet rownum colnum]
   (.getCell (.getRow sheet rownum) colnum))
@@ -48,6 +49,7 @@
     (if (nil? cell) nil (xls/read-cell cell))))
 
 (defn set-val [sheet rownum colnum value]
+  "creates a cell if non-existent. Could make more efficient -- don't create when value==nil"
   (let [row (.getRow sheet rownum)
         cell (or (.getCell row colnum) (.createCell row colnum))]
     (xls/set-cell! cell value)))
@@ -67,40 +69,6 @@
        })))
 ;; (get-product-info 35377)
 
-(defn update-ariba-product [sheet rownum prod]
-  (ppn "-----" prod rownum)
-  (set-val sheet rownum 3  (:descript prod))
-  (set-val sheet rownum 4  (:unspsc prod))
-  (set-val sheet rownum 17 (:image prod))
-  (set-val sheet rownum 18 (:thumbnail prod))
-  )
-
-(defn process-ariba-product [spreadsheet row-num matnr]
-  (ppn (str "matnr:" matnr))
-  (let [prod (get-product-info matnr)]
-    (if prod
-      (update-ariba-product spreadsheet row-num prod)
-      (ppn (str "no such matnr: " matnr))
-      )))
-
-(defn update-ariba-catalog [spreadsheet-basename]
-  (let [x (xls/load-workbook (str spreadsheet-basename ".xls"))
-        s (xls/select-sheet "Sheet1" x)
-        matnrs (map! (comp int :matnr) (filter identity (drop 12 (xls/select-columns {:B :matnr} s))))
-        prods (map! #(get-product-info %) matnrs)
-        ;; prods (take 10 ps)
-        ;; prods ps
-        ]
-    (def ps prods)
-    (ppn "________________" "______________" (take 40 (drop 12 (xls/select-columns {:D :descript} s))))
-    (doall
-     ;; (map-indexed (fn [n matnr] (process-ariba-product s (+ n 12) matnr)) matnrs))
-     ;; (map-indexed (fn [n matnr] (update-ariba-product s (+ n 12) matnr)) matnrs))
-     (map-indexed (fn [n matnr] (update-ariba-product s (+ n 12) matnr)) prods))
-    (xls/save-workbook! (str spreadsheet-basename "2" ".xls") x)
-    ))
-;; (time
-;;  (update-ariba-catalog "dow"))
 
 ;; (get-product-info 30716)
 
@@ -162,7 +130,7 @@ join mdm.ts_item t on t.item_pik=j.item_pik
 where j.matnr='" (as-matnr matnr) "';")
         result (first (exec-sql sql))]
     (or (:idw_unspsc result) (:ts_unspsc result))))
-(examples (unspsc 1000000))
+(examples (get-unspsc 1000000))
 
 (defn quoteit [s]
   ;; (pr-str s))
@@ -178,8 +146,18 @@ where j.matnr='" (as-matnr matnr) "';")
 ;; (println (str \" (str/replace "ab\"def\"" #"\"" "\\\\\"") \"))
 ;; (pr "ab\"xyq\"tu")
 
+
+
+ 
+;; (part-info 35379 3)
+;; (part-info 3255718 3)
+;; (ppn (part-info 3255718 3))
+;; (ppn (sort (part-info 3255718 3)))
+;; (ppn (sort (part-info 2854664 3)))
+;; (ppn (sort (part-info 3 3)))
+
 (defn part-info [matnr cust-part-num]
-   (println "222")
+   ;; (println "\n222 part-info")
    (let [
          mat (as-matnr matnr)
          bh-prod (ddetect :products (k/where {:matnr mat}))
@@ -190,12 +168,15 @@ where j.matnr='" (as-matnr matnr) "';")
          msds-url (:url (detect #(= "Attachment" (:type %)) file-urls))
          thumbnail-url (:url (detect #(= "Thumbnail" (:type %)) file-urls))
          image-url (:url (detect #(= "Image" (:type %)) file-urls))
-         customer-price (dow-price matnr)
-         internet-price (market-price matnr)
+         customer-price 0
+         internet-price 0
+         ;; customer-price (dow-price matnr)
+         ;; internet-price (market-price matnr)
          ;; price (if (<= internet-price customer-price) internet-price customer-price)
 
          ;; temporary fix
-         unspsc (get-unspsc matnr)
+         unspsc 39
+         ;; unspsc (get-unspsc matnr)
          lead-time 1
          uom (:uom bh-prod)
          short-name (:title mdm-prod)
@@ -207,13 +188,16 @@ where j.matnr='" (as-matnr matnr) "';")
       ;; :mdm-prod mdm-prod
 
       :matnr matnr
-      :mfr-name (quoteit (:name bh-mfr))
-      :url (str "https://www.summit.com/store/products/" product-id)
+      :mfr-name (:name bh-mfr)
+      ;; :mfr-name (quoteit (:name bh-mfr))
+      :url (if product-id (str "https://www.summit.com/store/products/" product-id))
       :ariba-network-id ariba-network-id
       :part-num (:manufacturer_part_number bh-prod)
       :customer-part-num cust-part-num
-      :descript (quoteit (:description bh-prod))
-      :short-name (quoteit short-name)
+      :descript (if (nil-or-empty? (:description bh-prod)) short-name (:description bh-prod))
+      ;; :descript (quoteit (:description bh-prod))
+      :short-name short-name
+      ;; :short-name (quoteit short-name)
       :unspsc unspsc
       :price customer-price
       :market-price (if (< customer-price internet-price) internet-price)
@@ -231,6 +215,10 @@ where j.matnr='" (as-matnr matnr) "';")
 ;; (ppn (part-info 35379 "cust-part-no"))  ; this has been zzzz-deleted.
 
 (def ariba-output-fields [:ariba-network-id :matnr :part-num :descript :unspsc :price :uom :lead-time
+                          :mfr-name :url :msds-url
+                          :market-price :customer-part-num
+                          :nothing :language :currency :short-name :image-url :thumbnail-url])
+(def ariba-supplemental-output-fields [nil nil :part-num :descript :unspsc nil nil nil
                           :mfr-name :url :msds-url
                           :market-price :customer-part-num
                           :nothing :language :currency :short-name :image-url :thumbnail-url])
@@ -286,6 +274,51 @@ where j.matnr='" (as-matnr matnr) "';")
 ;; (write-ariba-catalog catalog-matnr_cust-part-nums)
 
 
+
+
+(defn update-ariba-product [sheet rownum prod]
+  (ppn "-----" prod rownum)
+  (set-val sheet rownum 2  (:part-num prod))
+  (set-val sheet rownum 3  (:descript prod))
+  ;; (set-val sheet rownum 4  (:unspsc prod))
+  (set-val sheet rownum 4  39)
+  (set-val sheet rownum 8  (:mfr-name prod))
+  (set-val sheet rownum 9  (:url prod))
+  (set-val sheet rownum 16 (:short-name prod))
+  (set-val sheet rownum 17 (:image prod))
+  (set-val sheet rownum 18 (:thumbnail prod))
+  )
+
+(defn process-ariba-product [spreadsheet row-num matnr]
+  (ppn (str "matnr:" matnr))
+  (let [prod (get-product-info matnr)]
+    (if prod
+      (update-ariba-product spreadsheet row-num prod)
+      (ppn (str "no such matnr: " matnr))
+      )))
+
+(defn update-ariba-catalog [spreadsheet-basename]
+  (let [x (xls/load-workbook (str spreadsheet-basename ".xls"))
+        s (xls/select-sheet "Sheet1" x)
+        matnrs (map! (comp int :matnr) (filter identity (drop 12 (xls/select-columns {:B :matnr} s))))
+        ;; prods (map! #(get-product-info %) matnrs)
+
+        ;; matnrs (take 3 matnrs)
+
+        prods (map! #(part-info % nil) matnrs)
+        ;; prods (take 10 ps)
+        ;; prods ps
+        ]
+    (def ps prods)
+    (ppn "________________" "______________" (take 40 (drop 12 (xls/select-columns {:D :descript} s))))
+    (doall
+     ;; (map-indexed (fn [n matnr] (process-ariba-product s (+ n 12) matnr)) matnrs))
+     ;; (map-indexed (fn [n matnr] (update-ariba-product s (+ n 12) matnr)) matnrs))
+     (map-indexed (fn [n matnr] (update-ariba-product s (+ n 12) matnr)) prods))
+    (xls/save-workbook! (str spreadsheet-basename "2" ".xls") x)
+    ))
+;; (time
+;;  (update-ariba-catalog "dow"))
 
 (examples
 
