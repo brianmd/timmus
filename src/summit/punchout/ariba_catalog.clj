@@ -87,11 +87,11 @@
   (let [x (xls/load-workbook (str spreadsheet-basename ".xls"))
         s (xls/select-sheet "Sheet1" x)
         matnrs (map! (comp int :matnr) (filter identity (drop 12 (xls/select-columns {:B :matnr} s))))
-        ;; prods (map! #(get-product-info %) matnrs)
+        prods (map! #(get-product-info %) matnrs)
         ;; prods (take 10 ps)
-        prods ps
+        ;; prods ps
         ]
-    ;; (def ps prods)
+    (def ps prods)
     (ppn "________________" "______________" (take 40 (drop 12 (xls/select-columns {:D :descript} s))))
     (doall
      ;; (map-indexed (fn [n matnr] (process-ariba-product s (+ n 12) matnr)) matnrs))
@@ -226,8 +226,9 @@ where j.matnr='" (as-matnr matnr) "';")
       :currency "USD"
       :nothing ""
       }))
-  
-  ;; (ppn (part-info 8322 "cust-part-no"))
+
+;; (ppn (part-info 8322 "cust-part-no"))
+;; (ppn (part-info 35379 "cust-part-no"))  ; this has been zzzz-deleted.
 
 (def ariba-output-fields [:ariba-network-id :matnr :part-num :descript :unspsc :price :uom :lead-time
                           :mfr-name :url :msds-url

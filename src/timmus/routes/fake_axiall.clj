@@ -1,9 +1,10 @@
 (ns timmus.routes.fake-axiall
-  (:require ;; [clojure.test :as t]
-            ))
+  ;; (:require ;; [clojure.test :as t]
+  ;;  )
+  )
 
 
-(def fake-axiall
+(defn fake-axiall-punchout-request []
   "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <!DOCTYPE cXML SYSTEM \"http://xml.cxml.org/schemas/cXML/1.2.014/cXML.dtd\">
 <cXML payloadID=\"1211221788.71299@ip-10-251-122-83\" timestamp=\"Mon May 19 18:29:48 +0000 2008\" xml:lang=\"en-US\">
@@ -36,7 +37,7 @@
       <Extrinsic name=\"User\">myuser</Extrinsic>
       <Extrinsic name=\"BusinessUnit\">mybusinessunit</Extrinsic>
       <BrowserFormPost>
-        <URL>https://localhost:3449/api/punchout/accept-order-message/4</URL>
+        <URL>http://localhost:3449/api/punchout/accept-order-message/4</URL>
       </BrowserFormPost>
       <Contact role=\"myrole\">
         <Name xml:lang=\"en-US\">jim</Name>

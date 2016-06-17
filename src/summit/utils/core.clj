@@ -252,7 +252,7 @@
 
 (defn write-sql [conn sql]
   "use for insert/update queries"
-  (if (contains? protected-write-dbs conn)
+  (if (contains? @protected-write-dbs conn)
     (throw (Exception. "attempting to write to a protected database"))
     (exec-sql conn sql)))
 
@@ -806,19 +806,49 @@
           (pr-str obj)))
   obj)
 
-(defn do-log-request
-  ([req] (do-log-request req "requests"))
-  ([req filename]
-   (log-now req)   ;; always save separately
+(defn append-to-file [obj filename]
    (spit (str "log/" filename ".log")
          (with-out-str
            (pp
             [(localtime)
-             (if (map? req) (req->printable req) req)
+             (if (map? obj) (req->printable obj) obj)
              ]))
          :append true)
-   req))
-;; (do-log-request 3 "requests")
+   obj)
+
+;; (defn do-log-request-aux
+;;   ([req] (do-log-request req "requests"))
+;;   ([req filename]
+;;    (log-now req)   ;; always save separately
+;;    (spit (str "log/" filename ".log")
+;;          (with-out-str
+;;            (pp
+;;             [(localtime)
+;;              (if (map? req) (req->printable req) req)
+;;              ]))
+;;          :append true)
+;;    req))
+
+
+
+(defmacro do-log-request
+  [req & args]
+  (let [filename (if (empty? args) "requests" (first args))]
+    `(try
+       (let [result# ~req]
+         (log-now result#)
+         (append-to-file result# ~filename))
+       (catch Exception ~'e
+         (do
+           (log-now ~'e)
+           (append-to-file ~'e ~filename)
+           (throw ~'e)
+           )))
+    ))
+(examples
+ (do-log-request 3 "reque")
+ (do-log-request (/ 1 0) "reque")
+ )
 
 
 (defn fempty

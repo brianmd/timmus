@@ -130,7 +130,6 @@ uses transducers for sap files, such as inventory, bought-with, ...
 (examples
  (assert-= nil ((arg2nd identity) 3 4 5) ((arg2nd identity) 3))
  (assert-= 4 ((arg2nd identity) 3 4))
- )
 
 (transduce (comp (take 7) (map flatten) (map (partial interpose ",") )) println @service-center-bought)
 (transduce (comp (take 7) (map flatten) (map (partial interpose ",") )) (arg2nd println) @service-center-bought)
@@ -144,6 +143,7 @@ uses transducers for sap files, such as inventory, bought-with, ...
 (pp (take 3 @bought-together))
 (pp (map flatten (take 3 @bought-together)))
 
+)
 
 
 

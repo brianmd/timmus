@@ -67,7 +67,7 @@
 ;; (ppn (cypher-query "match (n:Product {matnr: 2761096})-[r]-(e) return n,r,e limit 25"))
 
 (defn cypher-query
-  ([query] (cypher-query conn query))
+  ([query] (cypher-query :default query))
   ([conn query]
    (map identity (cypher/tquery conn query))
    ;; (map parse-element (cypher/tquery conn query))
@@ -106,7 +106,7 @@
 ;;                            (into {}
 ;;                                  (filter (fn [[k v]] (if v v))
 ;;                                          (clojurize-map (clean-all (first (dselect :customers (k/limit 1)))))))]
-                          ))
+
 ;; (def cust-node (nodes/create conn
 ;;                           (into {}
 ;;                                 (filter (fn [[k v]] (if v v))

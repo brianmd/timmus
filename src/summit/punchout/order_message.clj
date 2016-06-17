@@ -286,7 +286,9 @@
 ;; (:browser_form_post (:punchout-request (retrieve-order-data 4668)))
 ;; (order-message-xml (retrieve-order-data 4668))
 (defn submit-order-message [order-id]
+  (ppn "in submit-order-message" order-id)
   (let [order-data (retrieve-order-data order-id)
+        _ (ppn "order-data:" order-data)
         url (:browser_form_post (:punchout-request order-data))
         xml (order-message-xml order-data)]
         ;; id (last-city-order-num)
@@ -301,13 +303,14 @@
     ;; (println "order request " order-request)
     ;; (println "punchout-request" punchout-request)
     ;; (println "hiccup " hiccup)
+    (ppn "url" url)
+    (ppn "xml:" xml)
+    (ppn "base64" (base64-encode xml))
+    (do-log-request xml "punchout-send-order-message")
     (do-log-request
      (client/post
       url
-      (do-log-request
-       {:headers {:content-type :xml}
-        :body xml}
-       "punchout-send-order-message")
+      {:form-params {:cXML-urlencoded (base64-encode xml)}}
       )
      "punchout-send-order-message-response")
     ))

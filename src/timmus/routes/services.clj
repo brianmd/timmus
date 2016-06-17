@@ -20,14 +20,12 @@
                      buffer sliding-buffer dropping-buffer]]
 
             [cemerick.url :refer [url-encode url]]
-            ;; [clj-http.client :as client]
+            [clj-http.client :as client]
             [config.core :refer [env]]
 
             ;[compojure.core :refer [defroutes GET]]
             ;[compojure.core :refer [GET]]
             [cheshire.generate :refer [add-encoder encode-str remove-encoder]]
-
-            [dk.ative.docjure.spreadsheet :as xls]
 
             [summit.utils.core :refer :all]
             [summit.db.relationships :refer :all]
@@ -47,7 +45,7 @@
             [summit.sap.project :refer [projects project]]
             [summit.bh.queries :as bh-queries]
 
-            [timmus.routes.fake-axiall :refer [fake-axiall]]
+            [timmus.routes.fake-axiall :refer [fake-axiall-punchout-request]]
             ))
 ;(-> @((-> customer :rel) "cart") :fk-key)
 
@@ -64,29 +62,33 @@ bb
 (p/process-punchout-request-str (:body aa))
 )
 
+(defn add-product-to-empty-cart [email product-id]
+  (let [cust (find-by-colname :customers :email email)
+        cart (find-by-id :carts (:main_cart_id cust))
+        line-items (select-by-colname :line_items :cart_id (:id cart))]
+    (ppn "-----" "line-items" line-items)
+    (if (empty? line-items)
+      (k/insert  :line_items (k/values {:product_id product-id :cart_id (:id cart) :quantity 1 :created_at (db-timenow) :updated_at (db-timenow)}))
+      )))
+;; (add-product-to-empty-cart "'axiall@murphydye.com'" 31)
+
 (defn process-fake-axiall-punchout []
-  ;; submit fake punchout
-  ;; add product to cart if it is empty
+  (ppn "faking")
+  (let [request (fake-axiall-punchout-request)
+        url "http://localhost:3449/api/punchout"]
+    (ppn request url)
+    (ppn
+     (client/post
+      url
+      {:headers {"Content-Type" "application/xml; charset=utf-8"},
+       :body request}))
+    (ppn "posted")
+    (add-product-to-empty-cart "'axiall@murphydye.com'" 31)
+    )
   )
 
+;; (process-fake-axiall-punchout)
 
-
-
-
-
-(defn create-fake-xls-stream []
-  (let [wb (xls/create-workbook "Price List"
-                            [["Name" "Price"]
-                             ["Foo Widget" 100]
-                             ["Bar Widget" 200]])
-        sheet (xls/select-sheet "Price List" wb)
-        header-row (first (xls/row-seq sheet))]
-    (do
-      (xls/set-row-style! header-row (xls/create-cell-style! wb {:background :yellow,
-                                                         :font {:bold true}}))
-      (with-open [w (clojure.java.io/output-stream "spread2.xlsx")]
-        (xls/save-workbook! w wb)))))
-;; (create-fake-xls-stream)
 
 
 
@@ -204,14 +206,14 @@ bb
 (defn log-request [& args]
   (>!! log-request-chan args))
 
-(defn log-request-loop [& args]
-  (go-loop []
-    (println "wait for incoming log request ...")
-    (let [args (<! log-request-chan)]
-      (apply do-log-request args)
-      (separately-log-request (first args) (:uri (first args)))
-      (recur)
-      )))
+;; (defn log-request-loop [& args]
+;;   (go-loop []
+;;     (println "wait for incoming log request ...")
+;;     (let [args (<! log-request-chan)]
+;;       (apply do-log-request args)
+;;       (separately-log-request (first args) (:uri (first args)))
+;;       (recur)
+;;       )))
 
 
 
@@ -331,15 +333,17 @@ bb
                :body (projects id)}
               )
 
-            (GET "/axiall" req
+            (GET "/punchout/axiall" req
               (let [url (process-fake-axiall-punchout)
-                    url "http://ubkkb140d981.brianmd.koding.io:22223/"
+                    url "http://ubkkb140d981.brianmd.koding.io:22223/punchout_login/axiall"
                     ]
                 (redirect url 302)))
 
-            (GET "/punchout/accept-order-message/:id" req
+            (POST "/punchout/accept-order-message/:id" req
               :path-params [id :- Long]
-              (ppn "/punchout/accept/accept-order-message/" id)
+              ;; :form-params [cXML-urlencoded :- String]
+              (ppn "in /punchout/accept/accept-order-message/" id)
+              (ppn "-------" "------" "cXML-urlencoded" (:cXML-urlencoded (:params req)))
               (do-log-request req "punchout-accept-order-message")
               {:status 200,
                ;; :headers {"Content-Type" "application/xml; charset=utf-8"},
@@ -351,29 +355,32 @@ bb
               :path-params [id :- Long]
               (ppn "/punchout/order-message/" id)
               (do-log-request req "punchout-order-message-get")
-                (try
-                  (do-log-request
-                   (if false
-                     {:status 200,
-                      :headers {"Content-Type" "text/json; charset=utf-8"},
-                      ;; :body (order-message/order-message (order-message/retrieve-order-data id))
-                      :body (order-message/order-message-hiccup (order-message/retrieve-order-data id))
-                      }
-                     {:status 200,
-                      :headers {"Content-Type" "application/xml; charset=utf-8"},
-                      :body (order-message/order-message-xml (order-message/retrieve-order-data id))
-                      })
-                   "punchout-order-message-get-response"
-                   )
-                  (catch Exception e
-                    {:status 404
-                     :headers {"Content-Type" "text/xml; charset=utf-8"},
-                     :body {:error (str "error: " (.getMessage e))}
-                     })))
+              (try
+                (do-log-request
+                 (if false
+                   {:status 200,
+                    :headers {"Content-Type" "text/json; charset=utf-8"},
+                    ;; :body (order-message/order-message (order-message/retrieve-order-data id))
+                    :body (order-message/order-message-hiccup (order-message/retrieve-order-data id))
+                    }
+                   {:status 200,
+                    :headers {"Content-Type" "application/xml; charset=utf-8"},
+                    :body (order-message/order-message-xml (order-message/retrieve-order-data id))
+                    })
+                 "punchout-order-message-get-response"
+                 )
+                (catch Exception e
+                  {:status 404
+                   :headers {"Content-Type" "text/xml; charset=utf-8"},
+                   :body {:error (str "error: " (.getMessage e))}
+                   })))
 
             (POST "/punchout/order-message" req
+            ;; (POST "/punchout/order-message" []
               ;; curl -H "Content-Type: application/json" -X POST -d '{"id":4667}' http://localhost:3449/api/punchout/order-message
               :body-params [id :- Long]
+              (ppn "in services, order-message")
+              (ppn (str "/punchout/order-message/" id))
               (do-log-request req "punchout-order-message-post")
               (let [
                     ;; id (order-message/last-city-order-num)
@@ -416,6 +423,7 @@ bb
                 } "punchout-response"))
 
             (POST "/punchout" req
+              (ppn "/punchout (post)")
               (do-log-request req "punchout-post")
               (do-log-request {:punchout (localtime)})
                    (println "in post punchout")
