@@ -197,10 +197,20 @@
   (let [p (download-product id)]
     (parse-product p)))
 
+(defn download-safe-product [id]
+  (try
+    (download-product id)
+    (catch Exception e
+      nil)))
+
 (examples
  (def ppp (download-product "MEM_GLD_102633"))
+ (download-safe-product "IDW_UNSPSC_39000000")
+ (download-safe-product "IDW_UNSPSC_3900000000")
+ (ppn ppp)
  (ppn (download-product "Unclassified_Golden_Records"))
  (ppn (product "MEM_GLD_102633"))
  )
+
 
 (println "done loading summit.sap.restapi")
