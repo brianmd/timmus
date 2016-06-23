@@ -116,13 +116,23 @@
   "map should contain minimally an id"
   (->Product (atom m)))
 
+(defn new-unspsc [m]
+  "map should contain minimally an id"
+  (->Product (atom m)))
+
 
 
 (examples
 
 
+(new-unspsc {:step-id "IDW_UNSPSC_11101500"})
+(step-attrs (new-unspsc {:step-id "IDW_UNSPSC_11101500"}))
+(step-attrs (new-unspsc {:step-id (:parent-id (step-attrs (new-unspsc {:step-id "IDW_UNSPSC_11101500"})))}))
+(step-attrs! (new-unspsc {:step-id "IDW_UNSPSC_11101500"}))
 
 (step-golden (new-product {:step-id "MEM_IDW_9509892"}))
+(step-golden (new-product {:step-id "MEM_IDW_10000013"}))
+(step-attrs (new-product {:step-id "MEM_IDW_10000013"}))
 (id (new-product {:id 9509892}))
 (step-id (new-product {:id 1327768}))
 (id (new-product {:id 1327768}))
