@@ -9,6 +9,7 @@
     [clojure.pprint :refer [pprint]]
     [clojure.string :as str]
     [clojure.java.io :as io]
+    [clojure.java.shell :refer [sh]]
 
     [cheshire.generate :refer [add-encoder encode-str remove-encoder]]
     [taoensso.carmine :as car :refer (wcar)]
@@ -830,6 +831,7 @@
 ;;    req))
 
 
+(sh "mkdir" "-p" "log/separate")
 
 (defmacro do-log-request
   [req & args]
