@@ -831,7 +831,7 @@
 ;;    req))
 
 
-(sh "mkdir" "-p" "log/separate")
+;; (sh "mkdir" "-p" "log/separate")
 
 (defmacro do-log-request
   [req & args]
