@@ -513,7 +513,7 @@
    (if (:project-id @filters)
      [:div.row
       [:div.col-md-7]
-      [:div.col-md-3 "Download"]])])
+      [:div.col-md-3 [:a {:href "https://facebook.github.io/fixed-data-table/example-object-data.html" :target "_blank"} "Download"]]])])
 
 (defn blank-row []
   [:div.row
