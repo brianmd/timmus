@@ -76,7 +76,7 @@ bb
   (ppn "faking")
   (let [request (fake-axiall-punchout-request)
         url "http://localhost:3449/api/punchout"]
-    (ppn request url)
+    (ppn "request" request "url" url)
     (ppn
      (client/post
       url
@@ -335,7 +335,7 @@ bb
 
             (GET "/punchout/axiall" req
               (let [url (process-fake-axiall-punchout)
-                    url "http://ubkkb140d981.brianmd.koding.io:22223/punchout_login/axiall"
+                    url "http://meta.murphydye.com:11002/punchout_login/axiall"
                     ]
                 (redirect url 302)))
 
