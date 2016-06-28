@@ -171,7 +171,7 @@
 
 
 ;; (k/select service-center)
-;; (k/select customer (database (find-db :bh-local)) (where {:email "abq@murphydye.com"}))
+;; (k/select customer (database (find-db :bh-local)) (where {:email "axiall@murphydye.com"}))
 ;; (dselect customer  (where {:email "abq@murphydye.com"}))
 #_(defn last-city-order-num []
   (let [db (find-db :bh-local)
