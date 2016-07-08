@@ -108,10 +108,10 @@
     (fn []
       [:div
        [:span
-        ;; [win/dialog-test]
-        ;; [:input {:type "button" :value "Projects Prototype"
-        ;;          :style {:background-color :red :color :white}
-        ;;          :on-click #(win/new-window project/new-projects-component proj-map)}]
+        [win/dialog-test]
+        [:input {:type "button" :value "Projects Prototype"
+                 :style {:background-color :red :color :white}
+                 :on-click #(win/new-window project/new-projects-component proj-map)}]
 
         ;; [:input {:type "button" :value "Create Mfr Lookup"
         ;;          :style {:background-color :black :color :white}
