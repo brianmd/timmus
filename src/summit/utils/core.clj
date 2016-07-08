@@ -455,6 +455,9 @@
   (if string (str/replace string #"^0*" "")))
 ;; (as-short-document-num (as-document-num "00001"))
 
+(defn as-customer-num [string]
+  (as-document-num string))
+
 (defn blue-harvest-secret []
   (-> env :blue-harvest :secret))
 
