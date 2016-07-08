@@ -11,27 +11,23 @@
     [clojure.java.io :as io]
     [clojure.java.shell :refer [sh]]
 
+    [cheshire.core :refer [generate-string]]
     [cheshire.generate :refer [add-encoder encode-str remove-encoder]]
     [taoensso.carmine :as car :refer (wcar)]
-    ;[cats.core :as m]
-    ;[cats.builtin]
-    ;[cats.monad.maybe :as maybe]
 
     [korma.core :as k]
     [korma.db :as kdb]
 
-    ;; [me.raynes.conch :refer [programs with-programs let-programs] :as sh]
     [com.rpl.specter :as s]
 
     [clojure.data.codec.base64 :as b64]
 
     [net.cgrand.enlive-html :as html]
 
-    ;; [devtools.core :as devtools]
+    [buddy.sign.jwt :as jwt]
     ))
 
-;; (devtools/install!)
-;; (.log js/console (range 20))
+
 
 ;; (with-programs [ls] (ls {:seq true}))
 ;; (with-programs [ssh] (ssh "neo" "ls -l" {:seq true}))
@@ -99,10 +95,6 @@
 
 (defn as-integer [string]
   (->int string))
-;; (if (= (type string) String)
-;;   (read-string (as-short-document-num string))
-;;   string))
-
 
 (def map! (comp doall map))
 (def maprun (comp dorun map))
@@ -122,6 +114,13 @@
  (assert= 6 (detect #(> % 5) (range)) ((detect #(> % 5)) (range))))
 
 (defn ppn
+  "pprint, returning nil"
+  [& args]
+  (binding [clojure.pprint/*print-miser-width* 120
+            clojure.pprint/*print-right-margin* 120]
+    (doseq [arg args] (pprint arg))))
+
+(defn ppa
   "pprint, returning nil"
   [& args]
   (binding [clojure.pprint/*print-miser-width* 120
@@ -297,7 +296,6 @@
 
 (defn stringify-all [x]
   (postwalk str x))
-  ;(postwalk #(if(keyword? %)(name %) %) x))
 
 (defonce clojurized-keywords (atom {}))
 
@@ -365,7 +363,7 @@
             (map str/capitalize
                  (-> s clojurize-keyword name (str/split #"-") ))))
 ;; (assert= "Parent Id" (humanize! "ParentID"))
-;; note: we would prefer "Parent ID"
+;; note: would prefer "Parent ID"
 
 (defonce humanized-words (atom {}))
 
@@ -457,7 +455,59 @@
   (if string (str/replace string #"^0*" "")))
 ;; (as-short-document-num (as-document-num "00001"))
 
-(defn bh_login [email pw]
+(defn blue-harvest-secret []
+  (-> env :blue-harvest :secret))
+
+(defn customer-acl [id]
+  (let [sql (str "select p.resource, p.action
+from customers c
+join roles r on r.customer_id=c.id
+join grants g on g.role_id=r.id
+join permissions p on p.id=g.permission_id
+where r.account_id is null and c.id=" id)]
+    (exec-sql sql)))
+;; (customer-acl 28)
+
+(defn webtoken->customer-id [secret token]
+  (:customer_id (jwt/unsign token secret)))
+
+(defn http-request-customer-id
+  "found from the webtoken in Authoriation line of header"
+  [secret req]
+  (let [auth (:authorization (:headers req))
+        token (last (str/split auth #" "))]
+    (webtoken->customer-id token)))
+
+(defn bh-login
+  "this uses the newer web token path"
+  [email pw]
+  (let [cred
+        {:data
+         {:type "tokens"
+          :attributes {:email email :password pw}}
+         }
+        params
+        {:body         (generate-string cred)
+         :content-type "application/vnd.api+json"
+         ;; :accept       "application/vnd.api+json"}
+         :accept       :json}
+        result (client/post
+                "https://www.summit.com/api/tokens"
+                params)
+        ;; (clojurize-map-keywords
+        result (assoc result :body (parse-string (:body result)))
+        m (clojurize-map (clojure.walk/keywordize-keys result))]
+    (assoc m
+           :auth-token (:X-CSRF-Token (:headers m))
+           :customer (-> m :body :customers first)
+           )))
+
+(defn bh-login-webtoken [email pw]
+  (-> (bh-login email pw) :body :data :attributes :token))
+
+(defn bh_login
+  "this is standard rails/devise authentication"
+  [email pw]
   (let [cred
         {"customer"
          {"email" email, "password" pw}
@@ -506,9 +556,6 @@
     )
   (if (or (> levels-to-save 0) (> levels-to-print))
     `(defn ~name ~args
-       ;(if (and (> (levels-to-print) 0) (= (count level-function-names) 1))
-       ;  (println "\n------------------------------"))
-       ;(println "level-function-names:" level-function-names (count level-function-names))
        (if (= (count level-function-names) 0)
          (reset! level-results {}))
        (binding [level-function-names (conj level-function-names '~name)]
@@ -532,8 +579,6 @@
 
 (defmacro make-record [name cols-names]
   `(apply (macro->fn defrecord) ['~name (->> ~cols-names (map name) (map symbol) vec)]))
-;; (defmacro make-record [name definition-vector]
-;;   `(apply (macro->fn defrecord) ['~name (->> ~(col-names definition-vector) (map name) (map symbol) vec)]))
 
 (defprotocol Validator
   "validate "
@@ -597,25 +642,6 @@
     }
    [:Products]])
 
-
-;(map * [1 2 3] [4 5 6])
-;(for [i [1 2 3] j [4 5 5]] (* i j))
-;(mapcat (fn[j] (map #(* % j) [4 5 6])) [1 2 3])
-;(mapcat (fn[j] (map (fn[i] (* i j)) [4 5 6])) [1 2 3])
-;
-;(defn zip
-;  [& colls]
-;  (apply map vector colls))
-;
-;(for [[i j] (zip [1 2 3] [4 5 6])] (* i j))
-;
-;(zip [1 2 3] [4 5 6] [7 8 9 9])
-;(interleave [1 2 3] [4 5 6])
-;(time (dorun (for [x (range 1000) y (range 10000) :while (> x y)] [x y])))
-;(time (doall (for [x (range 10) y (range 10) :while (> x y)] [x y])))
-;(time (doall (for [x (range 10) y (range 10) :when (> x y)] [x y])))
-;(time (dorun (for [x (range 1000) y (range 10000) :when (> x y)] [x y])))
-;(for [[x y] '([:a 0] [:b 2] [:c 0]) :when (= y 0)] x)
 
 (defn is-search-page? [txt]
   (re-find #"Refine By" txt))
@@ -816,22 +842,6 @@
              ]))
          :append true)
    obj)
-
-;; (defn do-log-request-aux
-;;   ([req] (do-log-request req "requests"))
-;;   ([req filename]
-;;    (log-now req)   ;; always save separately
-;;    (spit (str "log/" filename ".log")
-;;          (with-out-str
-;;            (pp
-;;             [(localtime)
-;;              (if (map? req) (req->printable req) req)
-;;              ]))
-;;          :append true)
-;;    req))
-
-
-;; (sh "mkdir" "-p" "log/separate")
 
 (defmacro do-log-request
   [req & args]

@@ -17,14 +17,12 @@ uses transducers for sap files, such as inventory, bought-with, ...
             [semantic-csv.core :as scsv ] ;:refer :all]
             [clojure.java.io :as io]
             [clojure.data.codec.base64 :as b64]
-            ;; [clojure.pprint :refer :all]
-
-            [summit.step.xml-output :refer :all]
 
             [summit.utils.core :refer :all]
+            [summit.step.xml-output :refer :all]
+
             [summit.step.import.core :refer :all]
             [summit.step.import.sap.core :refer :all]
-            ;; [summit.step.import.product-selectors :refer [slurp-source-ids]]
             [summit.step.import.product-selectors :refer :all]
             ))
 
@@ -64,12 +62,6 @@ uses transducers for sap files, such as inventory, bought-with, ...
 (defn cast-vector [transforms v]
   (map #(%1 %2) transforms v))
 
-
-;; (->int nil)
-;; (->int "")
-;; (defn ->short)
-;; (defn ->int [v]
-;;   (if (or (nil? v) (empty? v))))
 
 (defn process-file-info [file-info filter-fn process-row-fn]
   (with-open [in-file (io/reader (:filename file-info))]
@@ -131,31 +123,31 @@ uses transducers for sap files, such as inventory, bought-with, ...
  (assert-= nil ((arg2nd identity) 3 4 5) ((arg2nd identity) 3))
  (assert-= 4 ((arg2nd identity) 3 4))
 
-(transduce (comp (take 7) (map flatten) (map (partial interpose ",") )) println @service-center-bought)
-(transduce (comp (take 7) (map flatten) (map (partial interpose ",") )) (arg2nd println) @service-center-bought)
-(transduce (comp (take 7) (map flatten) (map (partial interpose ",") )) (arg2nd #(println (apply str %))) @service-center-bought)
-(transduce (comp (take 7) (map flatten) (map (partial interpose ",") )) (arg2nd #(->> % (apply str) println)) @service-center-bought)
-(transduce (comp (take 7) (map flatten) (map (partial interpose ","))))
+ (transduce (comp (take 7) (map flatten) (map (partial interpose ",") )) println @service-center-bought)
+ (transduce (comp (take 7) (map flatten) (map (partial interpose ",") )) (arg2nd println) @service-center-bought)
+ (transduce (comp (take 7) (map flatten) (map (partial interpose ",") )) (arg2nd #(println (apply str %))) @service-center-bought)
+ (transduce (comp (take 7) (map flatten) (map (partial interpose ",") )) (arg2nd #(->> % (apply str) println)) @service-center-bought)
+ (transduce (comp (take 7) (map flatten) (map (partial interpose ","))))
 
-(pp (take 3 @bought-products))
-(pp (map second (take 3 @bought-products)))
+ (pp (take 3 @bought-products))
+ (pp (map second (take 3 @bought-products)))
 
-(pp (take 3 @bought-together))
-(pp (map flatten (take 3 @bought-together)))
+ (pp (take 3 @bought-together))
+ (pp (map flatten (take 3 @bought-together)))
 
-)
+ )
 
 
 
-(with-open [out (io/writer (str sap-input-path  "bought-products.csv"))]
-  (transduce (comp
-              ;; (take 7)
-              (map second)
-              (map vals)
-              (map (partial interpose ","))
-              )
-             (arg2nd #(->> % (apply str "\n") (.write out)))
-             @bought-products))
+;; (with-open [out (io/writer (str sap-input-path  "bought-products.csv"))]
+;;   (transduce (comp
+;;               ;; (take 7)
+;;               (map second)
+;;               (map vals)
+;;               (map (partial interpose ","))
+;;               )
+;;              (arg2nd #(->> % (apply str "\n") (.write out)))
+;;              @bought-products))
 "
 // load # times products were bought
 LOAD CSV
@@ -165,14 +157,14 @@ merge (p:Product {matnr: toint(line[0]), times_bought: toint(line[1])})
 ;
 "
 
-(with-open [out (io/writer (str sap-input-path  "bought-together.csv"))]
-  (transduce (comp
-              ;; (take 7)
-              (map flatten)
-              (filter #(> (nth % 2) 1))
-              (map (partial interpose ",")))
-             (arg2nd #(->> % (apply str "\n") (.write out)))
-             @bought-together))
+;; (with-open [out (io/writer (str sap-input-path  "bought-together.csv"))]
+;;   (transduce (comp
+;;               ;; (take 7)
+;;               (map flatten)
+;;               (filter #(> (nth % 2) 1))
+;;               (map (partial interpose ",")))
+;;              (arg2nd #(->> % (apply str "\n") (.write out)))
+;;              @bought-together))
 
 "
 USING PERIODIC COMMIT 1000
@@ -185,13 +177,13 @@ merge (p1)-[:BOUGHT_WITH {times: toint(line[2])}]->(p2)
 ;
 "
 
-(with-open [out (io/writer (str sap-input-path  "sc-bought.csv"))]
-  (transduce (comp
-              ;; (take 7)
-              (map flatten)
-              (map (partial interpose ",")))
-             (arg2nd #(->> % (apply str "\n") (.write out)))
-             @service-center-bought))
+;; (with-open [out (io/writer (str sap-input-path  "sc-bought.csv"))]
+;;   (transduce (comp
+;;               ;; (take 7)
+;;               (map flatten)
+;;               (map (partial interpose ",")))
+;;              (arg2nd #(->> % (apply str "\n") (.write out)))
+;;              @service-center-bought))
 
 "
 LOAD CSV

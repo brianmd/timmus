@@ -67,19 +67,10 @@
 (defn get-projects [db]
   (let [url (str "/api/projects/" (:account-number @db))
         handler #(do
-                   (println "got projects ------------------------------------------------------")
-                   (println %)
-                   (println (type %))
-                   (println (first %))
-                   (println ((first %) "title"))
-                   (println (map (fn [x] (x "title")) %))
-                   (println "count:" (count %))
-                   (println "account number: " (:account-number @db))
                    (swap! db assoc :projects %)
-                   (println (:projects @db))
                    )
         error-handler #(win/qgrowl (str "Unable to get projects for account number " (:account-number @db)))
-        options {:timeout 240000  ;4 * 60 * 1000  ;; 4 minutes
+        options {:timeout 240000  ;; 4 * 60 * 1000 = 4 minutes
                  :handler handler
                  :response-format :transit
                  :error-handler error-handler
@@ -87,7 +78,7 @@
     (println "getting projects for " (:account-number @db) @db)
     (when (empty? (:projects @db))
       (GET url options)
-      (println "off request went ..."))))
+      (println "request has departed ..."))))
 
 
 (declare project-component-win)
@@ -153,48 +144,6 @@
     ]
    [:br]])
 
-
-
-
-;; (def jquery (js* "$"))
-;; (def jquery (js* "jQuery"))
-
-
-;; (defn table-mounter [this]
-;;   (.DataTable
-;;    (js/$ (r/dom-node this))
-;;    (clj->js {:bDestroy true :fnDrawCallback (r/force-update this)})))
-
-;; (defn datatable-updater [this]
-;;   (.DataTable
-;;    (js/$ (r/dom-node this))
-;;    (clj->js {:bDestroy true})))
-
-      ;; :component-did-mount table-mounter
-      ;; :component-did-update table-mounter
-      ;; #(let [self (js* "this")]
-      ;;                         (win/qgrowl "mounted")
-      ;;                         (.log js/console self)
-      ;;                         ;; (.DataTable (js/jQuery "table") {:bDestroy true :fnDrawCallback (fn [x] (.forceUpdate x))})
-      ;;                         (.DataTable (js/jQuery "table")
-      ;;                                     (clj->js {:sPaginationType "bootstrap" :bAutoWidth false :bDestroy true
-      ;;                                               ;; :fnDrawCallback (fn [] (r/force-update-all))
-                              ;;                       }))
-                              ;; )
-
-      ;; :component-did-update #(do
-      ;;                          (win/qgrowl "updated")
-      ;;                          (.log js/console "{{{{{{}}}}}}" (js/jQuery "table"))
-      ;;                          (.DataTable (js/jQuery "table") (clj->js {:paging false :aaSorting [] :bDestroy true :fnDrawCallback (fn [] (r/force-update-all))}))
-      ;;                          )
-
-      ;; :component-did-update #(do (win/qgrowl "updated") (.log js/console "{{{{{{}}}}}}" ($ "table")))
-      ;; :component-did-update #(do (win/qgrowl "updated") (println (js/jQuery "table")))
-      ;; :component-did-update #(do (win/qgrowl "updated") (.DataTables ($ :table)))
-;; $("table").DataTable({"paging": false, "aaSorting": []})
-      ;; :component-did-update #(do (win/qgrowl "updated") (-> (jquery "table") (.DataTables)))
-      ;; :component-did-update #(do (win/qgrowl "updated") ("table" js/jQuery. .DataTables))
-
 (defn project-component [db filters]
     (r/create-class
      {
@@ -218,8 +167,6 @@
                 delivery-keys (:delivery (:ordering proj))
                 orders (map #(utils/select-keys3 % order-keys) p)
                 ]
-            (win/qgrowl circuit-id)
-            (ppc "orders" orders "---" p)
             [:div.container
              [:div.row [:div.col-md-12 [:h1.center (str "Project: " (:project-name @db))]]]
              [filters-component filters (:filter-lookups proj)]
@@ -400,17 +347,14 @@
                        (swap! filters assoc :account-number (-> % .-target .-value)))
        :on-key-down
        #(when (= (.-keyCode %) 13)
-          (ppc "hit return")
           (swap! db assoc
                  :account-number (:account-number @filters)
                  :projects [])
-          (ppc "swapped 1")
           (swap! filters assoc
                  :drawing-num nil
                  :circuit-id nil
                  :project-id nil)
-          (ppc "swapped 2")
-          (.log js/console (str "requesting projects for: " (:account-number @db)))
+          ;; (.log js/console (str "requesting projects for: " (:account-number @db)))
           (get-projects db)
           )
        }]]

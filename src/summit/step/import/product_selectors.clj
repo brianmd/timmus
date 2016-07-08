@@ -36,7 +36,6 @@
             [clojure.edn :as edn]
 
             [summit.utils.core :refer :all]
-            ;; [summit.step.import.core :refer :all]
             ))
 
 (def ^:dynamic *matched-products* [])

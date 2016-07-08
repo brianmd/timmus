@@ -1,23 +1,8 @@
 (ns summit.step.import.all-import
   (:require [clojure.string :as str]
-;            [clojure.java.io :as io :refer [as-url make-parents]]
-
-;            [clojure.data.xml :as xml]
-;            [clojure.xml :as x]
-            ;; [hiccup.core :as hiccup]
-            ;; [clojure.core.reducers :as r]
-
-;            [clojure.data.csv :as csv]
-            ;; [clojure.java.io :as io]
-            ;; [clojure.data.codec.base64 :as b64]
-
-            ;; [summit.step.xml-output :refer :all]
-
-
-            ;; [net.cgrand.enlive-html :as html]
-            [summit.punchout.core :refer :all]
 
             [summit.utils.core :refer :all]
+            [summit.punchout.core :refer :all]
 
             [summit.step.import.product-selectors :refer :all]
             [summit.step.import.idw.product :as idw]

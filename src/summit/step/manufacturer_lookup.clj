@@ -7,7 +7,6 @@
             [clojure.data.xml :as xml]
 
             [me.raynes.conch :refer [programs with-programs let-programs] :as sh]
-            ;; [me.raynes.conch.low-level :as shell]
 
             [com.rpl.specter :as s :refer [ALL LAST]]
 

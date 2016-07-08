@@ -68,10 +68,6 @@
     (with-out-str (c-xml/emit-element (sans-content node)))))
 
 
-;(defn timenow []
-;  (.format (java.text.SimpleDateFormat. "yyyy-MM-dd HH:mm:ss Z") (new java.util.Date))
-;  )
-
 (defn doxml [tags all-categories]
   (println "tags" tags)
   (println "cats" all-categories)

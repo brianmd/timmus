@@ -10,7 +10,7 @@
 
 (defn raw-account-detail [account-number]
   (let [detail-fn (find-function *sap-server* :bapi_customer_getdetail1)]
-    (execute-account-detail detail-fn account-number)
+    ;; (execute-account-detail detail-fn account-number)
     (pull-map detail-fn :pe-companydata)))
 
 (examples

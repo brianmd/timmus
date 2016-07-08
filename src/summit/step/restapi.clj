@@ -4,25 +4,11 @@
   (:require [clojure.string :as str]
             [net.cgrand.enlive-html :as html]
             [com.rpl.specter :as s :refer [ALL]]
-                                        ;            [clojure.java.io :as io :refer [as-url make-parents]]
-
-                                        ;            [clojure.data.xml :as xml]
-                                        ;            [clojure.xml :as x]
-            ;; [hiccup.core :as hiccup]
-            ;; [clojure.core.reducers :as r]
-
-                                        ;            [clojure.data.csv :as csv]
-            ;; [clojure.java.io :as io]
-            ;; [clojure.data.codec.base64 :as b64]
-
-            ;; [summit.step.xml-output :refer :all]
-
-
-            ;; [net.cgrand.enlive-html :as html]
-            [summit.punchout.core :refer :all]
-            [summit.punchout.hiccup :refer :all]
 
             [summit.utils.core :refer :all]
+
+            [summit.punchout.core :refer :all]
+            [summit.punchout.hiccup :refer :all]
 
             [summit.step.import.product-selectors :refer :all]
             [summit.step.import.idw.product :as idw]
@@ -152,12 +138,7 @@
  (ppn (manufacturer "GoldenMfr8260"))
  (ppn (manufacturer "TsMfr3534"))
  (ppn (manufacturer "GoldenMfr110202")) ; ""3M Test""
- (ppn (manufacturer "Manufacturer")))
-
-;; (:type (manufacturer "GoldenMfr8260"))
-;; (:type (manufacturer "Manufacturer"))
-
-(examples
+ (ppn (manufacturer "Manufacturer"))
  (download-manufacturer-children "GoldenMfr8260")
  (ppn (download-manufacturer-children "GoldenMfr8260"))
  (ppn (root-manufacturers))
@@ -177,22 +158,6 @@
 (defn parse-product [p]
   (extract-attrs p))
 
-
-(examples
- (def ppp (download-product "MEM_GLD_102633"))
- (parse-product ppp)
- (def ppp (download-product "MEM_SAP_1327768"))
- (parse-product ppp)
- )
-
-;; (def idwprod (download-product "MEM_IDW_8963576"))
-;; (def gldprod (download-product "MEM_GLD_150247"))
-;; (parse-product gldprod)
-
-;; (ppn ppp)
-
-;; (extract-attrs ppp)
-
 (defn product [id]
   (let [p (download-product id)]
     (parse-product p)))
@@ -203,7 +168,13 @@
     (catch Exception e
       nil)))
 
+
 (examples
+ (def ppp (download-product "MEM_GLD_102633"))
+ (parse-product ppp)
+ (def ppp (download-product "MEM_SAP_1327768"))
+ (parse-product ppp)
+
  (def ppp (download-product "MEM_GLD_102633"))
  (download-safe-product "IDW_UNSPSC_39000000")
  (download-safe-product "IDW_UNSPSC_3900000000")

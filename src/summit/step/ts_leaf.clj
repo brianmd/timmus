@@ -5,23 +5,11 @@
     [clojure.data.codec.base64 :as b64]
     [clojure.data.xml :as xml]
 
-    ;[csvr.defun]
-    ;[csvr.xml-output]
-
-    [summit.step.xml-output :refer :all]
-
     [summit.utils.core :refer :all]
-    ;[clojure.core.async
-    ; :as a
-    ; :refer [>! <! >!! <!! go chan buffer close! thread
-    ;         alts! alts!! tfileimeout]]
+    [summit.step.xml-output :refer :all]
     )
   (:import
     [java.security MessageDigest]
-    ;javax.crypto.Mac
-    ;[jline.console ConsoleReader]
-    ;javax.crypto.spec.SecretKeySpec
-    ;org.apache.commons.codec.binary.Base64
    )
   )
 
@@ -41,9 +29,6 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;(def ^:dynamic levels-to-save 0)
-;(def ^:dynamic levels-to-print 0)
 
 (defn create-ts-leaf-hierarchy []
   (->
@@ -172,12 +157,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   output-tuple functions
 
-;(def x (create-ts-leaf-hierarchy))
-;x
-
-
-;(with-out-str (println "this should return as a string"))
-
 (def blue-hierarchy
   {:type "Product"
    :rootType "Product"
@@ -243,29 +222,5 @@
     :idPrefix "UNSPSC_"
     :userTypeIds ["Segment", "Family", "Class", "Commodity"]
     ))
-
-
-
-;(def ^:dynamic levels-to-save 1)
-;(def ^:dynamic levels-to-print 0)
-;
-
-;; (binding [levels-to-save 0
-;;           levels-to-print 5]
-;;   (pp
-;;     (create-ts-leaf-hierarchy)
-;;     ))
-;; (def x (create-ts-leaf-hierarchy))
-
-;
-;*e
-;x
-;extract-leaf-class-names
-;(extract-leaf-class-names x)
-;ts-leaf-tag-names
-;(xml/emit-str
-;  (doxml ts-leaf-tag-names x)
-;  )
-
 
 

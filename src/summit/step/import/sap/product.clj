@@ -10,14 +10,12 @@
             [clojure.data.csv :as csv]
             [clojure.java.io :as io]
             [clojure.data.codec.base64 :as b64]
-            ;; [clojure.pprint :refer :all]
-
-            [summit.step.xml-output :refer :all]
 
             [summit.utils.core :refer :all]
+            [summit.step.xml-output :refer :all]
+
             [summit.step.import.core :refer :all]
             [summit.step.import.sap.core :refer :all]
-            ;; [summit.step.import.product-selectors :refer [slurp-source-ids]]
             [summit.step.import.product-selectors :refer :all]
             ))
 
