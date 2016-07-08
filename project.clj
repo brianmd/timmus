@@ -35,6 +35,10 @@
                  [conman "0.4.8"]
                                         ;[conman "0.3.0" :exclusions [org.slf4j/slf4j-api org.slf4j/slf4j-log4j12]]
                  [mysql/mysql-connector-java "5.1.6"]
+
+                 [buddy/buddy-core "0.13.0"]
+                 [buddy/buddy-sign "1.1.0"]
+
                  [org.clojure/clojurescript "1.8.40" :scope "provided"]
                  ;; [reagent "0.6.0-alpha"]
                  [reagent "0.5.1"]
@@ -201,19 +205,19 @@
                       {:main "timmus.app"
                        :asset-path "/js/out"
                        :optimizations :none
-                       :source-map true}}}} 
-                  
+                       :source-map true}}}}
                   :figwheel
                   {:http-server-root "public"
                    :server-port 3449
+                   :server-ip "0.0.0.0"  ;; default is localhost
                    :nrepl-port 7002
                    :nrepl-middleware ["cemerick.piggieback/wrap-cljs-repl"]
                    :css-dirs ["resources/public/css"]
                    :ring-handler timmus.handler/app}
-                  
                   :source-paths ["env/dev/clj"]
                   :resource-paths ["env/dev/resources"]
-                  :repl-options {:init-ns timmus.core}
+                  :repl-options {:init-ns timmus.core
+                                 :timeout 320000}
                   :injections [(require 'pjstadig.humane-test-output)
                                (pjstadig.humane-test-output/activate!)]
                   ;;when :nrepl-port is set the application starts the nREPL server on load
