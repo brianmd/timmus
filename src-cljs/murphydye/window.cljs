@@ -14,15 +14,15 @@
             [reagent-table.core :as rt]
             [siren.core :refer [siren! sticky-siren! base-style]]
 
+            [clojure.string :as str]
+
             [murphydye.utils.core :as utils :refer [ppc]]
-
-                                        ;[timmus.sales-associate.core]
-            ;; [timmus.csr.core :refer [csr-page platt-prices]]
-            ;; [timmus.math :refer [math-page]]
-                                        ;[timmus.sales-associate.core :refer [csr-page]]
-
-            [clojure.string :as str])
+            )
   (:import goog.History))
+
+(defn qgrowl [msg] (growl {:message msg :delay 2000}))
+(defn alert [msg] (growl {:message msg :delay 2000}))
+(defn static-alert [msg] (growl {:message msg :delay :sticky}))
 
 (defn show-reagent-table
   "tbl should be a map with :headers and :rows"
@@ -43,17 +43,7 @@
     "FALSE" ""
     (str value)))
 
-;; (defn make-css-class [s]
-;;   (str/replace (str/replace s " " "")))
-  ;; (str/lower-case (str/replace s " " ""))
-  ;; (-> string str/lower-case #(str/replace % " " ""))))
-  ;; (name (utils/clojurize-keyword string)))
-
 (defn click-header-cell [headers sort-map event]
-  ;; (ppc "click-header-cell" sort-map args (count args) (first args))
-  ;; (let [v (-> (first args) .-target .-value)]
-  ;; (.dir js/console event)
-  ;; (ppc "screenx" (.-screenX event) "clientX" (.-clientX event))
   (let [col-name (-> event .-target .-innerHTML)
         col-num (.indexOf headers col-name)
         ascending? (if (= col-num (:col-num @sort-map))
@@ -62,12 +52,11 @@
                        true false
                        false nil)
                      true)]
-    ;; (ppc v col-num ascending?)
     (swap! sort-map assoc :col-num (if-not (nil? ascending?) col-num) :ascending? ascending? :col-name col-name)
     ))
 
 (defn show-table
-  "tbl should be a map with :headers and :rows"
+  "tbl should be a map with :rows and optionally :headers"
   ;; ([tbl] (show-table tbl {}))
   ([tbl options]
    (if tbl
@@ -76,33 +65,22 @@
                    {:headers (tbl "headers") :rows (tbl "rows")})
            headers (map utils/humanize (:headers tbl))
            css-classes (map (comp name utils/clojurize-keyword) (:headers tbl))
-           rows (:rows tbl)
            counter (atom 0)
            row-options (atom {})
            sort-info (r/atom {:col-num nil :ascending? nil})
            onclick-fn (:on-row-click options)
            col-filters (if-let [f (:col-filters options)] f (r/atom {}))
-           rows (:rows tbl)
            ]
        (fn [tbl options]
          (let [
-               ;; table (if (:headers tbl)
-               ;;         tbl
-               ;;         {:headers (tbl "headers") :rows (tbl "rows")})
-               ;; headers (map utils/humanize (:headers tbl))
-               ;; css-classes (map (comp name utils/clojurize-keyword) (:headers tbl))
-               _ (ppc "show-table col-filters" (:col-filters options))
-               ;; counter (atom 0)
+               rows (:rows tbl)
                row-options (atom {})
-               ;; sort-info (atom {:col-num nil :direction :down})
                sort-col (:col-num @sort-info)
                sort-name (:col-name @sort-info)
                ascending? (:ascending? @sort-info)
                filtered-rows (let [filters @col-filters
                                    rows (atom rows)]
-                               ;; (ppc "tbl" rows @col-filters)
                                (ppc filters)
-                               ;; (utils/map! (fn [k v] (ppc "k,v" k v)) filters)
                                (utils/map!
                                 (fn [[k v]]
                                   (ppc "k,v" k v)
@@ -116,14 +94,10 @@
                                (sort-by #(nth % col) #(compare %2 %1) filtered-rows)
                                )
                              filtered-rows)
-               ;; onclick-fn (:on-row-click options)
                ]
            (if-let [f (:on-row-click options)]
              (swap! row-options assoc :on-click #(f)))
 
-           ;; (ppc "sort-info" sort-info)
-           ;; (println "row options:" @row-options)
-           ;; [:table.well.smaller.table.table-striped.table-bordered
            [:div
             [:div.max-height
              [:table.well.smaller.table.table-bordered.centered
@@ -131,8 +105,6 @@
                (for [h headers]
                  (let [ascending-col? (if (= h sort-name) ascending?)]
                    ^{:key h} [:th {:on-click (partial click-header-cell headers sort-info)} h (case ascending-col? true "\u25bc" false " \u25b2" nil)]))]
-              ;; ^{:key h} [:th {:on-click #(do (.dir js/console %) (.dir js/console (.-target %)) (.dir js/console (-> % .-target .-innerHTML)))} h])]
-              ;; ^{:key h} [:th {:on-click #(do (.dir js/console %) (.dir js/console (.-target %)) (set! (.-zzz js/window) (.-target %)))} h])]
               [:tfoot]
               ;; [:tfoot
               ;;  [:tr
@@ -144,18 +116,14 @@
                   (doall
                    (map (fn [col-name css-class]
                           (if col-name
-                            ;; (let [n (.indexOf headers col-name)]
                             (let [n (.indexOf (:headers tbl) col-name)]
-                              ;; [:td [:input (name %)]]
-                              [:td [:input {:style {:width "100%"}
+                              ^{:key n} [:td [:input {:style {:width "100%"}
                                             :className css-class
                                             :type :text
                                             :value (@col-filters n)
-                                            ;; :value (print-str @col-filters)  ;(@col-filters n)
                                             :on-change (fn [event] (let [value (-> event .-target .-value)]
                                                                      (ppc "filter val" value col-name n headers)
                                                                      (swap! col-filters assoc n value)
-                                                                     ;; (swap! col-filters assoc x)
                                                                      ))}]])
                             [:td ""]))
                         filterable-cols
@@ -163,7 +131,6 @@
                (doall
                 (for [row sorted-rows]
                   (let [clicker (if onclick-fn {:on-click #(onclick-fn row)} {})]
-                    ;; (let [clicker (if onclick-fn {:on-click #(do (.dir js/console (-> % .-target))(.dir js/console (-> %))(.dir js/console (.type %)) (onclick-fn row))} {})]
                     ^{:key (swap! counter inc)}
                     [:tr.row-hover (merge options clicker)
                      (doall
@@ -212,18 +179,9 @@
                )
         msg (:message local)
         style (dissoc local :message)]
-    ;; (println "local:" local delay msg style)
      (if (= delay :sticky)
        (sticky-siren! {:style style :content (str "<div>" msg "</div>")})
        (siren! {:style style :content (str "<div>" msg "</div>") :delay delay}))))
-;; (growl "yea")
-;; (growl :success "yea" {:delay 1000})
-;; (growl {:status :success :message "sticky" :delay :sticky})
-
-(defn qgrowl [msg] (growl {:message msg :delay 2000}))
-(defn alert [msg] (growl {:message msg :delay 2000}))
-;; (qgrowl "quick")
-(defn static-alert [msg] (growl {:message msg :delay :sticky}))
 
 (def ^:private window-number (atom 0))
 
