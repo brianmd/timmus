@@ -335,7 +335,7 @@ bb
 
             (GET "/punchout/axiall" req
               (let [url (process-fake-axiall-punchout)
-                    url "http://meta.murphydye.com:11002/punchout_login/axiall"
+                    url "http://meta.murphydye.com:11000/punchout_login/axiall"
                     ]
                 (redirect url 302)))
 
@@ -350,6 +350,24 @@ bb
                :headers {"Content-Type" "text/json; charset=utf-8"},
                :body {:ok 200}
                })
+
+            (GET "/punchout/order-message-form/:id" req
+              :path-params [id :- Long]
+              (ppn "/punchout/order-message-form/" id)
+              (do-log-request req "punchout-order-message-form-get")
+              (try
+                (do-log-request
+                 {:status 200,
+                  :headers {"Content-Type" "text/json; charset=utf-8"},
+                  :body (order-message/order-message-form id)
+                  }
+                 "punchout-order-message-form-get-response"
+                 )
+                (catch Exception e
+                  {:status 404
+                   :headers {"Content-Type" "text/xml; charset=utf-8"},
+                   :body {:error (str "error: " (.getMessage e))}
+                   })))
 
             (GET "/punchout/order-message/:id" req
               :path-params [id :- Long]
