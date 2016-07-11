@@ -500,12 +500,13 @@ bb
 
             (GET "/entities/definitions" []
                   (println "&&&&&&&&&&&&&&&&&&&&&&&&&&^^^^^^^^^^^")
-                  ;(println mysql/entity-definitions)
-                  (ok (clean-all mysql/entity-definitions)))
+                  (println @mysql/entity-definitions)
+                  (ok (clean-all @mysql/entity-definitions))
+                  )
 
             (GET "/entities/query/:entity-name/:attribute-name/:val" []
                   :path-params [entity-name :- String, attribute-name :- String, val :- String]
-                  ;(println mysql/entity-definitions)
+                  ;(println @mysql/entity-definitions)
                   (println "getting entity" [entity-name attribute-name val] " ...")
                   (ok (clean-all (mysql/attribute-query (keyword entity-name) (keyword attribute-name) val)))
                   )
