@@ -83,7 +83,7 @@
   )
 
 (defprotocol StepProduct
-  (step-others [this]) ; sources if this is golden, golden if this is a source
+  (step-others [this]) ; returns sources if this is golden, golden if this is a source
   )
 
 (declare new-product)

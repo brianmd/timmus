@@ -94,8 +94,9 @@
 (defn create-one-time-password [cust]
   )
 ;; (def base-punchout-login-url "http://ubkkb140d981.brianmd.koding.io:22222/punchout_login/")
-(def base-punchout-login-url "http://ubkkb140d981.brianmd.koding.io:22223/punchout_login/")
+;; (def base-punchout-login-url "http://ubkkb140d981.brianmd.koding.io:22223/punchout_login/")
 ;; (def base-punchout-login-url "http://localhost:3000/punchout_login/")
+(def base-punchout-login-url "http://meta.murphydye.com:11002/punchout_login/")
 
 (defn create-onetime-url [onetime]
   (str base-punchout-login-url "onetime-" onetime))
