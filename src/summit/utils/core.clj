@@ -204,6 +204,9 @@
 
 (defn new-mysql-connection [m]
   (korma.db/mysql m))
+;; (new-mysql-connection (-> env :db :default))
+;; (new-mysql-connection (-> env :db :bh-dev))
+
 
 (defn find-db [db-name]
   (if-let [db (db-name @dbs)]
@@ -230,22 +233,28 @@
   (str/lower-case (->str tbl-name)))
 (defn ->table-name [tbl-name]
   (str/lower-case (->str tbl-name)))
+(defn ->db-value [v]
+  (if (= (type v) String)
+    (str "'" v "'")
+    v))
+(examples
+ (assert-= 3 (->db-value 3))
+ (assert-= "'abc'" (->db-value "abc")))
 
 (defn select-by-colname
   ([tbl-name colname id] (exec-sql (str "select * from " (->table-name tbl-name) " where " (->column-name colname) "=" id)))
   ([conn tbl-name colname id] (exec-sql conn (str "select * from " (->table-name tbl-name) " where " (->column-name colname) "=" id)))
   )
 (defn find-by-colname
-  ;; ([tbl-name colname id] (first (exec-sql (str "select * from " (->table-name tbl-name) " where " (->column-name colname) "=" id))))
-  ;; ([conn tbl-name colname id] (first (exec-sql conn (str "select * from " (->table-name tbl-name) " where " (->column-name colname) "=" id))))
-  ([tbl-name colname id] (first (select-by-colname tbl-name colname id)))
-  ([conn tbl-name colname id] (first (select-by-colname conn tbl-name colname id)))
+  ([tbl-name colname id] (first (select-by-colname tbl-name colname (->db-value id))))
+  ([conn tbl-name colname id] (first (select-by-colname conn tbl-name colname (->db-value id))))
   )
 (defn find-by-id
   ([tbl-name id] (find-by-colname tbl-name "id" id))
   ([conn tbl-name id] (find-by-colname tbl-name "id" id))
   )
 ;; (find-by-colname :customers :id 28)
+;; (find-by-colname :customers :email "axiall@murphydye.com")
 ;; (find-by-id :customers 28)
 
 (def protected-write-dbs (atom #{:bh-prod}))

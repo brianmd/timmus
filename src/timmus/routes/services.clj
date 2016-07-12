@@ -61,14 +61,14 @@ bb
 (:body aa)
 (p/process-punchout-request-str (:body aa))
 )
-
 (defn add-product-to-empty-cart [email product-id]
   (let [cust (find-by-colname :customers :email email)
-        cart (find-by-id :carts (:main_cart_id cust))
-        line-items (select-by-colname :line_items :cart_id (:id cart))]
+        cart-id (:main_cart_id cust)
+        _ (if-not cart-id (throw (Exception. (str "Customer " email "does not have a cart."))))
+        line-items (if cart-id (select-by-colname :line_items :cart_id cart-id))]
     (ppn "-----" "line-items" line-items)
     (if (empty? line-items)
-      (k/insert  :line_items (k/values {:product_id product-id :cart_id (:id cart) :quantity 1 :created_at (db-timenow) :updated_at (db-timenow)}))
+      (k/insert  :line_items (k/values {:product_id product-id :cart_id cart-id :quantity 1 :created_at (db-timenow) :updated_at (db-timenow)}))
       )))
 ;; (add-product-to-empty-cart "'axiall@murphydye.com'" 31)
 
@@ -83,7 +83,7 @@ bb
       {:headers {"Content-Type" "application/xml; charset=utf-8"},
        :body request}))
     (ppn "posted")
-    (add-product-to-empty-cart "'axiall@murphydye.com'" 31)
+    (add-product-to-empty-cart "axiall@murphydye.com" 31)
     )
   )
 
