@@ -1,37 +1,19 @@
 (println "loading summit.punchout.order-message")
 
 (ns summit.punchout.order-message
-  (:require [clojure.string :as str]
-            [clojure.java.io :as io :refer [as-url make-parents]]
-
-            [clojure.data.xml :as xml]
-            [hiccup.core :as hiccup :refer [h] :rename {h escape}]
-            [clojure.core.reducers :as r]
-
-            [clojure.data.csv :as csv]
-            [clojure.java.io :as io]
-            [clojure.data.codec.base64 :as b64]
-
-            [net.cgrand.enlive-html :as html]
-            [cheshire.core :refer [generate-string parse-string]]
-            [pl.danieljanus.tagsoup :as soup]
-            [taoensso.carmine :as car :refer (wcar)]
-            [clojure.zip :as zip]
-            [config.core :refer [env]]
-            [korma.core :refer [database limit where values insert order] :as k]
-
-            [com.rpl.specter :as s]
+  (:require [cheshire.core :refer [generate-string parse-string]]
             [clj-http.client :as client]
-
-            [dk.ative.docjure.spreadsheet :as xls]
-
-            [summit.step.xml-output :refer :all]
+            [clojure.java.io :as io :refer [as-url make-parents]]
+            [config.core :refer [env]]
+            [hiccup.core :as hiccup :refer [h] :rename {h escape}]
+            [korma.core :as k :refer [database insert limit order values where]]
+            [taoensso.carmine :as car :refer [wcar]]
 
             [summit.utils.core :refer :all]
-            [summit.punchout.core :as p]
             [summit.db.relationships :refer :all]
+            [summit.punchout.core :as p]
+            [summit.step.xml-output :refer :all]
             ))
-
 
 (defn order-header [order]
   (let [punchout-request (:punchout-request order)
