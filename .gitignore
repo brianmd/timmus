@@ -17,6 +17,6 @@ profiles.clj
 *.jcoDestination
 oracle-meta
 /docker/m2
-/docker/checkouts
+/docker/jars
 .nrepl-port
 
