@@ -5,6 +5,8 @@
             [timmus.db.migrations :as migrations]
             [config.core :refer [env]]
             ;; [timmus.config :refer [env]]
+
+            [summit.utils.core :as utils]
             )
   (:gen-class))
 

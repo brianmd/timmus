@@ -5,4 +5,4 @@
 # cd docker
 mkdir -p m2
 mkdir -p lein
-docker run -ti --rm -p 127.0.0.1:7000:7000 -p 127.0.0.1:3007:3007 -v $(pwd -P)/..:/root/docker -v $(pwd -P)/m2:/root/.m2 -v $(pwd -P)/lein:/root/.lein -v $(pwd -P)/../../utils:/root/utils timmus /bin/bash
+docker run -ti --rm -w /root/docker -v $(pwd -P)/..:/root/docker -v $(pwd -P)/m2:/root/.m2 -v $(pwd -P)/lein:/root/.lein -v $(pwd -P)/../../utils:/root/utils timmus /bin/bash
