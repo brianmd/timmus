@@ -16,4 +16,7 @@ profiles.clj
 *.edn
 *.jcoDestination
 oracle-meta
+/docker/m2
+/docker/checkouts
+.nrepl-port
 
