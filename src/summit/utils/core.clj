@@ -127,6 +127,13 @@
             clojure.pprint/*print-right-margin* 120]
     (doseq [arg args] (pprint arg))))
 
+(defn ppl
+  "pprint, returning last arg"
+  [& args]
+  (apply ppn args)
+  (last args))
+;; (ppn 3 {:a 3 :q "rew"})
+
 (defn pp
   "pprint, returning last arg"
   [& args]
@@ -207,13 +214,24 @@
 ;; (new-mysql-connection (-> env :db :default))
 ;; (new-mysql-connection (-> env :db :bh-dev))
 
+(defn default-env-for [key]
+  (-> env :defaults key))
 
-(defn find-db [db-name]
-  (if-let [db (db-name @dbs)]
-    db
-    (when-let [db (new-mysql-connection (-> env :db db-name))]
-      (swap! dbs assoc db-name db)
-      db)))
+(defn default-env-setting [key]
+  (let [default (default-env-for key)]
+    (-> env key default)))
+;; (default-env-setting :redis)
+;; (default-env-setting :db)
+;; ((default-env-setting :db) :local)
+
+(defn find-db
+  ([] (find-db (default-env-for :db)))
+  ([db-name]
+   (if-let [db (db-name @dbs)]
+     db
+     (when-let [db (new-mysql-connection (-> env :db db-name))]
+       (swap! dbs assoc db-name db)
+       db))))
 
 (defn exec-sql
   ([sql]
@@ -228,6 +246,8 @@
 ;; (exec-sql :bh-neo "select count(*) from customers")
 ;; (exec-sql :bh-dev "select count(*) from customers")
 ;; (exec-sql :mdm-local "select count(*) from idw_manufacturer")
+;; (exec-sql :bh-dev "select count(*) from customers")
+;; (exec-sql "select count(*) from customers")
 
 (defn ->column-name [tbl-name]
   (str/lower-case (->str tbl-name)))
@@ -270,15 +290,6 @@
 (def step-input-path (-> env :paths :local :step-input-path))
 (def step-output-path (-> env :paths :local :step-output-path))
 
-
-(defn default-env-setting [key]
-  (let [default (-> env :defaults key)]
-    (-> env key default)))
-;; (default-env-setting :redis)
-;; (default-env-setting :db)
-;; ((default-env-setting :db) :local)
-
-(println "loading summit.utils.core2a")
 (println "(an error here indicates you need a profile.clj file with redis settings!)")
 
 (def redis-conn {:pool {} :spec (default-env-setting :redis)})
@@ -840,19 +851,22 @@ where r.account_id is null and c.id=" id)]
 
 (defn log-now [obj]
   "stores request in its own file as edn"
-  (let [filename (uuid)]
-    (spit (str "log/separate/" filename)
-          (pr-str obj)))
+  (let [filename      (uuid)
+        full-filename (str "log/separate/" filename)]
+    (io/make-parents full-filename)
+    (spit full-filename (pr-str obj)))
   obj)
 
 (defn append-to-file [obj filename]
-   (spit (str "log/" filename ".log")
-         (with-out-str
-           (pp
-            [(localtime)
-             (if (map? obj) (req->printable obj) obj)
-             ]))
-         :append true)
+  (let [full-filename (str "log/" filename ".log")]
+    (io/make-parents full-filename)
+    (spit full-filename
+          (with-out-str
+            (pp
+             [(localtime)
+              (if (map? obj) (req->printable obj) obj)
+              ]))
+          :append true))
    obj)
 
 (defmacro do-log-request
