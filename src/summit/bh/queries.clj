@@ -36,12 +36,18 @@ order by c.created_at
 
 (defn last-orders [n]
   (reverse
-   (dselect contact-email (database (find-db :bh-prod)) (where {:type "Order"}) (order :id :DESC) (limit n))))
-;; (k/select :blue_harvest_dev.customers (k/database (utils/find-db :bh-local)) (k/where {:id 28}))
-;; (k/select :service_centers (k/database (find-db :bh-local)))
-;; (-> (k/select* :service_centers)
-;;     (k/as-sql))
+   (dselect contact-email (database (find-db :bh-prod)) (where {:type "Order"}) (order :id :DESC) (limit n) (k/with cart) (k/with account))))
 
+(defn last-order []
+  (first (last-orders 1)))
+
+(examples
+ (last-orders 1)
+ (last-order)
+ (keys (last-order))
+ (:customer_id_2 (last-order))
+ (order-vitals (last-order))
+ )
 
 (defn open-last-order []
   (let [orders (last-orders 1)]
@@ -52,16 +58,8 @@ order by c.created_at
   (map (comp #(/ % 100.0) :total_price)
        (dselect contact-email (database (find-db :bh-prod)) (where {:type "Order"}) (fields [:total_price]))))
 
-(defn last-order []
-  (first
-   (dselect contact-email (database (find-db :bh-prod)) (where {:type "Order"}) (order :id :DESC) (limit 1))))
-
 (defn last-order-sans-json []
   (dissoc (last-order) :sap_json_result))
-
-;; (defn order-vitals [o]
-;;   (let [o (mapv #(get o %) [:id :total_price :email :name :created_at :sap_document_number])]
-;;     (assoc o 1 (/ (nth o 1) 100.0))))
 
 (defn orders-by [email]
   (dselect contact-email (database (find-db :bh-prod)) (where {:type "Order" :email email}) (order :id :DESC) (limit 1)))
@@ -69,12 +67,17 @@ order by c.created_at
 ;; (count (orders-by (:email (last-order))))
 ;; (:created_at (ddetect customer (where {:email (:email (last-order))})))
 
-(defn order-vitals [o]
-  (let [o (into {} (s/select [s/ALL #(contains? #{:id :total_price :email :name :created_at :sap_document_number :delivery_method :message} (first %))] o))]
+(defn order-vitals [order]
+  (let [o (into {} (s/select [s/ALL #(contains? #{:id :total_price :email :name :created_at :sap_document_number :delivery_method :message} (first %))] order))
+        ]
     (assoc o
            :total_price (/ (:total_price o) 100.0)
-           :created (localtime (:created_at o)))))
-
+           :created (localtime (:created_at o))
+           :account_name (:name_2 order)
+           :account (str "https://www.summit.com/store/credit/accounts/" (:account_number order))
+           :customer (str "https://www.summit.com/store/credit/customers/" (:customer_id_2 order))
+           ;; :order-full order
+           )))
 
 
 

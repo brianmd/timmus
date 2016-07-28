@@ -53,6 +53,7 @@
 (defentity account
            (table :accounts)
            (has-many role {:fk :account_id})
+           (has-many contact-email {:fk :account_id})
            (many-to-many customer :roles {:lfk :account_id :rfk :customer_id})
            )
 
@@ -70,6 +71,7 @@
            (table :carts)
            ;(name :carts)
            (has-many line-item)
+           (has-many contact-email {:fk :cart_id})
            (belongs-to customer {:fk :customer_id})
            (belongs-to service-center {:fk :service_center_id})
            )
@@ -86,11 +88,8 @@
 
 (defentity contact-email
   (table :contact_emails)
+  (belongs-to account {:fk :account_id})
   (belongs-to cart {:fk :cart_id})
-  )
-
-(defentity contact-email
-  (table :contact_emails)
   (belongs-to customer {:fk :customer_id})
   )
 
