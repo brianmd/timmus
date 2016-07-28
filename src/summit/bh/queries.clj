@@ -70,7 +70,7 @@ order by c.created_at
 (defn order-vitals [order]
   (let [o (into {} (s/select [s/ALL #(contains? #{:id :total_price :email :name :created_at :sap_document_number :delivery_method :message} (first %))] order))
         ]
-    (assoc o
+    (assoc (clojure.set/rename-keys o {:name :customer-name :email :customer-email}) 
            :total_price (/ (:total_price o) 100.0)
            :created (localtime (:created_at o))
            :account_name (:name_2 order)
@@ -78,6 +78,10 @@ order by c.created_at
            :customer (str "https://www.summit.com/store/credit/customers/" (:customer_id_2 order))
            ;; :order-full order
            )))
+
+(defn sorted-order-vitals [order]
+  (into (sorted-map) (order-vitals order)))
+;; (sorted-order-vitals (last-order))
 
 
 

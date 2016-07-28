@@ -12,8 +12,8 @@
             [clojure.string :as str]
             [clojure.walk :refer :all]
             [cheshire.core :refer :all]
-            ;[clj-time.core :as t]
-            ;[clj-time.format :as f]
+                                        ;[clj-time.core :as t]
+                                        ;[clj-time.format :as f]
             [net.cgrand.enlive-html :as html]
             [clojure.core.async :as  a
              :refer [>! <! >!! <!! go go-loop chan close! thread alts! alts!! timeout
@@ -23,8 +23,8 @@
             [clj-http.client :as client]
             [config.core :refer [env]]
 
-            ;[compojure.core :refer [defroutes GET]]
-            ;[compojure.core :refer [GET]]
+                                        ;[compojure.core :refer [defroutes GET]]
+                                        ;[compojure.core :refer [GET]]
             [cheshire.generate :refer [add-encoder encode-str remove-encoder]]
 
             [summit.utils.core :refer :all]
@@ -37,6 +37,7 @@
             [summit.punchout.core :as p]
             [summit.punchout.punchout :refer [process-punchout-request-str ]]
             [summit.punchout.order-message :as order-message]
+            [summit.punchout.order-request :as order-request]
             [summit.punchout.order-request :as p3]
             [summit.papichulo.core :refer [papichulo-url papichulo-creds create-papi-url papichulo-url-with-creds]]
             [summit.health-check.blue-harvest :as bh]
@@ -46,7 +47,8 @@
             [summit.bh.queries :as bh-queries]
 
             [timmus.routes.fake-axiall :refer [fake-axiall-punchout-request]]
-            ))
+
+            [clojure.java.io :as io]))
 ;(-> @((-> customer :rel) "cart") :fk-key)
 
 ;; (def fffff (into [] (map :matnr (k/select :mdm.price (k/fields :matnr)))))
@@ -187,11 +189,13 @@ bb
   "stores request in its own file as edn"
   ([req] (separately-log-request req "request"))
   ([req filename]
-   (let [hash (req-sans-unprintable req)]
-     (spit (str "log/" (short-timenow) "-"
-                (clojure.string/replace filename "/" "-")
-                ".clj")
-           (pr-str hash)))))
+   (let [hash (req-sans-unprintable req)
+         filename (str "log/" (short-timenow) "-"
+              (clojure.string/replace filename "/" "-")
+              ".clj")
+         ]
+     (io/make-parents filename)
+     (spit filename (pr-str hash)))))
 
 (defn load-log-request [filename]
   (read-string (slurp (str "log/" filename ".clj"))))
@@ -317,7 +321,9 @@ bb
             (GET "/last-orders/:n" req
                 :path-params [n :- Long]
                 {:status 200,
-                 :body (mapv bh-queries/order-vitals (bh-queries/last-orders n))})
+                 :body (mapv bh-queries/sorted-order-vitals (bh-queries/last-orders n))})
+
+
 
             (GET "/project/:id" req
               :path-params [id :- Long]
@@ -333,11 +339,26 @@ bb
                :body (projects id)}
               )
 
+
+
             (GET "/punchout/axiall" req
               (let [url (process-fake-axiall-punchout)
                     url "http://meta.murphydye.com:11000/punchout_login/axiall"
                     ]
                 (redirect url 302)))
+
+            (POST "/punchout/po" req
+              (let [byte? (= (type (:body req)) org.httpkit.BytesInputStream)
+                    req (if byte? (assoc req :body (slurp (:body req))) req)]
+                (do-log-request req "punchout/po")
+                (do-log-request {:punchout-po (localtime)})
+                {:status 200,
+                 :headers {"Content-Type" "application/xml; charset=utf-8"},
+                 :body (order-request/xml-response 3)
+                 }
+
+                )
+              )
 
             (POST "/punchout/accept-order-message/:id" req
               :path-params [id :- Long]
@@ -442,21 +463,21 @@ bb
 
             (POST "/punchout" req
               (ppn "/punchout (post)")
-              (do-log-request req "punchout-post")
-              (do-log-request {:punchout (localtime)})
-                   (println "in post punchout")
-                   (def qqq req)
-                   (binding [*out* *err*]
-                     (println "in post punchout"))
-                   (let [byte? (= (type (:body req)) org.httpkit.BytesInputStream)
-                         req (if byte? (assoc req :body (slurp (:body req))) req)]
-                     ;; (do-log-request req "punchout")
-                     (let [response (process-punchout-request-str (:body req))]
-                       ;; text/xml; charset=utf-8
-                       (do-log-request {:status 200
-                                 :headers {"Content-Type" "text/xml; charset=utf-8"}
-                                 :body response} "punchout-response")
-                       )))
+              (let [byte? (= (type (:body req)) org.httpkit.BytesInputStream)
+                    req (if byte? (assoc req :body (slurp (:body req))) req)]
+                (do-log-request req "punchout-post")
+                (do-log-request {:punchout (localtime)})
+                (println "in post punchout")
+                (def qqq req)
+                (binding [*out* *err*]
+                  (println "in post punchout"))
+                ;; (do-log-request req "punchout")
+                (let [response (process-punchout-request-str (:body req))]
+                  ;; text/xml; charset=utf-8
+                  (do-log-request {:status 200
+                                   :headers {"Content-Type" "text/xml; charset=utf-8"}
+                                   :body response} "punchout-response")
+                  )))
 
             (GET "/manufacturerlookup" req
               (do
