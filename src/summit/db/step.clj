@@ -73,7 +73,7 @@
 
 ;; (k/select :STEPSYS.VT_PRODUCT (k/database step-db) (k/where {:SOURCEID 2015657}))
 
-;; (k/select :customers (k/database (utils/find-db :bh-local)) (k/limit 1))
+;; (k/select :customers (k/database (utils/find-db)) (k/limit 1))
 
 ;; (-> (k/select* :VT_PRODUCT)
 ;;     (k/database step-db)
