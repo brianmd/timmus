@@ -5,6 +5,8 @@
             [net.cgrand.enlive-html :as html]
             [com.rpl.specter :as s :refer [ALL]]
 
+            [clj-http.client :as client]
+
             [summit.utils.core :refer :all]
 
             [summit.punchout.core :refer :all]
@@ -45,7 +47,7 @@
 (defn get-url-content [url]
   (let [url (str base-url url context)
         _   (ppn url)
-        response (clj-http.client/get url (step-authentication))]
+        response (client/get url (step-authentication))]
     (if (= 200 (:status response))
       (xml->map (:body response))
       nil)))
