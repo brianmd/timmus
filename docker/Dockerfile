@@ -1,12 +1,11 @@
 FROM clojure:latest
 
 RUN apt-get update && \
-    apt-get install -y sudo && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    apt-get install -y sudo zsh
 
-RUN adduser --disabled-password --gecos '' clojure && \
-    adduser clojure sudo && \
+# RUN adduser --disabled-password --gecos '' summit && \
+RUN adduser --disabled-password --gecos '' summit -s /bin/zsh && \
+    adduser summit sudo && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 ENV MAVEN_VERSION="3.3.9" \
@@ -20,11 +19,17 @@ RUN cd /tmp && \
 
 RUN echo "cleaning up" && \
   # apk del wget && \
-  rm -f /tmp/* /var/cache/apk/*
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    rm -f /tmp/* /var/cache/apk/*
 
-RUN mkdir -p /root/docker
-WORKDIR /root
-ENV HOME /root
+# RUN mkdir -p /root/docker
+# WORKDIR /root
+# ENV HOME /root
+RUN mkdir -p /home/summit/docker
+WORKDIR /home/summit
+USER summit
+ENV HOME /home/summit
 
 # 7897=nrepl, 7002=cljs-nrepl, 3449=http
 # EXPOSE 7897 7002 3449
