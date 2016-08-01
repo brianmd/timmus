@@ -24,7 +24,7 @@
             ))
 
 
-(def ^:dynamic *db-name* :bh-local)
+(def ^:dynamic *db-name* (default-env-for :db))
 
 (defn create-cart [cart-map item-maps]
   (let [db (find-db *db-name*)]
@@ -120,6 +120,23 @@
  (pp (mapv order-vitals (last-orders 5)))
  (plot-order-dollars)
  )
+
+(defn create-response [order]
+  (cxml
+   [:Response
+    [:Status {:code "200" :text "OK"}]])
+  )
+;; (create-response 3)
+
+(defn xml-response [order]
+  (create-cxml (create-response order)))
+;; (xml-response 3)
+;; <cXML payloadID="9949494" xml:lang="en"
+;; timestamp="1999-03-12T18:39:09-08:00">
+;; <Response>
+;; <Status code="200" text="OK"/>
+;; </Response>
+;; </cXML>
 
 (println "done loading summit.punchout.order-request")
 

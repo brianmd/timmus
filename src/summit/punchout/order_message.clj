@@ -18,19 +18,23 @@
 (defn order-header [order]
   (let [punchout-request (:punchout-request order)
         punchout (parse-string (:params punchout-request))
-        from ((punchout "sender") "id") ;; broker
-        to ((punchout "from") "id")  ;; company
+        from ((punchout "from") "id") ;; broker
+        to ((punchout "to") "id")  ;; company
+        sender ((punchout "sender") "id")  ;; company
+        ;; secret ((punchout "sender") "secret")
         ]
     [:Header
      [:From
       [:Credential {:domain "DUNS"}
-       [:Identity from]]]
+       [:Identity to]]]
      [:To
       [:Credential {:domain "DUNS"}
-       [:Identity to]]]
+       [:Identity from]]]
      [:Sender
       [:Credential {:domain "DUNS"}
-       [:Identity from]]
+       [:Identity sender]
+       ;; [:SharedSecret secret]
+       ]
       [:UserAgent "Summit cXML Application"]]
      ]))
 (examples
@@ -41,22 +45,31 @@
  (parse-string (:params (:punchout-request (retrieve-order-data 4668))))
  ((parse-string (:params (:punchout-request (retrieve-order-data 4668)))) "company"))
 
-(defn item->hiccup [item]
-  (let [prod (find-entity :products (:product_id item))
-        cents (if-let [c (:price_cents item)] c 4.23)
+(defn item->hiccup [cart-item]
+  (let [prod (find-entity :products (:product_id cart-item))
+        mfr (find-entity :manufacturers (:manufacturer_id prod))
+        cents (if-let [c (:price_cents cart-item)] c 4.23)
         cents (if (= 0 cents) 4.23 cents)]
-    [:ItemIn {:quantity (:quantity item)}
+    (ppn "item" cart-item)
+    (ppn "prod" prod)
+    [:ItemIn {:quantity (:quantity cart-item)}
      [:ItemID
-      [:SupplierPartID (:product_id item)]
-      [:SupplierPartAuxiliaryID (:matnr prod)]]
+      [:SupplierPartID (->int (:matnr prod))]
+      [:SupplierPartAuxiliaryID (:product_id cart-item)]
+      ]
      [:ItemDetail
       [:UnitPrice [:Money {:currency "USD"} cents]]
       [:Description {:xml:lang "en"}
-       [:ShortName (escape (:name prod))]
-       (escape (:LongDescription prod))]
+       (escape (:name prod))
+       ;; [:ShortName (escape (:name prod))]
+       ;; (escape (:LongDescription prod))
+       ]
+      [:ManufacturerName (:name mfr)]
+      [:ManufacturerPartID (:manufacturer_part_number prod)]
       [:UnitOfMeasure (:uom prod)]
-      [:URL (str "https://www.summit.com/store/products/" (:product_id item))]
-      (if false [:Classification {:domain "UNSPSC"} (:unspsc prod)])
+      [:URL (str "https://www.summit.com/store/products/" (:product_id cart-item))]
+      [:Classification {:domain "UNSPSC"} "39000000"]
+      ;; (if false [:Classification {:domain "UNSPSC"} (:unspsc prod)])
       ]]))
 
 (defn load-order-info [order-num]
@@ -65,11 +78,11 @@
                            (find-entity :punchouts (:punchout_id order-request)))
         cart (find-entity :carts (:cart_id order-request))
         cust (find-entity :customers (:customer_id cart))
-        items (find-entity-by :line_items :cart_id (:cart_id order-request))
+        cart-items (find-entity-by :line_items :cart_id (:cart_id order-request))
         ]
     {:order-num order-num
      :cart cart
-     :items items
+     :items cart-items
      :customer customer
      :punchout-request punchout-request}))
 (examples
@@ -80,18 +93,18 @@
 (println "--------- f")
 
 (defn items-price [items]
-  23)
+  4.23)
 
 (defn create-order-message-from [{:keys [items punchout-request]}]
   [:Message {:inReplyTo (:payload_id punchout-request)}
    ;; create disallows inspect/edit. May want to allow these in the future. p. 90
-   [:PunchOutOrderMessage {:operationAllowed "create"}
+   [:PunchOutOrderMessage
     [:BuyerCookie (:buyer_cookie punchout-request)]
     [:PunchOutOrderMessageHeader {:operationAllowed (:operation punchout-request)}
      [:Total
       [:Money {:currency "USD"} (items-price items)]]]
+    (map item->hiccup items)
     ]
-   (map item->hiccup items)
    ]
   )
 
@@ -106,12 +119,17 @@
 
 (defn retrieve-order-data [order-id]
   (try
+    (ppn "order-id" order-id)
     (let [order (find-entity :contact_emails order-id)
+          _ (ppn "order" order)
           punchout-id (:punchout_id order)
           cart (find-entity :carts (:cart_id order))
+          _ (ppn "cart" cart)
           customer (find-entity :customers (:customer_id cart))
           items (find-entity-by :line_items :cart_id (:id cart))
+          _ (ppn "items" items)
           punchout-request (p/find-punchout-request punchout-id)
+          _ (ppn "preq" punchout-request)
           ]
       (if-not punchout-id
         (throw (Exception. (str "Order " order-id " is not in a punchout session"))))
@@ -133,17 +151,21 @@
   (println "\n\n\n      order-message-hiccup     \n\n\n")
   (let [head (order-header order-message-data)
         msg (create-order-message-from order-message-data)]
+    (ppn "hiccup" msg)
     [head msg]))
 
 (defn order-message-xml [order-message-data]
-  (let [data (order-message-hiccup order-message-data)]
-    (p/create-cxml (p/cxml (first data) (second data)))))
+  (let [data (order-message-hiccup order-message-data)
+        xml (p/create-cxml (p/cxml (first data) (second data)))]
+    (println xml)
+    xml))
 
 (examples
  (order-message-xml (retrieve-order-data 4667))
  (order-message (retrieve-order-data 4667))
  (def xyz punchout-request)
  (def xyy url)
+ (pp 3 4 5)
  (println "order message id: " id)
  (println "order request " order-request)
  (println "punchout-request" punchout-request)
@@ -174,20 +196,25 @@
     (do-log-request xml "punchout-send-order-message")
     {:url url
      :method "post"
-     :base64 (base64-encode xml)}
-    ))
+     ;; :base64 (base64-encode xml)
+     ;; :xmlstr (hiccup/h xml)
+     :xmlstr xml
+     }))
 ;; (order-message-form 4818)
 
+;; (hiccup/h "a<b>c\"ef\"")
 
+"  not used for real work  "
 (defn submit-order-message [order-id]
-  (ppn "in submit-order-message" order-id)
+  (ppn "deprecated, don't use this!!! in submit-order-message" order-id)
   (let [order-data (retrieve-order-data order-id)
         _ (ppn "order-data:" order-data)
         url (:browser_form_post (:punchout-request order-data))
         xml (order-message-xml order-data)]
     (ppn "url" url)
     (ppn "xml:" xml)
-    (ppn "base64" (base64-encode xml))
+    (ppn "xml-str:" (hiccup/h xml))
+    ;; (ppn "base64" (base64-encode xml))
     (do-log-request xml "punchout-send-order-message")
     (do-log-request
      (client/post
