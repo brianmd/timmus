@@ -1,7 +1,7 @@
 FROM clojure:latest
 
 RUN apt-get update && \
-    apt-get install -y sudo zsh
+    apt-get install -y sudo
 
 ENV MAVEN_VERSION="3.3.9" \
     M2_HOME=/usr/lib/mvn
@@ -13,7 +13,7 @@ RUN cd /tmp && \
   ln -s "$M2_HOME/bin/mvn" /usr/bin/mvn
 
 # RUN adduser --disabled-password --gecos '' summit && \
-RUN adduser --disabled-password --gecos '' -m summit -s /bin/zsh && \
+RUN adduser --disabled-password --gecos '' summit && \
     adduser summit sudo && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
