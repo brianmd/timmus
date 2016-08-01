@@ -418,7 +418,7 @@
     ))
 
 (defn new-projects-component []
-  (let [db (project-for-account 1000092)]
+  (let [db (project-for-account 1002225)]
     (get-projects db)
     (fn projs-comp-win-fn []
       [projects-component db])))

@@ -29,13 +29,13 @@
                  [org.webjars/webjars-locator-jboss-vfs "0.1.0"]
                  ;; [luminus-immutant "0.1.9" :exclusions [org.jboss.logging/jboss-logging]]
                  [luminus-immutant "0.1.9"]
-                 [buddy "0.11.0"]
                  [luminus-migrations "0.1.0"]
                  ;; [migratus "0.8.9"]
                  [conman "0.4.8"]
                                         ;[conman "0.3.0" :exclusions [org.slf4j/slf4j-api org.slf4j/slf4j-log4j12]]
                  [mysql/mysql-connector-java "5.1.6"]
 
+                 [buddy "0.11.0"]
                  [buddy/buddy-core "0.13.0"]
                  [buddy/buddy-sign "1.1.0"]
 
@@ -112,6 +112,7 @@
                  [re-frame "0.7.0"]
                  ;[criterium "0.4.3"]                        ; benchmarking
 
+                 [hiccup "1.0.5"]
                  [enlive "1.1.6"]
 
                  ;; [com.h2database/h2 "1.4.190"]
