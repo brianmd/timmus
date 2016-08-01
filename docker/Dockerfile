@@ -12,7 +12,6 @@ RUN cd /tmp && \
   mv "apache-maven-$MAVEN_VERSION" "$M2_HOME" && \
   ln -s "$M2_HOME/bin/mvn" /usr/bin/mvn
 
-# RUN adduser --disabled-password --gecos '' summit && \
 RUN adduser --disabled-password --gecos '' summit && \
     adduser summit sudo && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
@@ -20,8 +19,8 @@ RUN adduser --disabled-password --gecos '' summit && \
 RUN echo "cleaning up" && \
   # apk del wget && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-    rm -f /tmp/* /var/cache/apk/*
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
+    rm -f  /var/cache/apk/*
 
 # RUN mkdir -p /root/docker
 # WORKDIR /root
