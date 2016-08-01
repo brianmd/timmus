@@ -69,15 +69,23 @@ order by c.created_at
 
 (defn order-vitals [order]
   (let [o (into {} (s/select [s/ALL #(contains? #{:id :total_price :email :name :created_at :sap_document_number :delivery_method :message} (first %))] order))
+        service-center (if (:service_center_id order)
+                         (find-by-id :service_centers (:service_center_id order)))
+        service-center-name (if service-center (:long_name service-center))
+        addr (str/join ", " [(:address order) (:city order) (:state order) (:zip order)])
         ]
-    (assoc (clojure.set/rename-keys o {:name :customer-name :email :customer-email}) 
-           :total_price (/ (:total_price o) 100.0)
-           :created (localtime (:created_at o))
-           :account_name (:name_2 order)
-           :account (str "https://www.summit.com/store/credit/accounts/" (:account_number order))
-           :customer (str "https://www.summit.com/store/credit/customers/" (:customer_id_2 order))
-           ;; :order-full order
-           )))
+    (dissoc
+     (assoc (clojure.set/rename-keys o {:name :customer-name :email :customer-email})
+            :total_price (/ (:total_price o) 100.0)
+            :created (localtime (:created_at o))
+            :account_name (:name_2 order)
+            :account (str "https://www.summit.com/store/credit/accounts/" (:account_number order))
+            :customer (str "https://www.summit.com/store/credit/customers/" (:customer_id_2 order))
+            :service_center service-center-name
+            :shipping_address addr
+            ;; :order-full order
+            )
+     :created_at)))
 
 (defn sorted-order-vitals [order]
   (into (sorted-map) (order-vitals order)))
