@@ -277,6 +277,13 @@
 ;; (find-by-colname :customers :email "axiall@murphydye.com")
 ;; (find-by-id :customers 28)
 
+(defn ensure-record [tblname values]
+  (if-let [row (first (k/select tblname (k/where values)))]
+    row
+    (let [new-id (k/insert tblname (k/values values))]
+      (first (k/select tblname (k/where {:id (:generated_key new-id)})))
+      )))
+
 (def protected-write-dbs (atom #{:bh-prod}))
 
 (defn write-sql [conn sql]
