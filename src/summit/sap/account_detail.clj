@@ -50,10 +50,10 @@
   (let [account-nums (k/select :accounts (k/database db) (k/fields [:account_number]) (k/where {:city nil}))
         account-nums (map :account_number account-nums)]
     (dorun (map #(bh-update-account db %) account-nums))))
-;; (time (bh-update-all-accounts (find-db :bh-local)))
+;; (time (bh-update-all-accounts (find-db)))
 
 (examples
- (time (bh-update-all-accounts (find-db :bh-local)))
+ (time (bh-update-all-accounts (find-db)))
  (def dkd (account-detail 1000736))
  (def dkd (account-detail 1027846))
  (ppn dkd)

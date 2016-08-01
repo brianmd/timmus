@@ -46,7 +46,6 @@
 
 
 
-
 (defn find-destination [server-name]
   (if (keyword? server-name)
     (JCoDestinationManager/getDestination (servers server-name))

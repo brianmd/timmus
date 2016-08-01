@@ -6,7 +6,7 @@
 ;; Data resides in three formats: xml, vector (hiccup), and map (enlive).
 ;; As we transform the same data in each of these formats, a suffix is sometimes added.
 ;; For example, order-message-xml, order-message-vector, and order-message-map.
-;; 
+;;
 ;; When data is in default format (input as map and output as vector), no suffix is needed.
 
 (ns summit.punchout.core
@@ -39,23 +39,11 @@
             ))
 
 
-(println "--------- d")
-
 (defn html->map [xml]
   (html/xml-resource (java.io.StringReader. xml)))
 
 (defn xml->map [xml]
   (html/xml-resource (java.io.StringReader. xml)))
-
-(defn log-punchout [other-party direction type msg]
-  (k/insert :punchout_logs
-            (k/values {:other_party other-party :direction (if (= direction :to) 1 0) :type (str type) :message (str msg) :created_at (db-timenow) :updated_at (db-timenow)}))
-  )
-
-;; (def x (slurp "test/mocks/punchout-request.xml"))
-;; x
-;; (def y (xml->map x))
-;; y
 
 (defn extract-content [enlive-parsed selector-vector]
   (first (html/select enlive-parsed (conj (vec selector-vector) html/text-node))))
@@ -98,9 +86,6 @@
     ))
 
 
-(println "--------- e")
-
-
 (def cxml-leader "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <!DOCTYPE cXML SYSTEM \"http://xml.cxml.org/schemas/cXML/1.1.010/cXML.dtd\">
 ")
@@ -112,7 +97,7 @@
   (clean-all (java.util.Date.)))
 
 (defmacro cxml [& body]
-  `[:cXML {:version "1.1.007" "xml:lang" "en-US" :payloadID ~(create-payload-id) :timestamp ~(create-timestamp)}
+  `[:cXML {:version "1.1.010" "xml:lang" "en-US" :payloadID ~(create-payload-id) :timestamp ~(create-timestamp)}
    ~@body
    ]
   )
@@ -134,6 +119,47 @@
 
 (defn find-punchout-request [id]
   (find-entity :punchouts id))
+
+
+(defn log-punchout [other-party direction type msg]
+  (k/insert :punchout_logs
+            (k/values {:other_party other-party :direction (if (= direction :to) 1 0) :type (str type) :message (str msg) :created_at (db-timenow) :updated_at (db-timenow)}))
+  )
+
+
+(defn extract-header [enlive-parsed]
+  (let [extract      (partial extract-content enlive-parsed)
+        request-type (request-type enlive-parsed)
+        ]
+    {:from    {:id (extract [:From :Identity])}
+     :to      {:id (extract [:To :Identity])}
+     :sender  {:id    (extract [:Sender :Identity])
+               :auth  (extract [:Sender :SharedSecret])
+               :agent (extract [:Sender :UserAgent])}
+     :type    request-type
+     :enlive-request enlive-parsed
+     }))
+
+(defn find-broker-company [company auth]
+  (first
+   (k/select :broker_companies
+             (k/where {:company_key company :company_auth_hash auth})
+             )))
+
+(defn insert-entities [header]
+  (let [company-key (-> header :from :id)
+        auth (-> header :sender :auth)]
+    (if-let [broker-company (find-broker-company company-key auth)]
+      (let [company (find-by-id :companies (:company_id broker-company))]
+        (assoc-in
+         (assoc-in header [:sender :broker-company] broker-company)
+         [:from :company] company))
+      (throw (Exception. (str "Unable to find matching broker-companies with company_key '" company-key "' and the provided authentication.")))
+      )))
+
+(defn parse-header [m]
+  (insert-entities (extract-header m)))
+
 
 
 (println "done loading summit.punchout.core")
