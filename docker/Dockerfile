@@ -3,11 +3,6 @@ FROM clojure:latest
 RUN apt-get update && \
     apt-get install -y sudo zsh
 
-# RUN adduser --disabled-password --gecos '' summit && \
-RUN adduser --disabled-password --gecos '' summit -s /bin/zsh && \
-    adduser summit sudo && \
-    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-
 ENV MAVEN_VERSION="3.3.9" \
     M2_HOME=/usr/lib/mvn
 
@@ -16,6 +11,11 @@ RUN cd /tmp && \
   tar -zxvf "apache-maven-$MAVEN_VERSION-bin.tar.gz" && \
   mv "apache-maven-$MAVEN_VERSION" "$M2_HOME" && \
   ln -s "$M2_HOME/bin/mvn" /usr/bin/mvn
+
+# RUN adduser --disabled-password --gecos '' summit && \
+RUN adduser --disabled-password --gecos '' -m summit -s /bin/zsh && \
+    adduser summit sudo && \
+    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 RUN echo "cleaning up" && \
   # apk del wget && \
