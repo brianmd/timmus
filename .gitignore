@@ -5,7 +5,7 @@
 /log
 .#*
 pom.xml
-jars/*
+/jars
 *.jar
 *.class
 /.lein-*
