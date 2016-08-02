@@ -12,7 +12,8 @@ RUN cd /tmp && \
   mv "apache-maven-$MAVEN_VERSION" "$M2_HOME" && \
   ln -s "$M2_HOME/bin/mvn" /usr/bin/mvn
 
-RUN adduser --disabled-password --gecos '' -u 1001 --gid 1001 summit && \
+RUN addgroup -gid 1001 summit
+    adduser --disabled-password --gecos '' -u 1001 --gid 1001 summit && \
     adduser summit sudo && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
