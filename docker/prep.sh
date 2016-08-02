@@ -1,7 +1,6 @@
 #!/bin/sh
 # note: must be run from the docker directory
 
-# need setup from inside docker thread
-# cd docker
-mkdir -p /home/summit/docker/checkouts
-ln -s /home/summit/utils /home/summit/docker/checkouts/utils
+git clone git@bitbucket.org:summitelectricsupply/jars.git /home/summit/docker
+cd /home/summit/jars && cp -r linux-64bit .
+

@@ -166,7 +166,7 @@
       :output-dir "target/cljsbuild/public/js/out"
       :externs ["react/externs/react.js"]
       :pretty-print true}}}}
-  
+
   :profiles
   {:uberjar {:omit-source true
              :env {:production true}
@@ -180,7 +180,7 @@
                   :pretty-print false
                   :closure-warnings
                   {:externs-validation :off :non-standard-jsdoc :off}}}}} 
-             
+
              :aot :all
              :source-paths ["env/prod/clj"]
              :resource-paths ["env/prod/resources"]}
@@ -218,15 +218,19 @@
                   :source-paths ["env/dev/clj"]
                   :resource-paths ["env/dev/resources"]
                   :repl-options {:init-ns timmus.core
+                                 :port 7003
+                                 :host "0.0.0.0"
                                  :timeout 320000}
                   :injections [(require 'pjstadig.humane-test-output)
                                (pjstadig.humane-test-output/activate!)]
                   ;;when :nrepl-port is set the application starts the nREPL server on load
                   :env {:dev        true
                         :port       3007
-                        :nrepl-port 7000}}
+                        ;; :nrepl-port 7000
+                        }}
    :project/test {:env {:test       true
                         :port       3001
-                        :nrepl-port 7001}}
+                        ;; :nrepl-port 7001
+                        }}
    :profiles/dev {}
    :profiles/test {}})

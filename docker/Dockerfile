@@ -16,27 +16,20 @@ RUN adduser --disabled-password --gecos '' summit && \
     adduser summit sudo && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
+RUN apt-get install -y telnet
+
 RUN echo "cleaning up" && \
   # apk del wget && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     rm -f  /var/cache/apk/*
 
-# RUN mkdir -p /root/docker
-# WORKDIR /root
-# ENV HOME /root
+# 7003=nrepl, 7002=cljs-nrepl, 3449=fig-http-server, 3007=http-server
+EXPOSE 3007 7003 7002 3449
+
 RUN mkdir -p /home/summit/docker
 WORKDIR /home/summit
 USER summit
 ENV HOME /home/summit
 
-# 7897=nrepl, 7002=cljs-nrepl, 3449=http
-# EXPOSE 7897 7002 3449
-EXPOSE 7000 3007 7002 3449
-
-# WORKDIR /home/clojure
-# ENV HOME /home/clojure
-# VOLUME ["/home/clojure"]
-
-# USER clojure
 
