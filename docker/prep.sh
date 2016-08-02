@@ -3,4 +3,4 @@
 
 # need setup from inside docker thread
 # cd docker
-ln -s /root/utils /root/docker/checkouts/utils
+ln -s /home/summit/utils /home/summit/docker/checkouts/utils
