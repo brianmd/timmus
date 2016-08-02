@@ -19,4 +19,6 @@ oracle-meta
 /docker/m2
 /docker/jars
 .nrepl-port
+/docker/lein
+*.trc
 
