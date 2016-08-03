@@ -12,12 +12,14 @@ RUN cd /tmp && \
   mv "apache-maven-$MAVEN_VERSION" "$M2_HOME" && \
   ln -s "$M2_HOME/bin/mvn" /usr/bin/mvn
 
-RUN addgroup -gid 1001 summit && \
-    adduser --disabled-password --gecos '' -u 1001 --gid 1001 summit && \
+ARG USERID=1000
+
+RUN addgroup -gid $USERID summit && \
+    adduser --disabled-password --gecos '' -u $USERID --gid $USERID summit && \
     adduser summit sudo && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
-RUN apt-get install -y telnet
+# RUN apt-get install -y telnet
 
 RUN echo "cleaning up" && \
   # apk del wget && \
