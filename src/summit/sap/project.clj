@@ -39,6 +39,7 @@
       (vals @projs))
     ))
 ;; (ppn (projects 1000092))
+;; (ppn (projects 1002225))
 
 
 
@@ -190,7 +191,7 @@
              ;; }
              )
            }}
-         
+
          ;; )
          )
        )))
@@ -198,6 +199,12 @@
   ;; (pp "" "" "----------------" "proj 19" (project 19))
   ;; (ppn (project 18))
   )
+
+;; (def x (project 1))
+;; (keys x)
+;; (-> x :data keys)
+;; (-> x :data :messages)
+;; (-> x :data :status-lines)
 
 (examples
  (ppn

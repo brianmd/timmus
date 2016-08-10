@@ -1,0 +1,2 @@
+#!/bin/bash
+DOCKER_RUN_FLAGS="-m 8G --add-host mysql.dev:10.10.0.110 --add-host mysql.prod:10.5.0.138 --add-host sapdev.insummit.com:10.80.2.41 --add-host sapqas.insummit.com:10.80.2.36 --add-host prdapp1.insummit.com:10.5.0.56"

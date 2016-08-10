@@ -18,6 +18,9 @@
     [korma.core :as k]
     [korma.db :as kdb]
 
+    [clj-time.core :as t]
+    [clj-time.format :as format]
+
     [com.rpl.specter :as s]
 
     [clojure.data.codec.base64 :as b64]
@@ -638,9 +641,9 @@ where r.account_id is null and c.id=" id)]
   (.format (java.text.SimpleDateFormat. "yyyyMMddHHmmssZ") (now))
   )
 
-(def db-time-format (clj-time.format/formatter "yyyy-MM-dd HH:mm:ss"))
+(def db-time-format (format/formatter "yyyy-MM-dd HH:mm:ss"))
 (defn db-timenow []
-  (clj-time.format/unparse db-time-format (clj-time.core/now))
+  (format/unparse db-time-format (t/now))
   ;; (.format (java.text.SimpleDateFormat. "yyyy-MM-dd HH:mm:ss Z") (now))
   )
 

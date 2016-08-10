@@ -21,4 +21,6 @@ oracle-meta
 .nrepl-port
 /docker/lein
 *.trc
+/.docker-state
+.envrc
 

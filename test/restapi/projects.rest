@@ -1,0 +1,70 @@
+# https://github.com/pashky/restclient.el
+# http://jakemcrary.com/blog/2014/07/04/using-emacs-to-explore-an-http-api/
+
+:default = <<
+User-Agent: Emacs Restclient
+#
+
+:json-api = <<
+Content-Type: applicaiton/vnd.api+json
+Accept: applicaiton/vnd.api+json
+User-Agent: Emacs Restclient
+#
+
+
+:github = https://api.github.com
+
+# get user
+GET :github/users/brianmd
+:default
+
+# render markdown
+POST :github/markdown
+:default
+
+{
+  "text" : "## Title"
+}
+
+# render markdown raw
+POST :github/markdown/raw
+:default
+Content-Type: text/plain
+
+I'm a Title
+-----
+
+
+
+:rosetta = http://localhost:3449
+# :rosetta = http://marketing-10.insummit.com:3449
+
+
+
+# last-orders
+GET :rosetta/api/last-orders/1
+:default
+
+
+# projects
+
+GET :rosetta/api/projects/1002225
+:json-api
+
+
+# project
+GET :rosetta/sap/project/1?filter[account]=1002225
+:json-api
+
+
+# projects
+GET :rosetta/sap/projects?filter[account]=1002225
+:json-api
+
+{"data": {
+   "type": "projects",
+   "attributes": {
+     "name": "Maleficent"
+   }
+}
+

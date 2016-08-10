@@ -12,8 +12,11 @@
             ; [ring.middleware.cors :refer [wrap-cors]]
             [luminus.logger :as logger]
 
+            [argo.core :refer [defapi defresource]]
+
             [timmus.config :refer [defaults]]
             [timmus.routes.websockets :refer [websocket-routes]]
+            [summit.sap.routes :refer [sap-routes]]
             ))
 
 (defn init
@@ -38,9 +41,10 @@
 
 (def app-routes
   (routes
+    (var sap-routes)
     (var websocket-routes)
     (var service-routes)
-    (var punchout-routes)
+    ;; (var punchout-routes)
     (wrap-routes #'home-routes middleware/wrap-csrf)
     ;(wrap-cors :access-control-allow-origin [#".*"]
     ;  :access-control-allow-methods [:get :put :post :delete])

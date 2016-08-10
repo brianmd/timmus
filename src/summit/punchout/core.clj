@@ -38,12 +38,24 @@
             [summit.db.relationships :refer :all]
             ))
 
-
 (defn html->map [xml]
   (html/xml-resource (java.io.StringReader. xml)))
 
 (defn xml->map [xml]
   (html/xml-resource (java.io.StringReader. xml)))
+
+(defn html->map [xml]
+  (html/xml-resource (java.io.StringReader. xml)))
+;; (def x "<html><body><h1>Hello world</h1></body></html>")
+;; (def y [:html [:header [:script]] [:body [:h1 {:id "h1er"} "hello world"]]])
+;; (html->map "<html><body><h1>Hello world</h1></body></html>")
+;; (=
+;;  (hiccup.core/html y)
+;;  (hiccup.core/html {:mode :xml} y)
+;;  )
+;; (=
+;;  (html->map "<html><body><h1>Hello world</h1></body></html>")
+;;  (html->map "<html><body><h1>Hello world</h1></body></html>"))
 
 (defn extract-content [enlive-parsed selector-vector]
   (first (html/select enlive-parsed (conj (vec selector-vector) html/text-node))))

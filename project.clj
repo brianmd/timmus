@@ -128,6 +128,8 @@
                  [resque-clojure "0.3.0"]
                  [local/ojdbc6 "11.2.0.4"]
 
+                 [argo "0.1.2"]   ;; for json api
+
                  ;; https://github.com/binaryage/cljs-devtools-sample/blob/master/project.clj
                  ;; [binaryage/devtools "0.7.0"]
 

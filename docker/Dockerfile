@@ -19,7 +19,7 @@ RUN addgroup -gid $USERID summit && \
     adduser summit sudo && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
-# RUN apt-get install -y telnet
+RUN apt-get install -y telnet
 
 RUN echo "cleaning up" && \
   # apk del wget && \

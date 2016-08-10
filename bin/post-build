@@ -1,0 +1,12 @@
+#!/bin/bash
+# mkdir -p .docker-state
+if [[ -d jars ]]; then
+  (cd jars && git pull)
+else
+  git clone git@bitbucket.org:summitelectricsupply/jars.git
+  (cd jars/instantclient_11_2 && mvn install:install-file -X -DgroupId=local -DartifactId=ojdbc6 -Dversion=11.2.0.4 -Dpackaging=jar -Dfile=ojdbc6.jar -DgeneratePom=true)
+fi
+
+(cd jars && cp -r linux-64bit/* .)
+
+

@@ -1,54 +1,65 @@
 (println "loading timmus.routes.services")
 
 (ns timmus.routes.services
-  (:require [ring.util.http-response :refer :all]
-            [ring.util.response :refer [redirect]]
-            [compojure.api.sweet :refer :all]
-            [ring.util.http-response :refer :all]
-            [schema.core :as s]
-            ;; [korma.core :refer :all]
-            [korma.core :as k]
-            [clojure.set]
-            [clojure.string :as str]
-            [clojure.walk :refer :all]
-            [cheshire.core :refer :all]
-                                        ;[clj-time.core :as t]
-                                        ;[clj-time.format :as f]
-            [net.cgrand.enlive-html :as html]
-            [clojure.core.async :as  a
-             :refer [>! <! >!! <!! go go-loop chan close! thread alts! alts!! timeout
-                     buffer sliding-buffer dropping-buffer]]
-
-            [cemerick.url :refer [url-encode url]]
+  (:require [brianmd.db.store-mysql :as mysql]
+            [cemerick.url :refer [url url-encode]]
+            [cheshire
+             [core :refer :all]
+             [generate :refer [add-encoder encode-str remove-encoder]]]
             [clj-http.client :as client]
+            [clojure
+             [string :as str]
+             [walk :refer :all]]
+            [clojure.core.async
+             :as
+             a
+             :refer
+             [<!
+              <!!
+              >!
+              >!!
+              alts!
+              alts!!
+              buffer
+              chan
+              close!
+              dropping-buffer
+              go
+              go-loop
+              sliding-buffer
+              thread
+              timeout]]
+            [clojure.java.io :as io]
+            ;; [compojure.api.sweet :refer :all]
+            [compojure.api.sweet :refer [defapi context GET POST PUT]]
             [config.core :refer [env]]
-
-                                        ;[compojure.core :refer [defroutes GET]]
-                                        ;[compojure.core :refer [GET]]
-            [cheshire.generate :refer [add-encoder encode-str remove-encoder]]
-
-            [summit.utils.core :refer :all]
-            [summit.db.relationships :refer :all]
-            [summit.sales-associate.order-spec :refer [send-spec-email]]
-
-
-            ;; [timmus.db.core :refer [*db*]]
-            [brianmd.db.store-mysql :as mysql]
-            [summit.punchout.core :as p]
-            [summit.punchout.punchout :refer [process-punchout-request-str ]]
-            [summit.punchout.order-message :as order-message]
-            [summit.punchout.order-request :as order-request]
-            [summit.punchout.order-request :as p3]
-            [summit.papichulo.core :refer [papichulo-url papichulo-creds create-papi-url papichulo-url-with-creds]]
-            [summit.health-check.blue-harvest :as bh]
-            [summit.step.manufacturer-lookup :refer [create-manufacturer-lookup-tables]]
-
-            [summit.sap.project :refer [projects project]]
+            [korma.core :as k]
+            [ring.util
+             [http-response :refer :all]
+             [response :refer [redirect]]]
+            [schema.core :as s]
             [summit.bh.queries :as bh-queries]
+            [summit.db.relationships :refer :all]
+            [summit.health-check.blue-harvest :as bh]
+            [summit.papichulo.core
+             :refer
+             [create-papi-url
+              papichulo-creds
+              papichulo-url
+              papichulo-url-with-creds]]
+            [summit.punchout
+             [core :as p]
+             [order-message :as order-message]
+             [order-request :as order-request]
+             [punchout :refer [process-punchout-request-str]]]
+            [summit.sales-associate.order-spec :refer [send-spec-email]]
+            [summit.sap.project :refer [project projects]]
+            [summit.step.manufacturer-lookup
+             :refer
+             [create-manufacturer-lookup-tables]]
+            [summit.utils.core :refer :all]
+            [timmus.routes.fake-axiall :refer [fake-axiall-punchout-request]]))
 
-            [timmus.routes.fake-axiall :refer [fake-axiall-punchout-request]]
-
-            [clojure.java.io :as io]))
 ;(-> @((-> customer :rel) "cart") :fk-key)
 
 ;; (def fffff (into [] (map :matnr (k/select :mdm.price (k/fields :matnr)))))

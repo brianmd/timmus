@@ -1,0 +1,52 @@
+# https://github.com/pashky/restclient.el
+# http://jakemcrary.com/blog/2014/07/04/using-emacs-to-explore-an-http-api/
+
+:default = <<
+User-Agent: Emacs Restclient
+#
+
+:json-api = <<
+Accept: applicaiton/vnd.api+json
+User-Agent: Emacs Restclient
+#
+
+
+:github = https://api.github.com
+
+# get user
+GET :github/users/brianmd
+:default
+
+# render markdown
+POST :github/markdown
+:default
+
+{
+  "text" : "## Title"
+}
+
+# render markdown raw
+POST :github/markdown/raw
+:default
+Content-Type: text/plain
+
+I'm a Title
+-----
+
+
+
+# :bh = http://localhost:3449
+:bh = http://marketing-10.insummit.com:3449
+
+
+
+# last-orders
+GET :bh/api/last-orders/1
+:default
+
+
+# projects
+
+GET :bh/api/projects?filter[account]=
+:json-api
+
