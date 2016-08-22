@@ -58,6 +58,8 @@
 (defmacro defn-memo [name & body]
   `(def ~name (memoize (fn ~body))))
 
+;; Conversions
+
 (defn ->str [a-name]
   (if (string? a-name)
     a-name
@@ -115,6 +117,9 @@
 (examples
  (assert= 9 (detect #(> % 5) [2 9 4 7]) ((detect #(> % 5)) [2 9 4 7]))
  (assert= 6 (detect #(> % 5) (range)) ((detect #(> % 5)) (range))))
+
+(defn dissoc-key [key m]
+  (dissoc m key))
 
 (defn ppn
   "pprint, returning nil"
