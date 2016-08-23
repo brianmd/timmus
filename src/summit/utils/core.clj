@@ -28,6 +28,8 @@
     [net.cgrand.enlive-html :as html]
 
     [buddy.sign.jwt :as jwt]
+
+    [summit.utils.log :as log]
     ))
 
 
@@ -124,23 +126,40 @@
 (defn ppn
   "pprint, returning nil"
   [& args]
-  (binding [clojure.pprint/*print-miser-width* 120
-            clojure.pprint/*print-right-margin* 120]
-    (doseq [arg args] (pprint arg))))
+  (apply log/log-soon args)
+  nil)
+  ;; (binding [clojure.pprint/*print-miser-width* 120
+  ;;           clojure.pprint/*print-right-margin* 120]
+  ;;   (doseq [arg args] (pprint arg))))
 
 (defn ppa
   "pprint, returning nil"
   [& args]
-  (binding [clojure.pprint/*print-miser-width* 120
-            clojure.pprint/*print-right-margin* 120]
-    (doseq [arg args] (pprint arg))))
+  (apply log/log-soon args))
+  ;; (binding [clojure.pprint/*print-miser-width* 120
+  ;;           clojure.pprint/*print-right-margin* 120]
+  ;;   (doseq [arg args] (pprint arg))))
 
 (defn ppl
   "pprint, returning last arg"
   [& args]
-  (apply ppn args)
-  (last args))
+  (apply log/log-soon args))
+  ;; (apply ppn args)
+  ;; (last args))
 ;; (ppn 3 {:a 3 :q "rew"})
+
+(defn ppd
+  "pprint, but when called quickly, drop most calls. Return last arg"
+  [& args]
+  (apply log/log-slowly args))
+;; (dotimes [n 5000]
+;;   (ppd n))
+
+(defn ppdn
+  "pprint, but when prints a lot, drop some of them. Return nil"
+  [& args]
+  (apply log/log-slowly args)
+  nil)
 
 (defn pp
   "pprint, returning last arg"
@@ -651,6 +670,12 @@ where r.account_id is null and c.id=" id)]
   (format/unparse db-time-format (t/now))
   ;; (.format (java.text.SimpleDateFormat. "yyyy-MM-dd HH:mm:ss Z") (now))
   )
+
+(defn conj-db-created [m]
+  (assoc m :created_at (db-timenow)))
+(defn conj-db-updated [m]
+  (assoc m :updated_at (db-timenow)))
+;; (conj-db-updated {})
 
 (defn localtime
   ([] (localtime (now)))
