@@ -231,10 +231,10 @@
 (defn pull-map [f name & args]
   (let [fld (find-field f name)
         names (map first (last (field-definition fld)))
-        _ (ppn "names" names)
+        ;; _ (ppn "names" names)
         vals (apply get-data fld args)
         ]
-    (if (empty? (first vals))
+    (if false ;;(empty? (first vals))
       []
       (if (seq? (first vals))
         (map #(apply assoc {} (interleave names %)) vals)
@@ -291,7 +291,8 @@
 
 
 (defn execute [f]
-  (.execute (:function f) (:destination f)))
+  (.execute (:function f) (:destination f))
+  f)
 
 ;; (defn set-data
 ;;   ([f key val]

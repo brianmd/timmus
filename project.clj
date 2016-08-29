@@ -228,6 +228,8 @@
                   ;;when :nrepl-port is set the application starts the nREPL server on load
                   :env {:dev        true
                         :port       3007
+                        :host       "0.0.0.0"
+                        :ip         "0.0.0.0"
                         ;; :nrepl-port 7000
                         }}
    :project/test {:env {:test       true

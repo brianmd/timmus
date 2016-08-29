@@ -86,8 +86,8 @@
   (when-not (>!! @log-chan args)
     (log args))
   (last args))
-(>!! @log-chan [3 4 5])
-(<!! @log-chan)
+;; (>!! @log-chan [3 4 5])
+;; (<!! @log-chan)
 
 (defn log-slowly [& args]
   (when-not (>!! @log-slowly-chan args)
