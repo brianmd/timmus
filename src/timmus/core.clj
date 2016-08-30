@@ -30,13 +30,15 @@
 (defn start-app
   "e.g. lein run 3000"
   [[port]]
-  (let [port (http-port port)]
+  (let [port (http-port port)
+        host "0.0.0.0"]
     (.addShutdownHook (Runtime/getRuntime) (Thread. stop-app))
     (when-let [repl-port (env :nrepl-port)]
       (repl/start {:port (parse-port repl-port)}))
     (http/start {:handler app
                  :init    init
-                 :port    port})))
+                 :port    port
+                 :host    host})))
 
 (defn -main [& args]
   (cond
