@@ -126,7 +126,7 @@
                  ;; [zookeeper-clj "0.9.4" :exclusions [org.slf4j/slf4j-log4j12]]
                  [com.rpl/specter "0.9.2"]
                  [resque-clojure "0.3.0"]
-                 ;; [local/ojdbc6 "11.2.0.4"]    ;; oracle
+                 [local/ojdbc6 "11.2.0.4"]    ;; oracle
 
                  [argo "0.1.2"]   ;; for json api
 

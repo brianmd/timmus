@@ -97,6 +97,8 @@
 
 
 ;; (log-soon 3 4)
+;; (log-slowly 5 6)
+
 ;; (dotimes [n 50]
 ;;   (log-soon n 4 (rand)))
 ;; (dotimes [n 50]

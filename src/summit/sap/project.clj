@@ -45,7 +45,7 @@
     (push f {:i_kunag (as-document-num account-num)})
     (execute f)
     (let [projs (atom (into {} (map! transform-project (pull f :et-projects))))]
-      (ppn projs)
+      ;; (ppn projs)
       ;; (map! (partial transform-ship-to projs) (pull f :et-ship-tos))
       (map! (partial transform-ship-to projs) (pull f :et-ship-tos))
       (vals @projs))))
@@ -119,6 +119,9 @@
                 :service-center-atp :main-loc-atp double]
    :delivery   [:delivery :vbeln-vl identity]})
 
+(defn- line-item-id [m]
+  (str (-> m :order :order-num) "-" (-> m :line-item :item-num)))
+
 (defn- extract-attr-vals
   ([m begin-str] (extract-attr-vals m begin-str 1 {}))
   ([m begin-str index v]
@@ -154,77 +157,67 @@
               [web-name (name-transform-fn (pull-map project-fn sap-name))]))))
   )
 
+;; (project 1)
+
+(defn- transform-raw-order [m]
+  (let [order (:order m)
+        ;; line-item-id (-> m :line-item )
+        ]
+    (assoc
+     (clojure.set/rename-keys order {:order-num :id})
+     :line-item-id (line-item-id m)
+     )
+    ))
+
+(defn- merge-order [orders order]
+  (let [line-item-ids (apply conj [] (map :line-item-id orders))]
+    (merge
+     order
+     {:line-item-ids (-> line-item-ids set sort)})))
+
+(defn- join-like-orders [orders]
+  (let [unique-orders (set (map #(dissoc % :line-item-id) orders))]
+    (map #(merge-order (collect-same orders (:id %)) %) unique-orders)))
+    ;; (set orders)))
+
+(defn- order->json-api [order]
+  (utils/ppn "" "" "--order:" order)
+  {:type :order
+   :id (:id order)
+   :attributes (dissoc order :id :project-id :line-item-ids)
+   :relationships {:project {:data {:type :project :id (:project-id order)}}
+                   :line-items {:data (map (fn [x] {:type :line-item :id x}) (:line-item-ids order))}
+                   }
+   })
+
+;; (defn- order [maps]
+;;   (let [order :order ])
+;;   (map #(assoc (clojure.set/rename-keys % {:order-num :id}) :line-items [])
+;;        (set (map :order maps))))
+
+(defn- extract-orders [maps]
+  (->> maps
+      (map transform-raw-order)
+      join-like-orders
+      (map order->json-api)
+      ))
+  ;; (map #(assoc (clojure.set/rename-keys % {:order-num :id}) :line-items [])
+  ;;      (set (map :order maps))))
 
 
-
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;   create order using line-item as a template. (then delete this line-item fn as it is defined further below)
-
-
-
-(defn- order [maps]
-  (let [order :order ])
-  (map #(assoc (clojure.set/rename-keys % {:order-num :id}) :line-items [])
-       (set (map :order maps))))
-;; (defn- line-item [line]
-;;   (let [item (:line-item line)
-;;         order-id (-> line :order :order-num)
-;;         delivery (-> line :delivery :delivery)
-;;         ]
-;;     (assoc item
-;;            :id (str order-id "-" (:item-num item))
-;;            :order-id order-id
-;;            :delivery delivery
-;;            )))
-
-
-(defn- unique-orders [maps]
-  (map #(assoc (clojure.set/rename-keys % {:order-num :id}) :line-items [])
-       (set (map :order maps))))
-
-;; (defn- order->json-api [order]
-;;   {:type :line-item
-;;    :id (:id item)
-;;    :attributes (dissoc item :order-id :delivery-ids)
-;;    :relationships {:order {:data {:type :order :id (:order-id item)}}
-;;                    :deliveries {:data (map (fn [x] {:type :delivery :id x}) (:delivery-ids item))}
-;;                    }})
-
-;; (defn- orders [maps]
-;;   (let [items (map line-item maps)
-;;         unique-items (set (map #(dissoc % :delivery :delivered-qty :picked-qty) items))
-;;         items (map #(merge % (line-item-summary items (:id %))) unique-items)]
-;;     (map line-item->json-api items))
-;;   )
-
-(defn- transform-raw-item [line]
-  (let [item (:line-item line)
-        order-id (-> line :order :order-num)
-        delivery (-> line :delivery :delivery)
+(defn- transform-raw-item [m]
+  (let [item (:line-item m)
+        order-id (-> m :order :order-num)
+        delivery (-> m :delivery :delivery)
         ]
     (assoc item
-           :id (str order-id "-" (:item-num item))
+           :id (line-item-id m)
            :order-id order-id
            :delivery delivery
            )))
 
-;; (defn- join-items [line-items item-id]
-;;   (let [items (filter #(= item-id (:id %)) line-items)
-;;         ;; delivery-ids (apply conj [] (filter #(not (= "" %)) (map :delivery items)))
-;;         delivery-ids (apply conj [] (filter #(not-empty %) (map :delivery items)))
-;;         delivered-qty (apply + (map :delivered-qty items))
-;;         picked-qty (apply + (map :picked-qty items))
-;;         ]
-;;      {:delivery-ids delivery-ids
-;;       :delivered-qty delivered-qty
-;;       :picked-qty picked-qty}
-;;      ))
 (defn- merge-item [items item]
   (let [
-        ;; items (filter #(= item-id (:id %)) line-items)
-        ;; delivery-ids (apply conj [] (filter #(not (= "" %)) (map :delivery items)))
         delivery-ids (apply conj [] (filter #(not-empty %) (map :delivery items)))
         delivered-qty (apply + (map :delivered-qty items))
         picked-qty (apply + (map :picked-qty items))
@@ -236,17 +229,12 @@
       :picked-qty picked-qty}
      )))
 
-(defn- collect-same-item [items id]
-  (filter #(= id (:id %)) items))
+(defn- collect-same [v id]
+  (filter #(= id (:id %)) v))
 
 (defn- join-like-items [items]
-  (println "in join-like-items")
-  (utils/ppdn "in join-like-items")
-  (utils/ppdn "items" items)
   (let [unique-items (set (map #(dissoc % :delivery :delivered-qty :picked-qty) items))]
-    (map #(merge-item (collect-same-item items (:id %)) %) unique-items)))
-    ;; (map #(merge % (join-items items (:id %)))
-    ;;      unique-items)))
+    (map #(merge-item (collect-same items (:id %)) %) unique-items)))
 
 (defn- line-item->json-api [item]
   {:type :line-item
@@ -257,34 +245,36 @@
                    }
    })
 
-
-;; (project 1)
-
-(defn- line-items [maps]
+(defn- extract-line-items [maps]
   (->> maps
       (map transform-raw-item)
-      (join-like-items)
+      join-like-items
       (map line-item->json-api)
       ))
 
-  ;; (let [items (map line-item maps)
-  ;;       items (map #(merge % (line-item-summary items (:id %)))
-  ;;                  (unique-items items))]
-  ;;   (map line-item->json-api items))
-  ;; )
-
-(defn transform [project-fn]
+(defn transform-project [project-fn]
   (let [maps (retrieve-maps project-fn)
         status-lines (:status-lines maps)
-        orders (unique-orders status-lines)
-        items (line-items status-lines)
+        order-ids (map #(-> % :order :order-num) status-lines)
+        items (extract-line-items status-lines)
+        orders (extract-orders status-lines)
+        json-orders (map (fn [x] {:type :order :id x}) order-ids)
         ]
-    {:includes
+    {:data
+     {:type :project
+      :id nil
+      :attributes {:order-attribute-names (:order-attr-defs maps)
+                   :line-item-attribute-names (:line-item-attr-defs maps)
+                   :delivery-attribute-names (:delivery-attr-defs maps)}
+      :relationships {:orders {:data json-orders}}
+      }
+     :included
      {
-      :line-items items
       :orders orders
-      ;; :raw maps
-      }}
+      :line-items items
+      }
+     :raw maps
+     }
     ))
 
 (defn project
@@ -297,7 +287,9 @@
        ;; (ppn (function-interface project-fn))
      (push project-fn {:i-proj-id (as-document-num project-id)})
      (execute project-fn)
-     (transform project-fn)
+     (assoc-in
+      (transform-project project-fn)
+      [:data :id] project-id)
      )))
                  ;; [(first attr-def) (nth attr-def 2) ])))
   ;; (project 1)
