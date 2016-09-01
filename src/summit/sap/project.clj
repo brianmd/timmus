@@ -11,7 +11,7 @@
 ;; ----------------------------------
 ;;     All projects for an account
 
-(def ^:private et-project-fields [:client :id :sold-to :project-name :title :start-date :end-date :service-center-code :status :last-modifier :modified-on])
+(def ^:private et-project-fields [:client :id :sold-to :name :title :start-date :end-date :service-center-code :status :last-modifier :modified-on])
 
 (defn- transform-triplets [m attr-defs]
   (let [attr-defs (partition 3 attr-defs)]
@@ -20,14 +20,13 @@
             (let [web-name (first attr-def)  sap-name (second attr-def)  name-transform-fn (nth attr-def 2)]
               [web-name (name-transform-fn (m sap-name))])))))
 
-(defn- transform-project [v]
+(defn- transform-project-summary [v]
   (let [m (into {} (map vector et-project-fields v))
         transformed-m
         (->
          m
          (dissoc :client)
          (assoc :sold-to (->int (:sold-to m))
-                :ship-to-ids []
                 :id (->int (:id m))
                 :status (case (:status m)
                           "A" :active
@@ -35,30 +34,54 @@
                           "C" :complete
                           "Z" :cancelled
                           (:status m))))]
-    [(:id transformed-m) transformed-m]))
+    ;; [(:id transformed-m) transformed-m]))
+     transformed-m))
 
 (defn- transform-ship-to [projs v]   ;; v => [:client :project :ship-to]
   (swap! projs update-in [(->int (second v)) :ship-to-ids] conj (->int (nth v 2))))
 
-(defn projects [account-num]
-  (let [f (find-function :qas :Z_O_ZVSEMM_KUNAG_ASSOC_PROJ)]
-    (push f {:i_kunag (as-document-num account-num)})
-    (execute f)
-    (let [projs (atom (into {} (map! transform-project (pull f :et-projects))))]
-      ;; (ppn projs)
-      ;; (map! (partial transform-ship-to projs) (pull f :et-ship-tos))
-      (map! (partial transform-ship-to projs) (pull f :et-ship-tos))
-      (vals @projs))))
-;; (ppn (projects 1000092))
-;; (ppn (projects 1002225))
+(defn- project-link [id]
+  {:self (str "/api/project/" id)})
+
+(defn- project->json-api [proj]
+  (let [id (:id proj)]
+    {:type "project"
+     :id id
+     :links (project-link id)
+     :attributes (dissoc proj :id :sold-to :ship-to-ids)
+     ;; :relationships
+     ;; {:account {:data {:type "sold-to" :id (:sold-to proj)}}}
+     }))
+
+(defn projects
+  ([account-num] (projects :qas account-num))
+  ([server account-num]
+   (let [f (find-function server :Z_O_ZVSEMM_KUNAG_ASSOC_PROJ)]
+     (push f {:i_kunag (as-document-num account-num)})
+     (execute f)
+     (let [projs (map transform-project-summary (pull f :et-projects))
+           project-relationships (map (fn [m] {:type "project"
+                                               :id (:id m)
+                                               :links (project-link (:id m))
+                                               }) projs)
+           ]
+       {:data
+        {:type "account"
+         :id account-num
+         :relationships {:projects project-relationships}
+         }
+        :included (map project->json-api projs)
+        }
+       ))))
 
 
 ;; ----------------------------------------------------
 ;;      a single project
 
-(defn transform-attribute-definition [m]
+(defn transform-attribute-definition [index m]
   (let [id (-> (:attr-assign m) str/lower-case (str/replace #"_" "-"))]
     [id {:id id
+         :seq (inc index)
          :title (:attr-title m)
          :len (->int (:attr-len m))
          :required? (= "X" (:attr-req m))
@@ -67,7 +90,7 @@
 
 (defn transform-attribute-definitions [v]
   (into {}
-        (map transform-attribute-definition v)))
+        (map-indexed (fn [idx attr] (transform-attribute-definition idx attr)) v)))
 
 (defn pair-key-vals [proj attr-prefix attr-defs]
   (map #(let [attr-name (str "attr-" (inc %))]
@@ -122,6 +145,12 @@
 (defn- line-item-id [m]
   (str (-> m :order :order-num) "-" (-> m :line-item :item-num)))
 
+(defn- collect-same [v id]
+  ;; (defn- collect-same [v id]
+  ;;   (filter #(= id (:id %)) v))
+
+  (filter #(= id (:id %)) v))
+
 (defn- extract-attr-vals
   ([m begin-str] (extract-attr-vals m begin-str 1 {}))
   ([m begin-str index v]
@@ -166,6 +195,7 @@
     (assoc
      (clojure.set/rename-keys order {:order-num :id})
      :line-item-id (line-item-id m)
+     :attrs (:order-attr-vals m)
      )
     ))
 
@@ -173,10 +203,11 @@
   (let [line-item-ids (apply conj [] (map :line-item-id orders))]
     (merge
      order
-     {:line-item-ids (-> line-item-ids set sort)})))
+     {:line-item-ids (-> line-item-ids set sort)
+      :additiona-attrs (:attrs (first orders))})))
 
 (defn- join-like-orders [orders]
-  (let [unique-orders (set (map #(dissoc % :line-item-id) orders))]
+  (let [unique-orders (set (map #(dissoc % :line-item-id :attrs) orders))]
     (map #(merge-order (collect-same orders (:id %)) %) unique-orders)))
     ;; (set orders)))
 
@@ -214,6 +245,7 @@
            :id (line-item-id m)
            :order-id order-id
            :delivery delivery
+           :attrs (:line-item-attr-vals m)
            )))
 
 (defn- merge-item [items item]
@@ -226,14 +258,12 @@
      item
      {:delivery-ids delivery-ids
       :delivered-qty delivered-qty
-      :picked-qty picked-qty}
+      :picked-qty picked-qty
+      :additional-attrs (:attrs (first items))}
      )))
 
-(defn- collect-same [v id]
-  (filter #(= id (:id %)) v))
-
 (defn- join-like-items [items]
-  (let [unique-items (set (map #(dissoc % :delivery :delivered-qty :picked-qty) items))]
+  (let [unique-items (set (map #(dissoc % :delivery :delivered-qty :picked-qty :attrs) items))]
     (map #(merge-item (collect-same items (:id %)) %) unique-items)))
 
 (defn- line-item->json-api [item]
@@ -252,13 +282,29 @@
       (map line-item->json-api)
       ))
 
+
+(defn- delivery->json-api [id]
+  {:type "delivery"
+   :id id})
+
+(defn- extract-deliveries [maps]
+  (->> maps
+       (map (fn [m] {:type "delivery"
+                     :id (-> m :delivery :delivery)
+                     :additional-attrdedevvs (:delivery-attr-vals m)}))
+       ;; (filter #(not-empty %))
+       set
+       ;; (map delivery->json-api)
+       ))
+
 (defn transform-project [project-fn]
   (let [maps (retrieve-maps project-fn)
         status-lines (:status-lines maps)
         order-ids (map #(-> % :order :order-num) status-lines)
         items (extract-line-items status-lines)
         orders (extract-orders status-lines)
-        json-orders (map (fn [x] {:type :order :id x}) order-ids)
+        deliveries (extract-deliveries status-lines)
+        json-orders (map (fn [id] {:type :order :id id}) order-ids)
         ]
     {:data
      {:type :project
@@ -272,6 +318,7 @@
      {
       :orders orders
       :line-items items
+      :deliveries deliveries
       }
      :raw maps
      }
@@ -291,8 +338,6 @@
       (transform-project project-fn)
       [:data :id] project-id)
      )))
-                 ;; [(first attr-def) (nth attr-def 2) ])))
-  ;; (project 1)
 
 (do
   #_(defn project-orig
@@ -409,11 +454,16 @@
  (ppn (map :delivery (project 18)))
 
  (ppn (projects 1000092))
+ (ppn (projects 1002225))
+ (ppn 3)
 
- (def projects-fn (find-function :dev :Z_O_ZVSEMM_KUNAG_ASSOC_PROJ))
+ (def projects-fn (find-function :qas :Z_O_ZVSEMM_KUNAG_ASSOC_PROJ))
  (ppn (function-interface projects-fn))
+ (def account-num 1002225)
  (push projects-fn {:i_kunag (as-document-num account-num)})
- (execute f)
+ (execute projects-fn)
+ (pull projects-fn :et-projects)
+ (pull projects-fn :et-ship-tos)
  (time
   (do
     (def result (projects 1000092))
