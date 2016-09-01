@@ -8,6 +8,7 @@
   :url "http://example.com/FIXME"
 
   :dependencies [[org.clojure/clojure "1.8.0"]
+                 [org.clojure/core.async "0.2.385"]
                  [domina "1.0.3"]
                  [selmer "1.0.4"]
                  [markdown-clj "0.9.87"]
@@ -120,7 +121,6 @@
                  ;; [medley "0.7.1"]  ;lightweight library of useful Clojure functions
                  [com.taoensso/carmine "2.12.2"]
                  [clj-tagsoup/clj-tagsoup "0.3.0" :exclusions [org.clojure/clojure]]
-                 ;; [lein-ancient "0.6.8"]
                  ;; [com.jakemccrary/lein-test-refresh "0.13.0"]
                  ;; [zookeeper-clj "0.9.4"]
                  ;; [zookeeper-clj "0.9.4" :exclusions [org.slf4j/slf4j-log4j12]]
@@ -228,8 +228,6 @@
                   ;;when :nrepl-port is set the application starts the nREPL server on load
                   :env {:dev        true
                         :port       3007
-                        :host       "0.0.0.0"
-                        :ip         "0.0.0.0"
                         ;; :nrepl-port 7000
                         }}
    :project/test {:env {:test       true
