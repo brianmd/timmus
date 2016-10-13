@@ -64,6 +64,7 @@
     (if prod
       {:descript descript
        :unspsc unspsc
+       :url (str "https://www.summit.com/store/products/" (:id prod))
        :image (:url (first (filter #(= "Image" (:type %)) files)))
        :thumbnail (:url (first (filter #(= "Thumbnail" (:type %)) files)))
        })))
@@ -319,6 +320,53 @@ where j.matnr='" (as-matnr matnr) "';")
     ))
 ;; (time
 ;;  (update-ariba-catalog "dow"))
+
+(defn- get-worksheet-products [filename sheetname]
+  (let [x (xls/load-workbook filename)
+        s (xls/select-sheet sheetname x)
+        matnr-maps (drop 1 (xls/select-columns {:A :matnr :B :descript} s))
+        ]
+    (map (fn [x] (assoc x :matnr (-> x :matnr utils/->int))) matnr-maps)))
+
+(defn- add-unspsc [product]
+  (let [unspsc (get-unspsc (:matnr product))]
+    (assoc product :unspsc (if unspsc unspsc "39"))))
+
+(defn- add-bh-info [product]
+  (let [prod-info (get-product-info (:matnr product))]
+    (merge prod-info product)))
+
+(defn- product->vector [m]
+  [(:matnr m) (:descript m) (:unspsc m) (:url m) (:image m) (:thumbnail m)])
+
+(defn prod->product-info [prod]
+  (->
+   prod
+   add-unspsc
+   add-bh-info
+   product->vector))
+;; (prod->product-info {:matnr 1056})
+
+(defn process-additional-matnrs []
+  (let [filename "/home/bmd/Dropbox/work/summit/dow/dow-additions.xlsx"
+        sheetname "Dow Catalog adds"
+        products (get-worksheet-products filename sheetname)
+        ]
+    (map prod->product-info products)))
+;; (take 3 (process-additional-matnrs))
+
+(defn create-additional-spreadsheet []
+  (let [rows (process-additional-matnrs)
+        name "Dow Catalog adds"
+        workbook (xls/create-workbook name
+                                      (concat [["SAP" "Description" "UNSPSC" "Summit item URL" "Image URL" "Thumbnail URL"]]
+                                              rows))
+        sheet (xls/select-sheet name workbook)
+        header-row (first (xls/row-seq sheet))]
+    (xls/set-row-style! header-row (xls/create-cell-style! workbook {:font {:bold true}}))
+    (xls/save-workbook! "/home/bmd/Dropbox/work/summit/dow/add.xlsx" workbook))
+  )
+;; (create-additional-spreadsheet)
 
 (examples
 
