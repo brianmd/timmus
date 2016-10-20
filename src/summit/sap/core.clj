@@ -24,7 +24,7 @@
    :prod "prd"
    })
 
-(def ^:dynamic *sap-server* :qas)
+(def ^:dynamic *sap-server* :prd)
 
 (defmacro with-sap-server [server-keyword & body]
   `(binding [*sap-server* ~server-keyword]
@@ -231,10 +231,10 @@
 (defn pull-map [f name & args]
   (let [fld (find-field f name)
         names (map first (last (field-definition fld)))
-        ;; _ (ppn "names" names)
+        _ (ppn "names" names)
         vals (apply get-data fld args)
         ]
-    (if false ;;(empty? (first vals))
+    (if (empty? (first vals))
       []
       (if (seq? (first vals))
         (map #(apply assoc {} (interleave names %)) vals)
@@ -291,8 +291,7 @@
 
 
 (defn execute [f]
-  (.execute (:function f) (:destination f))
-  f)
+  (.execute (:function f) (:destination f)))
 
 ;; (defn set-data
 ;;   ([f key val]
