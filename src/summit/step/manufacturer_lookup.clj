@@ -20,17 +20,23 @@
   (let [source   (:mfr-source manuf)
         sourceId (:id manuf)
         goldenId (:id golden)]
+    (ppn "source" source "sourceid" sourceId "goldenid" goldenId)
     (.write (streams :all) (str source "," sourceId "," goldenId "\n"))
     (.write (streams source) (str sourceId "," goldenId "\n"))
     ))
 
 (defn process-child [streams golden-ancestor golden]
+  (ppn "g:" golden)
   (assert (golden-manufacturer? golden))
-  (let [use-parent? (= (:mfr-show-parent golden) "true")
-        golden-ancestor (if use-parent? golden-ancestor golden)]
-    (map! #(write-manufacturer streams golden-ancestor (manufacturer %)) (:children golden))
-    (map! #(process-child streams golden-ancestor (manufacturer %)) (:golden-children golden))
-    ))
+  (try
+    (let [use-parent? (= (:mfr-show-parent golden) "true")
+          golden-ancestor (if use-parent? golden-ancestor golden)]
+      (map! #(write-manufacturer streams golden-ancestor (manufacturer %)) (:children golden))
+      (map! #(process-child streams golden-ancestor (manufacturer %)) (:golden-children golden))
+      )
+    (catch Exception e
+      (ppn "error in process-child" "golden:" golden "golden-ancestor" golden-ancestor)
+      (throw e))))
 
 (defn zipem []
   (with-programs [zip mv]
@@ -56,7 +62,12 @@
                    "IDW" idw
                    "SAP" sap
                    "TS"  ts}]
-      (process-child streams nil root)
+      (try
+        (process-child streams nil root)
+        (catch Exception e
+          (ppn "error in create-manufacturer-lookup-tables" e)
+          ;; (ppn "root:" root)
+          (throw e)))
       ))
   (zipem)
   (ppn "ALL DONE creating manufacturer lookup tables ...")

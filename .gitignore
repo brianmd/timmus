@@ -5,6 +5,7 @@
 /log
 .#*
 pom.xml
+pom.xml.asc
 /jars
 *.jar
 *.class
