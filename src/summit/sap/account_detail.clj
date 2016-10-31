@@ -1,3 +1,5 @@
+(println "loading summit.sap.account_detail")
+
 (ns summit.sap.account-detail
   (:require [clojure.set :as set]
             [korma.core :as k]
@@ -106,8 +108,8 @@
                  (k/set-fields flds)
                  (k/where {:account_number (:account-number acct)}))
        ))))
-(bh-update-account 1000736)
-(account-detail :qas 1000736)
+;; (bh-update-account 1000736)
+;; (account-detail :qas 1000736)
 ;; (bh-update-account 1000736 (find-db :bh-dev))
 ;; (time (bh-update-account 1000736 (find-db :bh-prod) :prd))
 
@@ -152,3 +154,5 @@
 
  (pull-map qqq :pe-companydata)
  )
+
+(println "done loading summit.sap.account_detail")

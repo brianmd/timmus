@@ -29,16 +29,19 @@
 (defn- transform-ship-to [projs v]   ;; v => [:client :project :ship-to]
   (swap! projs update-in [(->int (second v)) :ship-to-ids] conj (->int (nth v 2))))
 
-(defn projects [account-num]
-  (let [f (find-function :prd :Z_O_ZVSEMM_KUNAG_ASSOC_PROJ)]
-    (push f {:i_kunag (as-document-num account-num)})
-    (execute f)
-    (let [projs (atom (into {} (map! transform-project (pull f :et-projects))))]
-      (ppn projs)
-      (map! (partial transform-ship-to projs) (pull f :et-ship-tos))
-      (vals @projs))
-    ))
-;; (ppn (projects 1000092))
+(defn projects
+  ([account-num] (projects :prd account-num))
+  ([system account-num]
+   (let [f (find-function system :Z_O_ZVSEMM_KUNAG_ASSOC_PROJ)]
+     (push f {:i_kunag (as-document-num account-num)})
+     (execute f)
+     (let [projs (atom (into {} (map! transform-project (pull f :et-projects))))]
+       (ppn projs)
+       (map! (partial transform-ship-to projs) (pull f :et-ship-tos))
+       (vals @projs))
+     )))
+;; (ppn (projects :dev 1000092))
+;; (ppn (projects :qas 1002225))
 
 
 
@@ -190,7 +193,7 @@
              ;; }
              )
            }}
-         
+
          ;; )
          )
        )))
@@ -216,12 +219,19 @@
  (ppn
   "-----"
   (def proj18 (project 18))
-  proj18
+  (def proj1 (project :qas 1))
+  proj1
   )
- (project 19)
- (ppn (map :delivery (project 18)))
+ (project :qas 1)
+ (project 1)
+ (ppn (project :qas 1))
+ (ppn (keys (project :qas 1)))
+ (ppn (keys (:data (project :qas 1))))
+ (ppn (:status-lines (:data (project :qas 1))))
+ (ppn (set (map :delivery (:status-lines (:data (project :qas 1))))))
 
  (ppn (projects 1000092))
+ (ppn (projects :qas 1002225))
 
  (def projects-fn (find-function :dev :Z_O_ZVSEMM_KUNAG_ASSOC_PROJ))
  (ppn (function-interface projects-fn))
