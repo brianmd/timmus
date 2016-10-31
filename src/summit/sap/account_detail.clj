@@ -61,21 +61,29 @@
     ))
     ;; detail))
 
-(find-function :qas :bapi_customer_getdetail1)
+;; (find-function :qas :bapi_customer_getdetail1)
 (defn account-detail
-  ([account-number] (account-detail account-number *sap-server*))
-  ([account-number server]
-   (let [f (find-function server :bapi_customer_getdetail1)
-         ]
+  ([account-number] (account-detail *sap-server* account-number))
+  ([server account-number]
+   (let [f (find-function server :bapi_customer_getdetail1)]
      (->
-      (push-inputs f account-number)
+      f
+      (push-inputs account-number)
       execute
       pull-outputs
       (transform account-number)
       (dissoc :raw)
-      ))))
-;; (account-detail 1027846)
-;; (account-detail 1000736)
+      )
+     )))
+;; (account-detail :qas 1000736)
+;; (def ff (account-detail :prd 1000736))
+;; (pull-map ff :pe-companydata)
+;; (pull ff :pe-companydata)
+;; (def ff (find-function :qas :bapi_customer_getdetail1))
+;; (push-inputs ff {:customerno 1000736})
+;; (execute ff)
+;; (pull-map ff :pe-companydata)
+;; (account-detail :qas 1000736)
 
    ;; (transform-account-detail
    ;;  (raw-account-detail server account-number))))
@@ -89,7 +97,7 @@
   ([account-num-or-map db] (bh-update-account account-num-or-map db *sap-server*))
   ([account-num-or-map db server]
    (if-not (map? account-num-or-map)
-     (let [acct (if (map? account-num-or-map) account-num-or-map (account-detail account-num-or-map server))
+     (let [acct (if (map? account-num-or-map) account-num-or-map (account-detail server account-num-or-map))
            flds (utils/conj-db-updated (dissoc acct :id :account-number))
            ]
        (swap! num-updated inc)
@@ -98,7 +106,8 @@
                  (k/set-fields flds)
                  (k/where {:account_number (:account-number acct)}))
        ))))
-;; (bh-update-account 1000736)
+(bh-update-account 1000736)
+(account-detail :qas 1000736)
 ;; (bh-update-account 1000736 (find-db :bh-dev))
 ;; (time (bh-update-account 1000736 (find-db :bh-prod) :prd))
 
@@ -115,6 +124,7 @@
 
 (utils/examples
  (def updating (future (bh-update-all-accounts (utils/find-db :bh-prod) :prd)))
+ (println updating)
  num-updated
 
  (time (bh-update-all-accounts (find-db :bh-local) :qas))
