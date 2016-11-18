@@ -71,7 +71,7 @@
                  [org.clojure/data.xml "0.0.8"]
                  [com.cemerick/url "0.1.1"]
                  [incanter "1.5.7"]
-                 [dk.ative/docjure "1.10.0"]    ; access to excel
+                 [dk.ative/docjure "1.11.0"]    ; access to excel
 
 
                  ;; cljs libraries
@@ -211,7 +211,7 @@
                        :source-map true}}}}
                   :figwheel
                   {:http-server-root "public"
-                   :server-port 3449
+                   :server-port 3450
                    :server-ip "0.0.0.0"  ;; default is localhost
                    :nrepl-port 7002
                    :nrepl-middleware ["cemerick.piggieback/wrap-cljs-repl"]
@@ -227,7 +227,7 @@
                                (pjstadig.humane-test-output/activate!)]
                   ;;when :nrepl-port is set the application starts the nREPL server on load
                   :env {:dev        true
-                        :port       3007
+                        :port       4007
                         ;; :nrepl-port 7000
                         }}
    :project/test {:env {:test       true

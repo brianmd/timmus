@@ -20,10 +20,15 @@
   (let [source   (:mfr-source manuf)
         sourceId (:id manuf)
         goldenId (:id golden)]
-    (ppn "source" source "sourceid" sourceId "goldenid" goldenId)
+    ;; (ppn "source" source "sourceid" sourceId "goldenid" goldenId)
+    (ppn "sourceid" sourceId)
+    ;; #break manuf
     (.write (streams :all) (str source "," sourceId "," goldenId "\n"))
     (.write (streams source) (str sourceId "," goldenId "\n"))
     ))
+(examples
+ (time (create-manufacturer-lookup-tables))
+ )
 
 (defn process-child [streams golden-ancestor golden]
   (ppn "g:" golden)
