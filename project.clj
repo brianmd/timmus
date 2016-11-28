@@ -103,6 +103,8 @@
 
 
                  [clojurewerkz/neocons "3.1.0"]  ; neo4j
+                 [clojurewerkz/elastisch "3.0.0-beta1"]
+                 [org.elasticsearch/elasticsearch "2.3.3"]
 
                  ;; [com.datomic/datomic-pro "0.9.5344" :exclusions [joda-time org.slf4j/jul-to-slf4j org.slf4j/slf4j-nop org.slf4j/slf4j-over-log4j org.slf4j/slf4j org.slf4j/slf4j-log4j12]]
 

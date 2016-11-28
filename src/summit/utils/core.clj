@@ -90,6 +90,16 @@
           (-> v Double/parseDouble int)))
       (int v))))
 
+(defn ->long [v]
+  (if (nil? v)
+    nil
+    (if (string? v)
+      (let [v (str/trim v)]
+        (if (empty? v)
+          nil
+          (-> v Double/parseDouble long)))
+      (int v))))
+
 (defn ->float [v]
   (if (nil? v)
     nil
