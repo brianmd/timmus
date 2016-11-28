@@ -1,5 +1,8 @@
 # https://github.com/pashky/restclient.el
-# http://jakemcrary.com/blog/2014/07/04/using-emacs-to-explore-an-http-api/
+# http://jakemccrary.com/blog/2014/07/04/using-emacs-to-explore-an-http-api/
+
+# change to restclient-mode
+# ^-c ^-c to run query.
 
 :default = <<
 User-Agent: Emacs Restclient
@@ -33,7 +36,8 @@ Content-Type: text/plain
 
 I'm a Title
 -----
-
+test
+#
 
 
 :rosetta = http://localhost:3449

@@ -1,5 +1,5 @@
 # https://github.com/pashky/restclient.el
-# http://jakemcrary.com/blog/2014/07/04/using-emacs-to-explore-an-http-api/
+# http://jakemccrary.com/blog/2014/07/04/using-emacs-to-explore-an-http-api/
 
 :default = <<
 User-Agent: Emacs Restclient

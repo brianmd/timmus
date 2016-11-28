@@ -74,6 +74,15 @@ bb
 (:body aa)
 (p/process-punchout-request-str (:body aa))
 )
+
+
+
+
+(def punchout-url "http://localhost:3449/api/punchout")
+(def punchout-url "http://localhost:4007/api/punchout")
+
+
+
 (defn add-product-to-empty-cart [email product-id]
   (let [cust (find-by-colname :customers :email email)
         cart-id (:main_cart_id cust)
