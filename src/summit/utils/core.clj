@@ -32,6 +32,22 @@
     [summit.utils.log :as log]
     ))
 
+;; (->str :abc)
+;; (->str :abc/def)
+;; (->str "abc/def")
+(defn ->str2
+  [o]
+  {:pre [(or (keyword? o)
+             (string? o)
+             (symbol? o))]}
+  (let [s (str o)]
+    (if (= \: (first s))
+      (.substring s 1)
+      s)))
+;; (->str2 :abc)
+;; (->str2 :abc/def)
+;; (->str2 "abc/def")
+;; (->str2 3)
 
 
 ;; (with-programs [ls] (ls {:seq true}))

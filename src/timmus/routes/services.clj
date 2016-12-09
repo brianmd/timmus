@@ -96,8 +96,9 @@ bb
 
 (defn process-fake-axiall-punchout []
   (ppn "faking")
+  (println "\n\n\n------------in FAKING punchout\n\n")
   (let [request (fake-axiall-punchout-request)
-        url "http://localhost:3449/api/punchout"]
+        url punchout-url]
     (ppn "request" request "url" url)
     (ppn
      (client/post

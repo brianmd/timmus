@@ -196,7 +196,7 @@
     (do-log-request xml "punchout-send-order-message")
     {:url url
      :method "post"
-     ;; :base64 (base64-encode xml)
+     :base64 (base64-encode xml)
      ;; :xmlstr (hiccup/h xml)
      :xmlstr xml
      }))
