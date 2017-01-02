@@ -54,14 +54,15 @@
 
                  ;; clj libraries
 
-                 [com.taoensso/carmine "2.12.2"]
+                 [com.taoensso/carmine "2.12.2"]  ;; redis
+                 [resque-clojure "0.3.0"]
                  [clj-http "2.1.0"]
                  [org.clojure/data.csv "0.1.3"]
                  [semantic-csv "0.1.0"]
                  [org.clojure/data.codec "0.1.0"]
                  [org.clojure/data.xml "0.0.8"]
                  ;; [im.chit/hara.reflect "2.2.17"]
-                 [me.raynes/conch "0.8.0"]
+                 [me.raynes/conch "0.8.0"]  ;; shell to linux
                  [potemkin "0.4.3"]
                  [snipsnap "0.1.0" :exclusions [org.clojure/clojure]]
                  ;; [org.clojure/java.jdbc "0.4.2"]  removed because korma requires 0.3.7
@@ -121,13 +122,8 @@
                  ;; [com.h2database/h2 "1.4.190"]
                  ;; [gyptis "0.2.2" :exclusions [io.aviso/pretty com.taoensso/timbre]]   ;; vega plots, conflicts w/ clj-ns-browser
                  ;; [medley "0.7.1"]  ;lightweight library of useful Clojure functions
-                 [com.taoensso/carmine "2.12.2"]
                  [clj-tagsoup/clj-tagsoup "0.3.0" :exclusions [org.clojure/clojure]]
-                 ;; [com.jakemccrary/lein-test-refresh "0.13.0"]
-                 ;; [zookeeper-clj "0.9.4"]
-                 ;; [zookeeper-clj "0.9.4" :exclusions [org.slf4j/slf4j-log4j12]]
                  [com.rpl/specter "0.9.2"]
-                 [resque-clojure "0.3.0"]
                  [local/ojdbc6 "11.2.0.4"]    ;; oracle
 
                  [argo "0.1.2"]   ;; for json api
