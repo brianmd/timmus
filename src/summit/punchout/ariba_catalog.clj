@@ -131,7 +131,141 @@ join mdm.ts_item t on t.item_pik=j.item_pik
 where j.matnr='" (as-matnr matnr) "';")
         result (first (exec-sql sql))]
     (or (:idw_unspsc result) (:ts_unspsc result))))
-(examples (get-unspsc 1000000))
+(examples
+ (get-unspsc 1000000)
+ (get-unspsc 1)
+ )
+
+(def unspscs (map (fn [x] {:matnr x :unspsc (get-unspsc x)}) matnrs))
+(map :unspsc unspscs)
+(remove #(nil? (:unspsc %)) unspscs)
+
+(def matnrs [
+23260
+3254360
+3254362
+3254364
+3253347
+3254368
+3254699
+3254698
+3254689
+3254708
+3254710
+3254718
+3254721
+3255824
+3255335
+3253216
+3256030
+3256044
+3253109
+3251027
+3253112
+3253115
+3253101
+3253121
+3253123
+3253126
+3253127
+3253128
+3253171
+3253170
+3253182
+3253186
+3253156
+3253174
+3253175
+3253183
+3253177
+3253178
+3253179
+3253184
+3256183
+3255409
+3255420
+3255411
+3255412
+3255413
+3255414
+3255415
+3255417
+3255432
+3255433
+3255429
+3255435
+3255045
+3255046
+3253884
+3253954
+3252805
+3252820
+3253401
+3255659
+3255707
+3255702
+3255699
+3255718
+3255711
+3255719
+3255720
+3255715
+3255717
+3252646
+3252651
+3251226
+24035
+84202
+24040
+24042
+24055
+24054
+3151681
+3182923
+3231042
+3231043
+3230801
+3194533
+3155372
+3155376
+3155415
+20747
+2390157
+2289418
+30909
+3160547
+6109
+6860
+8971
+8981
+11144
+20753
+24299
+29421
+29472
+29475
+29484
+29500
+31314
+31318
+31325
+31331
+35431
+117057
+175040
+257703
+1471663
+1517172
+1540183
+2323491
+2352530
+2590661
+2712304
+2864181
+2864182
+3075847
+3124319
+])
 
 (defn quoteit [s]
   ;; (pr-str s))
@@ -157,6 +291,13 @@ where j.matnr='" (as-matnr matnr) "';")
 ;; (ppn (sort (part-info 2854664 3)))
 ;; (ppn (sort (part-info 3 3)))
 
+
+(def info (map (fn [matnr] (-> (part-info matnr nil) (select-keys [:matnr :unspsc :url :image-url :thumbnail-url]))) matnrs))
+(def info-table (concat ["Matnr" "UNSPSC" "Product URL" "Image URL" "Thumbnail URL"] (map vals info)))
+(with-open [out-file (io/writer "catalog.csv")]
+  (csv/write-csv out-file
+                 (vec info-table)))
+
 (defn part-info [matnr cust-part-num]
    ;; (println "\n222 part-info")
    (let [
@@ -176,7 +317,7 @@ where j.matnr='" (as-matnr matnr) "';")
          ;; price (if (<= internet-price customer-price) internet-price customer-price)
 
          ;; temporary fix
-         unspsc 39
+         unspsc (or (get-unspsc matnr) 39)
          ;; unspsc (get-unspsc matnr)
          lead-time 1
          uom (:uom bh-prod)
